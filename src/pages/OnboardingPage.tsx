@@ -135,7 +135,7 @@ const OnboardingPage = () => {
             </div>
             <h1 className="text-3xl font-extrabold tracking-tight">
               Welcome to{" "}
-              <span className="gradient-primary bg-clip-text text-transparent">BaatCheet</span>
+              <span className="gradient-primary bg-clip-text text-transparent">SingleTape</span>
             </h1>
             <p className="mt-2 text-muted-foreground">Your chats are 100% private & encrypted 🔒</p>
 
