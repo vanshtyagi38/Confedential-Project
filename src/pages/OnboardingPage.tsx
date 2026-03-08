@@ -199,7 +199,7 @@ const OnboardingPage = () => {
         {step === "age" && (
           <div className="animate-fade-in-up text-center">
             <p className="text-lg font-bold">How old are you? 🎂</p>
-            <p className="mt-1 text-sm text-muted-foreground">Must be 18+ to use BaatCheet</p>
+            <p className="mt-1 text-sm text-muted-foreground">Must be 18+ to use SingleTape</p>
             <div className="mt-8 flex items-center justify-center gap-6">
               <button
                 onClick={() => setAge((a) => Math.max(18, a - 1))}
