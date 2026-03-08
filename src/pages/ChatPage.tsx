@@ -137,7 +137,7 @@ const ChatPage = () => {
             alt={companion.name}
             className="h-10 w-10 rounded-full object-cover"
           />
-          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card bg-green-500" />
+          <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card bg-accent" />
         </div>
         <div className="flex-1">
           <h2 className="text-sm font-bold">{companion.name}</h2>
