@@ -27,9 +27,9 @@ serve(async (req) => {
       { auth: { autoRefreshToken: false, persistSession: false } }
     );
 
-    // Check if user exists
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find((u: any) => u.email === email);
+    // Check if user exists by email (listUsers has pagination issues)
+    const { data: { users } } = await supabaseAdmin.auth.admin.listUsers({ filter: `email.eq.${email}` });
+    const existingUser = users?.[0];
 
     if (existingUser) {
       // Generate a magic link token for existing user
