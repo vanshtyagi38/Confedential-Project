@@ -40,12 +40,7 @@ const mTags = [
   "Poet","Gamer","Foodie King","Adventure Seeker","Bookworm","Night Owl","Fitness Coach",
 ];
 
-const fCities = [
-  "Delhi","Noida","Gurgaon","Delhi NCR","Greater Noida","Faridabad","Ghaziabad",
-  "Delhi","Noida","Gurgaon","Delhi NCR","Delhi","Mumbai","Bangalore","Pune",
-];
-
-const mCities = [
+const cities = [
   "Mumbai","Delhi","Bangalore","Pune","Hyderabad","Chennai","Kolkata","Jaipur",
   "Chandigarh","Goa","Lucknow","Ahmedabad","Indore","Kochi","Bhopal",
 ];
@@ -94,8 +89,7 @@ function generate(
   names: string[],
   gender: "male" | "female",
   tags: string[],
-  bios: string[],
-  citiesList: string[]
+  bios: string[]
 ): Companion[] {
   return names.map((name, i) => ({
     id: `${name.toLowerCase()}-${gender[0]}`,
@@ -103,7 +97,7 @@ function generate(
     age: ages[i % ages.length],
     gender,
     tag: tags[i % tags.length],
-    city: citiesList[i % citiesList.length],
+    city: cities[i % cities.length],
     languages: langs[i % langs.length],
     ratePerMin: [3, 4, 5][i % 3],
     image: `https://randomuser.me/api/portraits/${gender === "female" ? "women" : "men"}/${i}.jpg`,
@@ -112,8 +106,8 @@ function generate(
 }
 
 export const companions: Companion[] = [
-  ...generate(fNames, "female", fTags, fBios, fCities),
-  ...generate(mNames, "male", mTags, mBios, mCities),
+  ...generate(fNames, "female", fTags, fBios),
+  ...generate(mNames, "male", mTags, mBios),
 ];
 
 export const getCompanionById = (id: string): Companion | undefined =>
