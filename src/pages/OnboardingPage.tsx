@@ -13,7 +13,7 @@ type Step = "gender" | "preference" | "age" | "email" | "otp";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
-  const { session, profile, sendOtp, verifyOtp, createProfile } = useAuth();
+  const { session, profile, signUpWithEmail, sendOtp, verifyOtp, createProfile } = useAuth();
   const [step, setStep] = useState<Step>("gender");
   const [gender, setGender] = useState("");
   const [preferredGender, setPreferredGender] = useState("");
