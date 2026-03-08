@@ -306,7 +306,7 @@ const OnboardingPage = () => {
               >
                 −
               </button>
-              <span className="min-w-[80px] text-6xl font-extrabold gradient-primary bg-clip-text text-transparent tabular-nums">
+              <span className="min-w-[80px] text-6xl font-extrabold text-primary tabular-nums">
                 {age}
               </span>
               <button
