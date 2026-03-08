@@ -1,22 +1,21 @@
-import { Wallet, Plus } from "lucide-react";
+import { Wallet, Plus, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 
-interface BalanceCardProps {
-  balance: number;
-}
-
-const BalanceCard = ({ balance }: BalanceCardProps) => {
+const BalanceCard = () => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const balance = profile?.balance_minutes || 0;
 
   return (
     <div className="mx-4 flex items-center justify-between rounded-xl bg-card p-4 shadow-card">
       <div className="flex items-center gap-3">
         <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
-          <Wallet className="h-5 w-5 text-accent" />
+          <Clock className="h-5 w-5 text-accent" />
         </div>
         <div>
-          <p className="text-xs text-muted-foreground">Your Balance</p>
-          <p className="text-xl font-bold">₹{balance}</p>
+          <p className="text-xs text-muted-foreground">Chat Balance</p>
+          <p className="text-xl font-bold">{Math.floor(balance)} min</p>
         </div>
       </div>
       <button
