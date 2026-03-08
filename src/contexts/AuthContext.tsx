@@ -62,7 +62,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const sendOtp = async (email: string) => {
-    const { error } = await supabase.auth.signInWithOtp({ email });
+    const { data, error } = await supabase.auth.signInWithOtp({ email });
+    // With auto-confirm, session may be created immediately
+    if (!error) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (sessionData?.session) {
+        setSession(sessionData.session);
+        await loadProfile(sessionData.session.user.id);
+      }
+    }
     return { error };
   };
 
