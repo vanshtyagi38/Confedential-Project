@@ -13,7 +13,7 @@ type Step = "gender" | "preference" | "age" | "email" | "otp";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
-  const { session, profile, sendOtp, verifyOtp, createProfile } = useAuth();
+  const { session, profile, signUpWithEmail, sendOtp, verifyOtp, createProfile } = useAuth();
   const [step, setStep] = useState<Step>("gender");
   const [gender, setGender] = useState("");
   const [preferredGender, setPreferredGender] = useState("");
@@ -46,43 +46,60 @@ const OnboardingPage = () => {
     setStep("email");
   };
 
-  const handleSendOtp = async () => {
+  const handleEmailSubmit = async () => {
     if (!email.trim() || !email.includes("@")) {
       toast.error("Enter a valid email");
       return;
     }
     setLoading(true);
-    const { error } = await sendOtp(email.trim());
-    if (error) {
-      setLoading(false);
-      toast.error(error.message || "Failed to send verification email");
-      return;
-    }
-    toast.success("Check your email — click the link or enter the code!");
-    setStep("otp");
-    setLoading(false);
-  };
 
-  const handleSkipVerification = async () => {
-    // With auto-confirm, the OTP call already signed the user in
-    // Just create profile and navigate
     if (isReturning) {
+      // Returning user: send magic link/OTP
+      const { error } = await sendOtp(email.trim());
+      setLoading(false);
+      if (error) {
+        toast.error(error.message || "Failed to send verification email");
+        return;
+      }
+      toast.success("Check your email for the verification link!");
+      setStep("otp");
+    } else {
+      // New user: sign up instantly (auto-confirm creates session)
+      const { error, session: newSession } = await signUpWithEmail(email.trim());
+      if (error) {
+        if (error.message?.includes("already registered")) {
+          // User exists, switch to OTP flow
+          const { error: otpError } = await sendOtp(email.trim());
+          setLoading(false);
+          if (otpError) {
+            toast.error(otpError.message || "Failed to send verification email");
+            return;
+          }
+          toast.info("This email is already registered. Check your email to sign in!");
+          setIsReturning(true);
+          setStep("otp");
+          return;
+        }
+        setLoading(false);
+        toast.error(error.message || "Sign up failed");
+        return;
+      }
+
+      // Session created instantly — now create profile
+      const { error: profileError } = await createProfile({
+        gender,
+        preferred_gender: preferredGender,
+        age,
+        display_name: email.split("@")[0],
+      });
+      setLoading(false);
+      if (profileError) {
+        toast.error("Failed to create profile. Try again.");
+        return;
+      }
+      toast.success("Welcome to SingleTape! 🎉");
       navigate("/", { replace: true });
-      return;
     }
-    setLoading(true);
-    const { error: profileError } = await createProfile({
-      gender,
-      preferred_gender: preferredGender,
-      age,
-      display_name: email.split("@")[0],
-    });
-    setLoading(false);
-    if (profileError) {
-      toast.error("Failed to create profile. Try again.");
-      return;
-    }
-    navigate("/", { replace: true });
   };
 
   const handleVerifyOtp = async () => {
@@ -266,37 +283,40 @@ const OnboardingPage = () => {
               {isReturning ? "Welcome back!" : "Almost there!"}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              We'll send a 6-digit OTP code to verify you
+              {isReturning ? "Enter your email to sign in" : "Enter your email to get started"}
             </p>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
+              onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
               placeholder="your@email.com"
               className="mt-6 w-full rounded-xl bg-card px-4 py-3.5 text-center text-base outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
               autoFocus
             />
             <button
-              onClick={handleSendOtp}
+              onClick={handleEmailSubmit}
               disabled={loading || !email.trim()}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Continue"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : isReturning ? "Send Login Link" : "Start Chatting"}
             </button>
             <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Lock className="h-3 w-3" />
-              We'll verify your email to keep your account safe.
+              Your account is safe & encrypted.
             </p>
           </div>
         )}
 
-        {/* Step 5: OTP */}
+        {/* Step 5: OTP (only for returning users) */}
         {step === "otp" && (
           <div className="animate-fade-in-up text-center">
             <p className="text-xl font-extrabold">Verify your email</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              We sent a verification to <span className="font-semibold text-foreground">{email}</span>
+              We sent a verification link to <span className="font-semibold text-foreground">{email}</span>
+            </p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Click the link in your email to sign in, or enter the code below:
             </p>
             <input
               type="text"
@@ -306,7 +326,7 @@ const OnboardingPage = () => {
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
               onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
               placeholder="000000"
-              className="mt-6 w-full rounded-xl bg-card px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
+              className="mt-4 w-full rounded-xl bg-card px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
               autoFocus
             />
             <button
@@ -314,17 +334,10 @@ const OnboardingPage = () => {
               disabled={loading || otp.length < 6}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Start Chatting"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Sign In"}
             </button>
             <button
-              onClick={handleSkipVerification}
-              disabled={loading}
-              className="mt-3 w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition-all active:scale-[0.97] hover:bg-secondary disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Skip verification — start chatting now"}
-            </button>
-            <button
-              onClick={() => { setOtp(""); handleSendOtp(); }}
+              onClick={() => { setOtp(""); handleEmailSubmit(); }}
               className="mt-3 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
             >
               Didn't get it? Resend
