@@ -46,60 +46,60 @@ const OnboardingPage = () => {
     setStep("email");
   };
 
-  const handleSendOtp = async () => {
+  const handleEmailSubmit = async () => {
     if (!email.trim() || !email.includes("@")) {
       toast.error("Enter a valid email");
       return;
     }
     setLoading(true);
-    const { error } = await sendOtp(email.trim());
-    if (error) {
-      setLoading(false);
-      toast.error(error.message || "Failed to send verification email");
-      return;
-    }
-    toast.success("Check your email — click the link or enter the code!");
-    setStep("otp");
-    setLoading(false);
-  };
-
-  const handleSkipVerification = async () => {
-    setLoading(true);
-    
-    // Wait a moment for the session to be picked up from auth state change
-    let attempts = 0;
-    let currentSession = session;
-    while (!currentSession && attempts < 10) {
-      await new Promise((r) => setTimeout(r, 500));
-      const { data } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
-      currentSession = data.session;
-      attempts++;
-    }
-
-    if (!currentSession) {
-      setLoading(false);
-      toast.error("Session not ready yet. Please verify via email or try again.");
-      return;
-    }
 
     if (isReturning) {
+      // Returning user: send magic link/OTP
+      const { error } = await sendOtp(email.trim());
       setLoading(false);
-      navigate("/", { replace: true });
-      return;
-    }
+      if (error) {
+        toast.error(error.message || "Failed to send verification email");
+        return;
+      }
+      toast.success("Check your email for the verification link!");
+      setStep("otp");
+    } else {
+      // New user: sign up instantly (auto-confirm creates session)
+      const { error, session: newSession } = await signUpWithEmail(email.trim());
+      if (error) {
+        if (error.message?.includes("already registered")) {
+          // User exists, switch to OTP flow
+          const { error: otpError } = await sendOtp(email.trim());
+          setLoading(false);
+          if (otpError) {
+            toast.error(otpError.message || "Failed to send verification email");
+            return;
+          }
+          toast.info("This email is already registered. Check your email to sign in!");
+          setIsReturning(true);
+          setStep("otp");
+          return;
+        }
+        setLoading(false);
+        toast.error(error.message || "Sign up failed");
+        return;
+      }
 
-    const { error: profileError } = await createProfile({
-      gender,
-      preferred_gender: preferredGender,
-      age,
-      display_name: email.split("@")[0],
-    });
-    setLoading(false);
-    if (profileError) {
-      toast.error("Failed to create profile. Try again.");
-      return;
+      // Session created instantly — now create profile
+      const { error: profileError } = await createProfile({
+        gender,
+        preferred_gender: preferredGender,
+        age,
+        display_name: email.split("@")[0],
+      });
+      setLoading(false);
+      if (profileError) {
+        toast.error("Failed to create profile. Try again.");
+        return;
+      }
+      toast.success("Welcome to SingleTape! 🎉");
+      navigate("/", { replace: true });
     }
-    navigate("/", { replace: true });
   };
 
   const handleVerifyOtp = async () => {
