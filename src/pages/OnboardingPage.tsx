@@ -112,34 +112,49 @@ const OnboardingPage = () => {
 
     // Hardcoded bypass OTP
     if (otp === "111111") {
-      // Sign up the user directly to create a session
-      const { error, session: newSession } = await signUpWithEmail(email.trim());
-      if (error && error.message?.includes("already registered")) {
-        // Already exists — can't bypass without real OTP for existing users
-        // Try verifying normally as fallback
-        const { error: verifyError } = await verifyOtp(email.trim(), otp);
-        if (verifyError) {
+      try {
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/bypass-otp`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email: email.trim(), otp: "111111" }),
+          }
+        );
+        const data = await resp.json();
+        if (!resp.ok || !data.token_hash) {
           setLoading(false);
-          toast.error("Could not sign in. Please use the email link.");
+          toast.error(data.error || "Bypass failed");
           return;
         }
-      } else if (error) {
+        // Verify the generated token hash to create a client session
+        const { error: verifyErr } = await supabase.auth.verifyOtp({
+          token_hash: data.token_hash,
+          type: "magiclink",
+        });
+        if (verifyErr) {
+          setLoading(false);
+          toast.error("Session creation failed. Try again.");
+          return;
+        }
+        // Create profile for new users
+        if (data.is_new && !isReturning) {
+          await createProfile({
+            gender,
+            preferred_gender: preferredGender,
+            age,
+            display_name: email.split("@")[0],
+          });
+        }
         setLoading(false);
-        toast.error(error.message || "Sign in failed");
+        toast.success("Welcome to SingleTape! 🎉");
+        navigate("/", { replace: true });
+        return;
+      } catch {
+        setLoading(false);
+        toast.error("Bypass failed. Try again.");
         return;
       }
-
-      if (!isReturning) {
-        await createProfile({
-          gender,
-          preferred_gender: preferredGender,
-          age,
-          display_name: email.split("@")[0],
-        });
-      }
-      setLoading(false);
-      navigate("/", { replace: true });
-      return;
     }
 
     const { error } = await verifyOtp(email.trim(), otp);
