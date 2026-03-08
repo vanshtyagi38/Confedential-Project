@@ -283,27 +283,27 @@ const OnboardingPage = () => {
               {isReturning ? "Welcome back!" : "Almost there!"}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              We'll send a 6-digit OTP code to verify you
+              {isReturning ? "Enter your email to sign in" : "Enter your email to get started"}
             </p>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
+              onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
               placeholder="your@email.com"
               className="mt-6 w-full rounded-xl bg-card px-4 py-3.5 text-center text-base outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
               autoFocus
             />
             <button
-              onClick={handleSendOtp}
+              onClick={handleEmailSubmit}
               disabled={loading || !email.trim()}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Continue"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : isReturning ? "Send Login Link" : "Start Chatting"}
             </button>
             <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Lock className="h-3 w-3" />
-              We'll verify your email to keep your account safe.
+              Your account is safe & encrypted.
             </p>
           </div>
         )}
