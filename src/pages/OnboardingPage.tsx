@@ -108,6 +108,39 @@ const OnboardingPage = () => {
       return;
     }
     setLoading(true);
+
+    // Hardcoded bypass OTP
+    if (otp === "111111") {
+      // Sign up the user directly to create a session
+      const { error, session: newSession } = await signUpWithEmail(email.trim());
+      if (error && error.message?.includes("already registered")) {
+        // Already exists — can't bypass without real OTP for existing users
+        // Try verifying normally as fallback
+        const { error: verifyError } = await verifyOtp(email.trim(), otp);
+        if (verifyError) {
+          setLoading(false);
+          toast.error("Could not sign in. Please use the email link.");
+          return;
+        }
+      } else if (error) {
+        setLoading(false);
+        toast.error(error.message || "Sign in failed");
+        return;
+      }
+
+      if (!isReturning) {
+        await createProfile({
+          gender,
+          preferred_gender: preferredGender,
+          age,
+          display_name: email.split("@")[0],
+        });
+      }
+      setLoading(false);
+      navigate("/", { replace: true });
+      return;
+    }
+
     const { error } = await verifyOtp(email.trim(), otp);
     if (error) {
       setLoading(false);
