@@ -1,16 +1,8 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Phone, Video, Sparkles } from "lucide-react";
+import { ArrowLeft, Send, Phone, Video } from "lucide-react";
 import { companions } from "@/data/companions";
-import {
-  type Mood,
-  getInitialMood,
-  transitionMood,
-  generateSmartReply,
-  getTypingDelay,
-  shouldSendFollowUp,
-  getFollowUpMessage,
-} from "@/lib/chatEngine";
+import { toast } from "sonner";
 
 type Message = {
   id: string;
@@ -19,37 +11,113 @@ type Message = {
   time: string;
 };
 
+type ChatMsg = { role: "user" | "assistant"; content: string };
+
 const quickReplies = ["Hey! 👋", "How are you?", "Tell me about yourself", "What do you like?", "I'm bored 😴"];
 
 const getTimeString = () =>
   new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
-const moodEmojis: Record<Mood, string> = {
-  flirty: "😏",
-  playful: "😄",
-  shy: "🙈",
-  sassy: "💅",
-  caring: "🥰",
-  moody: "🌧️",
-  excited: "🤩",
-  deep: "🌙",
-};
+const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/companion-chat`;
+
+async function streamChat({
+  messages,
+  companionId,
+  onDelta,
+  onDone,
+  onError,
+}: {
+  messages: ChatMsg[];
+  companionId: string;
+  onDelta: (text: string) => void;
+  onDone: () => void;
+  onError: (err: string) => void;
+}) {
+  const resp = await fetch(CHAT_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+    },
+    body: JSON.stringify({ messages, companionId }),
+  });
+
+  if (!resp.ok) {
+    const data = await resp.json().catch(() => ({ error: "Network error" }));
+    onError(data.error || `Error ${resp.status}`);
+    return;
+  }
+
+  if (!resp.body) {
+    onError("No response stream");
+    return;
+  }
+
+  const reader = resp.body.getReader();
+  const decoder = new TextDecoder();
+  let textBuffer = "";
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    textBuffer += decoder.decode(value, { stream: true });
+
+    let newlineIndex: number;
+    while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
+      let line = textBuffer.slice(0, newlineIndex);
+      textBuffer = textBuffer.slice(newlineIndex + 1);
+
+      if (line.endsWith("\r")) line = line.slice(0, -1);
+      if (line.startsWith(":") || line.trim() === "") continue;
+      if (!line.startsWith("data: ")) continue;
+
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === "[DONE]") break;
+
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) onDelta(content);
+      } catch {
+        textBuffer = line + "\n" + textBuffer;
+        break;
+      }
+    }
+  }
+
+  // Flush remaining
+  if (textBuffer.trim()) {
+    for (let raw of textBuffer.split("\n")) {
+      if (!raw) continue;
+      if (raw.endsWith("\r")) raw = raw.slice(0, -1);
+      if (!raw.startsWith("data: ")) continue;
+      const jsonStr = raw.slice(6).trim();
+      if (jsonStr === "[DONE]") continue;
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+        if (content) onDelta(content);
+      } catch { /* ignore */ }
+    }
+  }
+
+  onDone();
+}
 
 const ChatPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const companion = companions.find((c) => c.id === id);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [chatHistory, setChatHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
   const [typing, setTyping] = useState(false);
-  const [mood, setMood] = useState<Mood>("playful");
-  const [msgCount, setMsgCount] = useState(0);
+  const [streaming, setStreaming] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const streamTextRef = useRef("");
 
   useEffect(() => {
     if (companion) {
-      const initialMood = getInitialMood(companion);
-      setMood(initialMood);
       setMessages([
         {
           id: "intro",
@@ -58,24 +126,15 @@ const ChatPage = () => {
           time: getTimeString(),
         },
       ]);
+      setChatHistory([
+        { role: "assistant", content: companion.bio },
+      ]);
     }
   }, [companion]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, typing]);
-
-  const addCompanionMessage = useCallback((text: string) => {
-    setMessages((prev) => [
-      ...prev,
-      {
-        id: Date.now().toString() + Math.random(),
-        text,
-        sender: "companion",
-        time: getTimeString(),
-      },
-    ]);
-  }, []);
+  }, [messages, typing, streaming]);
 
   if (!companion) {
     return (
@@ -85,43 +144,68 @@ const ChatPage = () => {
     );
   }
 
-  const sendMessage = (text: string) => {
-    if (!text.trim()) return;
-    const newCount = msgCount + 1;
-    setMsgCount(newCount);
+  const sendMessage = async (text: string) => {
+    if (!text.trim() || streaming) return;
+    const trimmed = text.trim();
+    setInput("");
 
+    // Add user message
     const userMsg: Message = {
       id: Date.now().toString(),
-      text: text.trim(),
+      text: trimmed,
       sender: "user",
       time: getTimeString(),
     };
     setMessages((prev) => [...prev, userMsg]);
-    setInput("");
+
+    const newHistory: ChatMsg[] = [...chatHistory, { role: "user", content: trimmed }];
+    setChatHistory(newHistory);
+
     setTyping(true);
+    streamTextRef.current = "";
 
-    // Transition mood
-    const newMood = transitionMood(mood, newCount);
-    setMood(newMood);
+    // Small delay to feel natural
+    await new Promise((r) => setTimeout(r, 600 + Math.random() * 800));
+    setTyping(false);
+    setStreaming(true);
 
-    const delay = getTypingDelay(newMood);
+    // Create placeholder companion message
+    const companionMsgId = (Date.now() + 1).toString();
+    setMessages((prev) => [
+      ...prev,
+      { id: companionMsgId, text: "", sender: "companion", time: getTimeString() },
+    ]);
 
-    setTimeout(() => {
-      setTyping(false);
-      const reply = generateSmartReply(text.trim(), companion, newMood, newCount);
-      addCompanionMessage(reply);
-
-      // Possible follow-up message (creates addictive "she's still thinking about you" feeling)
-      if (shouldSendFollowUp(newCount, newMood)) {
-        setTimeout(() => {
-          setTyping(true);
-          setTimeout(() => {
-            setTyping(false);
-            addCompanionMessage(getFollowUpMessage(newMood));
-          }, 1500 + Math.random() * 1000);
-        }, 2000 + Math.random() * 3000);
-      }
-    }, delay);
+    try {
+      await streamChat({
+        messages: newHistory,
+        companionId: companion.id,
+        onDelta: (chunk) => {
+          streamTextRef.current += chunk;
+          const currentText = streamTextRef.current;
+          setMessages((prev) =>
+            prev.map((m) => (m.id === companionMsgId ? { ...m, text: currentText } : m))
+          );
+        },
+        onDone: () => {
+          setStreaming(false);
+          setChatHistory((prev) => [
+            ...prev,
+            { role: "assistant", content: streamTextRef.current },
+          ]);
+        },
+        onError: (err) => {
+          setStreaming(false);
+          // Remove empty companion message
+          setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
+          toast.error(err);
+        },
+      });
+    } catch (e) {
+      setStreaming(false);
+      setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
+      toast.error("Failed to get a response. Try again!");
+    }
   };
 
   return (
@@ -144,8 +228,10 @@ const ChatPage = () => {
           <p className="text-[10px] text-muted-foreground">
             {typing ? (
               <span className="text-primary animate-pulse-soft">typing...</span>
+            ) : streaming ? (
+              <span className="text-accent animate-pulse-soft">replying...</span>
             ) : (
-              <>Online · {moodEmojis[mood]} · ₹{companion.ratePerMin}/min</>
+              <>Online · ₹{companion.ratePerMin}/min</>
             )}
           </p>
         </div>
@@ -157,12 +243,6 @@ const ChatPage = () => {
             <Video className="h-4 w-4 text-muted-foreground" />
           </button>
         </div>
-      </div>
-
-      {/* Mood indicator */}
-      <div className="flex items-center justify-center gap-1.5 bg-secondary/50 py-1.5 text-[10px] text-muted-foreground">
-        <Sparkles className="h-3 w-3" />
-        <span>{companion.name} is feeling {mood} {moodEmojis[mood]}</span>
       </div>
 
       {/* Messages */}
@@ -180,13 +260,13 @@ const ChatPage = () => {
               />
             )}
             <div
-              className={`max-w-[72%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
+              className={`max-w-[75%] rounded-2xl px-4 py-2.5 text-sm leading-relaxed ${
                 msg.sender === "user"
                   ? "gradient-primary text-primary-foreground rounded-br-md"
                   : "bg-card shadow-card rounded-bl-md"
               }`}
             >
-              <p className="whitespace-pre-wrap">{msg.text}</p>
+              <p className="whitespace-pre-wrap">{msg.text || "..."}</p>
               <p
                 className={`mt-1 text-[9px] ${
                   msg.sender === "user" ? "text-primary-foreground/70" : "text-muted-foreground"
@@ -238,11 +318,12 @@ const ChatPage = () => {
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
             placeholder="Type a message..."
-            className="flex-1 rounded-full bg-secondary px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground"
+            disabled={streaming}
+            className="flex-1 rounded-full bg-secondary px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={!input.trim()}
+            disabled={!input.trim() || streaming}
             className="flex h-10 w-10 items-center justify-center rounded-full gradient-primary text-primary-foreground transition-transform active:scale-90 disabled:opacity-40"
           >
             <Send className="h-4 w-4" />

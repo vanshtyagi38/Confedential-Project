@@ -1,0 +1,4 @@
+project_id = "fckraevvqfvribyiqkdo"
+
+[functions.companion-chat]
+verify_jwt = false
