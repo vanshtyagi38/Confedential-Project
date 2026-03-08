@@ -308,12 +308,15 @@ const OnboardingPage = () => {
           </div>
         )}
 
-        {/* Step 5: OTP */}
+        {/* Step 5: OTP (only for returning users) */}
         {step === "otp" && (
           <div className="animate-fade-in-up text-center">
             <p className="text-xl font-extrabold">Verify your email</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              We sent a verification to <span className="font-semibold text-foreground">{email}</span>
+              We sent a verification link to <span className="font-semibold text-foreground">{email}</span>
+            </p>
+            <p className="mt-4 text-sm text-muted-foreground">
+              Click the link in your email to sign in, or enter the code below:
             </p>
             <input
               type="text"
@@ -323,7 +326,7 @@ const OnboardingPage = () => {
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
               onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
               placeholder="000000"
-              className="mt-6 w-full rounded-xl bg-card px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
+              className="mt-4 w-full rounded-xl bg-card px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
               autoFocus
             />
             <button
@@ -331,17 +334,10 @@ const OnboardingPage = () => {
               disabled={loading || otp.length < 6}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Start Chatting"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Sign In"}
             </button>
             <button
-              onClick={handleSkipVerification}
-              disabled={loading}
-              className="mt-3 w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition-all active:scale-[0.97] hover:bg-secondary disabled:opacity-50"
-            >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Skip verification — start chatting now"}
-            </button>
-            <button
-              onClick={() => { setOtp(""); handleSendOtp(); }}
+              onClick={() => { setOtp(""); handleEmailSubmit(); }}
               className="mt-3 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
             >
               Didn't get it? Resend
