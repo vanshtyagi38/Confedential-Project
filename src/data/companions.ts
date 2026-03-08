@@ -40,7 +40,12 @@ const mTags = [
   "Poet","Gamer","Foodie King","Adventure Seeker","Bookworm","Night Owl","Fitness Coach",
 ];
 
-const cities = [
+const fCities = [
+  "Delhi","Noida","Gurgaon","Delhi NCR","Greater Noida","Faridabad","Ghaziabad",
+  "Delhi","Noida","Gurgaon","Delhi NCR","Delhi","Mumbai","Bangalore","Pune",
+];
+
+const mCities = [
   "Mumbai","Delhi","Bangalore","Pune","Hyderabad","Chennai","Kolkata","Jaipur",
   "Chandigarh","Goa","Lucknow","Ahmedabad","Indore","Kochi","Bhopal",
 ];
