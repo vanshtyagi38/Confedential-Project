@@ -1,7 +1,9 @@
-import { User, Settings, HelpCircle, LogOut, Clock, Shield } from "lucide-react";
+import { Settings, HelpCircle, LogOut, Clock, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import BottomNav from "@/components/BottomNav";
+import onboardBoy from "@/assets/onboard-boy.png";
+import onboardGirl from "@/assets/onboard-girl.png";
 
 const ProfilePage = () => {
   const navigate = useNavigate();
@@ -12,18 +14,16 @@ const ProfilePage = () => {
     navigate("/onboarding", { replace: true });
   };
 
+  const avatarImg = profile?.gender === "male" ? onboardBoy : onboardGirl;
+
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-24">
+    <div className="mx-auto min-h-[100dvh] max-w-lg bg-background pb-24">
       <div className="px-4 py-4">
         <h1 className="text-lg font-bold">Profile</h1>
       </div>
 
       <div className="flex flex-col items-center py-6">
-        <div className="flex h-20 w-20 items-center justify-center rounded-full gradient-primary">
-          <span className="text-3xl">
-            {profile?.gender === "male" ? "👦" : "👧"}
-          </span>
-        </div>
+        <img src={avatarImg} alt="Avatar" className="h-20 w-20 rounded-full object-cover shadow-elevated" />
         <h2 className="mt-3 text-base font-bold">
           {profile?.display_name || "User"}
         </h2>

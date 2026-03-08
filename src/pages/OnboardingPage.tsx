@@ -1,8 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, ArrowLeft, Shield, Sparkles, Lock, Headphones } from "lucide-react";
+import { Loader2, ArrowLeft, Shield, Lock } from "lucide-react";
 import { toast } from "sonner";
+import logoIcon from "@/assets/logo-icon.png";
+import onboardBoy from "@/assets/onboard-boy.png";
+import onboardGirl from "@/assets/onboard-girl.png";
+import chatBoy from "@/assets/chat-boy.png";
+import chatGirl from "@/assets/chat-girl.png";
 
 type Step = "gender" | "preference" | "age" | "email" | "otp";
 
@@ -103,7 +108,7 @@ const OnboardingPage = () => {
   };
 
   const stepIndex = step === "gender" ? 0 : step === "preference" ? 1 : step === "age" ? 2 : step === "email" ? 3 : 4;
-  const progressPct = `${((stepIndex) / 4) * 100}%`;
+  const progressPct = `${(stepIndex / 4) * 100}%`;
 
   return (
     <div className="mx-auto flex min-h-[100dvh] max-w-lg flex-col bg-background">
@@ -129,15 +134,13 @@ const OnboardingPage = () => {
         {/* Step 1: Gender */}
         {step === "gender" && (
           <div className="animate-fade-in-up text-center">
-            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-elevated">
-              <Headphones className="h-8 w-8 text-primary-foreground" />
-            </div>
+            <img src={logoIcon} alt="SingleTape" className="mx-auto mb-5 h-16 w-16 rounded-2xl shadow-elevated" />
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
               Welcome to{" "}
               <span className="gradient-primary bg-clip-text text-transparent">SingleTape</span>
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
-              Private chats. Real vibes. Zero boring. 🔒
+              Private chats. Real vibes. Zero boring.
             </p>
 
             <div className="mt-8">
@@ -145,16 +148,16 @@ const OnboardingPage = () => {
               <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
                 <button
                   onClick={() => handleGender("male")}
-                  className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-5 sm:p-6 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
+                  className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-4 sm:p-5 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
                 >
-                  <span className="text-5xl transition-transform group-hover:scale-110">👦</span>
+                  <img src={onboardBoy} alt="Boy" className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover transition-transform group-hover:scale-105" />
                   <span className="text-base font-bold">Boy</span>
                 </button>
                 <button
                   onClick={() => handleGender("female")}
-                  className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-5 sm:p-6 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
+                  className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-4 sm:p-5 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
                 >
-                  <span className="text-5xl transition-transform group-hover:scale-110">👧</span>
+                  <img src={onboardGirl} alt="Girl" className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover transition-transform group-hover:scale-105" />
                   <span className="text-base font-bold">Girl</span>
                 </button>
               </div>
@@ -177,21 +180,21 @@ const OnboardingPage = () => {
         {/* Step 2: Preference */}
         {step === "preference" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-xl font-extrabold">Who do you wanna vibe with? 😏</p>
+            <p className="text-xl font-extrabold">Who do you wanna vibe with?</p>
             <p className="mt-1 text-sm text-muted-foreground">Pick your match type</p>
             <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4">
               <button
                 onClick={() => handlePreference("male")}
-                className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-5 sm:p-6 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
+                className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-4 sm:p-5 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
               >
-                <span className="text-5xl transition-transform group-hover:scale-110">🧑</span>
+                <img src={chatBoy} alt="Boys" className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover transition-transform group-hover:scale-105" />
                 <span className="text-base font-bold">Boys</span>
               </button>
               <button
                 onClick={() => handlePreference("female")}
-                className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-5 sm:p-6 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
+                className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-4 sm:p-5 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
               >
-                <span className="text-5xl transition-transform group-hover:scale-110">👩</span>
+                <img src={chatGirl} alt="Girls" className="h-20 w-20 sm:h-24 sm:w-24 rounded-full object-cover transition-transform group-hover:scale-105" />
                 <span className="text-base font-bold">Girls</span>
               </button>
             </div>
@@ -205,7 +208,7 @@ const OnboardingPage = () => {
         {/* Step 3: Age */}
         {step === "age" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-xl font-extrabold">How old are you? 🎂</p>
+            <p className="text-xl font-extrabold">How old are you?</p>
             <p className="mt-1 text-sm text-muted-foreground">Must be 18+ to join SingleTape</p>
             <div className="mt-8 flex items-center justify-center gap-6">
               <button
@@ -237,7 +240,7 @@ const OnboardingPage = () => {
         {step === "email" && (
           <div className="animate-fade-in-up text-center">
             <p className="text-xl font-extrabold">
-              {isReturning ? "Welcome back! 🎉" : "Almost there! 📧"}
+              {isReturning ? "Welcome back!" : "Almost there!"}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
               We'll send a 6-digit OTP code to verify you
@@ -256,7 +259,7 @@ const OnboardingPage = () => {
               disabled={loading || !email.trim()}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Send OTP Code 🚀"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Send OTP Code"}
             </button>
             <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Lock className="h-3 w-3" />
@@ -268,7 +271,7 @@ const OnboardingPage = () => {
         {/* Step 5: OTP */}
         {step === "otp" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-xl font-extrabold">Enter the magic code ✨</p>
+            <p className="text-xl font-extrabold">Enter the magic code</p>
             <p className="mt-1 text-sm text-muted-foreground">
               6-digit code sent to <span className="font-semibold text-foreground">{email}</span>
             </p>
@@ -288,7 +291,7 @@ const OnboardingPage = () => {
               disabled={loading || otp.length < 6}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Start Chatting 🎉"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Start Chatting"}
             </button>
             <button
               onClick={() => { setOtp(""); handleSendOtp(); }}
