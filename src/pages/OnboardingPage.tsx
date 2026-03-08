@@ -64,13 +64,30 @@ const OnboardingPage = () => {
   };
 
   const handleSkipVerification = async () => {
-    // With auto-confirm, the OTP call already signed the user in
-    // Just create profile and navigate
+    setLoading(true);
+    
+    // Wait a moment for the session to be picked up from auth state change
+    let attempts = 0;
+    let currentSession = session;
+    while (!currentSession && attempts < 10) {
+      await new Promise((r) => setTimeout(r, 500));
+      const { data } = await (await import("@/integrations/supabase/client")).supabase.auth.getSession();
+      currentSession = data.session;
+      attempts++;
+    }
+
+    if (!currentSession) {
+      setLoading(false);
+      toast.error("Session not ready yet. Please verify via email or try again.");
+      return;
+    }
+
     if (isReturning) {
+      setLoading(false);
       navigate("/", { replace: true });
       return;
     }
-    setLoading(true);
+
     const { error: profileError } = await createProfile({
       gender,
       preferred_gender: preferredGender,
