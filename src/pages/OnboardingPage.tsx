@@ -137,7 +137,7 @@ const OnboardingPage = () => {
             <img src={logoIcon} alt="SingleTape" className="mx-auto mb-5 h-16 w-16 rounded-2xl shadow-elevated" />
             <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
               Welcome to{" "}
-              <span className="gradient-primary bg-clip-text text-transparent">SingleTape</span>
+              <span className="text-foreground">SingleTape</span>
             </h1>
             <p className="mt-2 text-sm text-muted-foreground">
               Private chats. Real vibes. Zero boring.
