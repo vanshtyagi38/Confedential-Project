@@ -15,6 +15,7 @@ type AuthContextType = {
   session: Session | null;
   profile: UserProfile | null;
   loading: boolean;
+  signUpWithEmail: (email: string) => Promise<{ error: any; session: Session | null }>;
   sendOtp: (email: string) => Promise<{ error: any }>;
   verifyOtp: (email: string, token: string) => Promise<{ error: any }>;
   signOut: () => Promise<void>;
@@ -61,16 +62,22 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => subscription.unsubscribe();
   }, []);
 
-  const sendOtp = async (email: string) => {
-    const { data, error } = await supabase.auth.signInWithOtp({ email });
-    // With auto-confirm, session may be created immediately
-    if (!error) {
-      const { data: sessionData } = await supabase.auth.getSession();
-      if (sessionData?.session) {
-        setSession(sessionData.session);
-        await loadProfile(sessionData.session.user.id);
-      }
+  // New user: signUp with auto-generated password (auto-confirm creates session instantly)
+  const signUpWithEmail = async (email: string) => {
+    const randomPass = crypto.randomUUID() + "!Aa1";
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password: randomPass,
+    });
+    if (!error && data.session) {
+      setSession(data.session);
     }
+    return { error, session: data?.session || null };
+  };
+
+  // Returning user: magic link OTP flow
+  const sendOtp = async (email: string) => {
+    const { error } = await supabase.auth.signInWithOtp({ email });
     return { error };
   };
 
@@ -86,13 +93,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const createProfile = async (data: { display_name?: string; gender: string; preferred_gender: string; age: number }) => {
-    if (!session?.user) return { error: "Not authenticated" };
+    // Get fresh session if not in state yet
+    let userId = session?.user?.id;
+    if (!userId) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      userId = sessionData?.session?.user?.id;
+      if (sessionData?.session) setSession(sessionData.session);
+    }
+    if (!userId) return { error: "Not authenticated" };
+    
     const { error } = await (supabase as any).from("user_profiles").insert({
-      user_id: session.user.id,
+      user_id: userId,
       ...data,
       balance_minutes: 5,
     });
-    if (!error) await loadProfile(session.user.id);
+    if (!error) await loadProfile(userId);
     return { error };
   };
 
@@ -101,7 +116,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ session, profile, loading, sendOtp, verifyOtp, signOut, createProfile, refreshProfile }}>
+    <AuthContext.Provider value={{ session, profile, loading, signUpWithEmail, sendOtp, verifyOtp, signOut, createProfile, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );
