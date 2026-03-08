@@ -53,13 +53,36 @@ const OnboardingPage = () => {
     }
     setLoading(true);
     const { error } = await sendOtp(email.trim());
-    setLoading(false);
     if (error) {
-      toast.error(error.message || "Failed to send OTP");
+      setLoading(false);
+      toast.error(error.message || "Failed to send verification email");
       return;
     }
-    toast.success("Check your inbox for the 6-digit code! 📩");
+    toast.success("Check your email — click the link or enter the code!");
     setStep("otp");
+    setLoading(false);
+  };
+
+  const handleSkipVerification = async () => {
+    // With auto-confirm, the OTP call already signed the user in
+    // Just create profile and navigate
+    if (isReturning) {
+      navigate("/", { replace: true });
+      return;
+    }
+    setLoading(true);
+    const { error: profileError } = await createProfile({
+      gender,
+      preferred_gender: preferredGender,
+      age,
+      display_name: email.split("@")[0],
+    });
+    setLoading(false);
+    if (profileError) {
+      toast.error("Failed to create profile. Try again.");
+      return;
+    }
+    navigate("/", { replace: true });
   };
 
   const handleVerifyOtp = async () => {
@@ -71,7 +94,7 @@ const OnboardingPage = () => {
     const { error } = await verifyOtp(email.trim(), otp);
     if (error) {
       setLoading(false);
-      toast.error(error.message || "Invalid OTP. Try again.");
+      toast.error(error.message || "Invalid code. Try again.");
       return;
     }
 
@@ -259,11 +282,11 @@ const OnboardingPage = () => {
               disabled={loading || !email.trim()}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Send OTP Code"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Continue"}
             </button>
             <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Lock className="h-3 w-3" />
-              No login links. Just a simple 6-digit code.
+              We'll verify your email to keep your account safe.
             </p>
           </div>
         )}
@@ -271,9 +294,9 @@ const OnboardingPage = () => {
         {/* Step 5: OTP */}
         {step === "otp" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-xl font-extrabold">Enter the magic code</p>
+            <p className="text-xl font-extrabold">Verify your email</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              6-digit code sent to <span className="font-semibold text-foreground">{email}</span>
+              We sent a verification to <span className="font-semibold text-foreground">{email}</span>
             </p>
             <input
               type="text"
@@ -294,14 +317,18 @@ const OnboardingPage = () => {
               {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Start Chatting"}
             </button>
             <button
+              onClick={handleSkipVerification}
+              disabled={loading}
+              className="mt-3 w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition-all active:scale-[0.97] hover:bg-secondary disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Skip verification — start chatting now"}
+            </button>
+            <button
               onClick={() => { setOtp(""); handleSendOtp(); }}
               className="mt-3 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
             >
-              Didn't get the code? Resend
+              Didn't get it? Resend
             </button>
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              Check spam folder if you don't see it
-            </p>
           </div>
         )}
       </div>
