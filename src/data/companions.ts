@@ -94,7 +94,8 @@ function generate(
   names: string[],
   gender: "male" | "female",
   tags: string[],
-  bios: string[]
+  bios: string[],
+  citiesList: string[]
 ): Companion[] {
   return names.map((name, i) => ({
     id: `${name.toLowerCase()}-${gender[0]}`,
@@ -102,7 +103,7 @@ function generate(
     age: ages[i % ages.length],
     gender,
     tag: tags[i % tags.length],
-    city: cities[i % cities.length],
+    city: citiesList[i % citiesList.length],
     languages: langs[i % langs.length],
     ratePerMin: [3, 4, 5][i % 3],
     image: `https://randomuser.me/api/portraits/${gender === "female" ? "women" : "men"}/${i}.jpg`,
@@ -111,8 +112,8 @@ function generate(
 }
 
 export const companions: Companion[] = [
-  ...generate(fNames, "female", fTags, fBios),
-  ...generate(mNames, "male", mTags, mBios),
+  ...generate(fNames, "female", fTags, fBios, fCities),
+  ...generate(mNames, "male", mTags, mBios, mCities),
 ];
 
 export const getCompanionById = (id: string): Companion | undefined =>
