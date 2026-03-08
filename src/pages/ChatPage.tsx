@@ -1,8 +1,9 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Phone, Video, Image as ImageIcon, X, CheckCheck, Check, Loader2 } from "lucide-react";
-import { companions } from "@/data/companions";
+import { ArrowLeft, Send, Phone, Video, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap } from "lucide-react";
+import { companions, getCompanionById } from "@/data/companions";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 
 type MessageStatus = "sending" | "sent" | "delivered" | "seen";
@@ -26,27 +27,21 @@ const getTimeString = () =>
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/companion-chat`;
 
-// Humanized delay — short replies feel faster, long ones take more time
 function getHumanDelay(isImage: boolean): number {
-  if (isImage) return 1800 + Math.random() * 2200; // Images take longer to "look at"
-  return 800 + Math.random() * 1200; // Natural thinking pause
+  if (isImage) return 1800 + Math.random() * 2200;
+  return 800 + Math.random() * 1200;
 }
 
 function getStreamStartDelay(): number {
-  // Simulate "reading & thinking" before typing starts
   return 400 + Math.random() * 600;
 }
 
 async function streamChat({
-  messages,
-  companionId,
-  onDelta,
-  onDone,
-  onError,
-  signal,
+  messages, companionId, companionMeta, onDelta, onDone, onError, signal,
 }: {
   messages: ChatMsg[];
   companionId: string;
+  companionMeta: any;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
@@ -58,7 +53,7 @@ async function streamChat({
       "Content-Type": "application/json",
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages, companionId }),
+    body: JSON.stringify({ messages, companionId, companionMeta }),
     signal,
   });
 
@@ -99,7 +94,6 @@ async function streamChat({
     }
   }
 
-  // Flush remaining
   if (textBuffer.trim()) {
     for (let raw of textBuffer.split("\n")) {
       if (!raw) continue;
@@ -117,18 +111,13 @@ async function streamChat({
   onDone();
 }
 
-// Upload image to storage
 async function uploadImage(file: File): Promise<string> {
   const ext = file.name.split(".").pop() || "jpg";
   const path = `${Date.now()}-${Math.random().toString(36).slice(2)}.${ext}`;
-
   const { error } = await supabase.storage.from("chat-images").upload(path, file, {
-    contentType: file.type,
-    cacheControl: "3600",
+    contentType: file.type, cacheControl: "3600",
   });
-
   if (error) throw error;
-
   const { data } = supabase.storage.from("chat-images").getPublicUrl(path);
   return data.publicUrl;
 }
@@ -146,7 +135,8 @@ const StatusIcon = ({ status }: { status?: MessageStatus }) => {
 const ChatPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const companion = companions.find((c) => c.id === id);
+  const { session, profile, refreshProfile } = useAuth();
+  const companion = getCompanionById(id || "");
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
@@ -155,12 +145,17 @@ const ChatPage = () => {
   const [pendingImage, setPendingImage] = useState<File | null>(null);
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
+  const [outOfBalance, setOutOfBalance] = useState(false);
+  const [displayBalance, setDisplayBalance] = useState(profile?.balance_minutes || 0);
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamTextRef = useRef("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const minutesUsedRef = useRef(0);
+  const chatActiveRef = useRef(false);
 
-  // Track online status
+  // Online tracking
   useEffect(() => {
     const goOffline = () => setOnline(false);
     const goOnline = () => setOnline(true);
@@ -169,23 +164,103 @@ const ChatPage = () => {
     return () => { window.removeEventListener("offline", goOffline); window.removeEventListener("online", goOnline); };
   }, []);
 
+  // Load previous messages from DB
   useEffect(() => {
-    if (companion) {
-      setMessages([{
-        id: "intro",
-        text: companion.bio,
-        sender: "companion",
-        time: getTimeString(),
-      }]);
-      setChatHistory([{ role: "assistant", content: companion.bio }]);
-    }
-  }, [companion]);
+    if (!companion || !session?.user) return;
+    const load = async () => {
+      const { data } = await (supabase as any)
+        .from("chat_messages")
+        .select("*")
+        .eq("user_id", session.user.id)
+        .eq("companion_slug", companion.id)
+        .order("created_at", { ascending: true })
+        .limit(100);
+
+      if (data && data.length > 0) {
+        const loaded: Message[] = data.map((m: any) => ({
+          id: m.id,
+          text: m.content,
+          sender: m.role === "user" ? "user" : "companion",
+          time: new Date(m.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+          imageUrl: m.image_url || undefined,
+          status: "seen" as MessageStatus,
+        }));
+        const history: ChatMsg[] = data.map((m: any) => ({
+          role: m.role as "user" | "assistant",
+          content: m.content,
+        }));
+        setMessages(loaded);
+        setChatHistory(history);
+      } else {
+        // First time - show intro
+        setMessages([{
+          id: "intro",
+          text: companion.bio,
+          sender: "companion",
+          time: getTimeString(),
+        }]);
+        setChatHistory([{ role: "assistant", content: companion.bio }]);
+      }
+    };
+    load();
+  }, [companion, session?.user]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, typing, streaming]);
 
-  // Simulate status progression
+  // Update display balance when profile changes
+  useEffect(() => {
+    setDisplayBalance(profile?.balance_minutes || 0);
+    if ((profile?.balance_minutes || 0) <= 0) setOutOfBalance(true);
+  }, [profile?.balance_minutes]);
+
+  // Chat timer - deduct 1 min every 60 seconds while chatting
+  const startTimer = useCallback(() => {
+    if (chatActiveRef.current || timerRef.current) return;
+    chatActiveRef.current = true;
+    timerRef.current = setInterval(() => {
+      minutesUsedRef.current += 1;
+      setDisplayBalance((prev) => {
+        const next = Math.max(0, prev - 1);
+        if (next <= 0) setOutOfBalance(true);
+        return next;
+      });
+    }, 60000);
+  }, []);
+
+  // Save balance on unmount
+  useEffect(() => {
+    const saveBalance = async () => {
+      if (minutesUsedRef.current > 0 && session?.user && profile) {
+        const newBalance = Math.max(0, profile.balance_minutes - minutesUsedRef.current);
+        await (supabase as any)
+          .from("user_profiles")
+          .update({ balance_minutes: newBalance })
+          .eq("user_id", session.user.id);
+      }
+    };
+    const handleUnload = () => saveBalance();
+    window.addEventListener("beforeunload", handleUnload);
+    return () => {
+      window.removeEventListener("beforeunload", handleUnload);
+      if (timerRef.current) clearInterval(timerRef.current);
+      saveBalance().then(() => refreshProfile());
+    };
+  }, [session?.user, profile]);
+
+  // Save message to DB
+  const saveMessage = async (companionSlug: string, role: string, content: string, imageUrl?: string) => {
+    if (!session?.user) return;
+    await (supabase as any).from("chat_messages").insert({
+      user_id: session.user.id,
+      companion_slug: companionSlug,
+      role,
+      content,
+      image_url: imageUrl || null,
+    });
+  };
+
   const progressStatus = useCallback((msgId: string) => {
     setTimeout(() => setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: "sent" } : m)), 400 + Math.random() * 300);
     setTimeout(() => setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: "delivered" } : m)), 1000 + Math.random() * 500);
@@ -195,14 +270,8 @@ const ChatPage = () => {
   const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be under 5MB");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      toast.error("Only image files are supported");
-      return;
-    }
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
+    if (!file.type.startsWith("image/")) { toast.error("Only image files supported"); return; }
     setPendingImage(file);
     setPendingImagePreview(URL.createObjectURL(file));
     if (fileInputRef.current) fileInputRef.current.value = "";
@@ -222,41 +291,39 @@ const ChatPage = () => {
     );
   }
 
-  const sendMessage = async (text: string, retryMsg?: Message) => {
+  const sendMessage = async (text: string) => {
     if (streaming) return;
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
+    if (outOfBalance) {
+      toast.error("Out of chat minutes! Recharge to continue.", {
+        action: { label: "Recharge", onClick: () => navigate("/recharge") },
+      });
+      return;
+    }
     setInput("");
+    startTimer();
 
     const hasImage = !!pendingImage;
     let imageUrl: string | undefined;
-    const msgId = retryMsg?.id || Date.now().toString();
+    const msgId = Date.now().toString();
 
-    // Show user message immediately
-    if (!retryMsg) {
-      const userMsg: Message = {
-        id: msgId,
-        text: trimmed,
-        sender: "user",
-        time: getTimeString(),
-        imageUrl: pendingImagePreview || undefined,
-        status: "sending",
-      };
-      setMessages((prev) => [...prev, userMsg]);
-    } else {
-      setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: "sending" } : m));
-    }
+    const userMsg: Message = {
+      id: msgId,
+      text: trimmed,
+      sender: "user",
+      time: getTimeString(),
+      imageUrl: pendingImagePreview || undefined,
+      status: "sending",
+    };
+    setMessages((prev) => [...prev, userMsg]);
 
-    // Upload image if present
     if (pendingImage) {
       try {
         imageUrl = await uploadImage(pendingImage);
-        // Update message with real URL
-        setMessages((prev) =>
-          prev.map((m) => m.id === msgId ? { ...m, imageUrl } : m)
-        );
-      } catch (err) {
-        toast.error("Failed to upload image. Try again.");
+        setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, imageUrl } : m));
+      } catch {
+        toast.error("Failed to upload image.");
         setMessages((prev) => prev.map((m) => m.id === msgId ? { ...m, status: "sent" } : m));
         return;
       }
@@ -265,7 +332,9 @@ const ChatPage = () => {
 
     progressStatus(msgId);
 
-    // Build multimodal message for AI
+    // Save user message to DB
+    await saveMessage(companion.id, "user", trimmed || "[image]", imageUrl);
+
     let userContent: ChatContent;
     if (imageUrl) {
       const parts: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> = [];
@@ -279,13 +348,11 @@ const ChatPage = () => {
     const newHistory: ChatMsg[] = [...chatHistory, { role: "user", content: userContent }];
     setChatHistory(newHistory);
 
-    // Humanized delay before typing
     const thinkDelay = getHumanDelay(hasImage);
     setTyping(true);
     await new Promise((r) => setTimeout(r, thinkDelay));
     setTyping(false);
 
-    // Small extra pause then start streaming
     await new Promise((r) => setTimeout(r, getStreamStartDelay()));
     setStreaming(true);
     streamTextRef.current = "";
@@ -300,8 +367,17 @@ const ChatPage = () => {
 
     try {
       await streamChat({
-        messages: newHistory,
+        messages: newHistory.slice(-20), // Last 20 messages for context
         companionId: companion.id,
+        companionMeta: {
+          name: companion.name,
+          age: companion.age,
+          gender: companion.gender,
+          tag: companion.tag,
+          city: companion.city,
+          languages: companion.languages,
+          bio: companion.bio,
+        },
         signal: abortRef.current.signal,
         onDelta: (chunk) => {
           streamTextRef.current += chunk;
@@ -313,19 +389,19 @@ const ChatPage = () => {
         onDone: () => {
           setStreaming(false);
           abortRef.current = null;
-          setChatHistory((prev) => [
-            ...prev,
-            { role: "assistant", content: streamTextRef.current },
-          ]);
+          const finalText = streamTextRef.current;
+          setChatHistory((prev) => [...prev, { role: "assistant", content: finalText }]);
+          // Save companion message to DB
+          saveMessage(companion.id, "assistant", finalText);
         },
         onError: (err) => {
           setStreaming(false);
           abortRef.current = null;
           setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
-          if (err.includes("429") || err.includes("Too many")) {
-            toast.error("Too many messages! Wait a moment and try again.", { duration: 5000 });
-          } else if (err.includes("402") || err.includes("credits")) {
-            toast.error("AI credits exhausted. Please try again later.", { duration: 5000 });
+          if (err.includes("429")) {
+            toast.error("Too many messages! Wait a moment.", { duration: 5000 });
+          } else if (err.includes("402")) {
+            toast.error("AI credits exhausted. Try again later.", { duration: 5000 });
           } else {
             toast.error(err, {
               action: { label: "Retry", onClick: () => sendMessage(trimmed) },
@@ -337,7 +413,7 @@ const ChatPage = () => {
       if (e.name === "AbortError") return;
       setStreaming(false);
       setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
-      toast.error("Connection lost. Check your internet.", {
+      toast.error("Connection lost.", {
         action: { label: "Retry", onClick: () => sendMessage(trimmed) },
       });
     }
@@ -345,7 +421,6 @@ const ChatPage = () => {
 
   return (
     <div className="mx-auto flex h-screen max-w-lg flex-col bg-background">
-      {/* Offline banner */}
       {!online && (
         <div className="bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground">
           You're offline. Messages will send when connected.
@@ -370,20 +445,32 @@ const ChatPage = () => {
               <span className="text-accent animate-pulse-soft">replying...</span>
             ) : online ? (
               <>Online · ₹{companion.ratePerMin}/min</>
-            ) : (
-              "Offline"
-            )}
+            ) : "Offline"}
           </p>
         </div>
-        <div className="flex gap-2">
-          <button className="rounded-full bg-secondary p-2 transition-transform active:scale-90">
-            <Phone className="h-4 w-4 text-muted-foreground" />
-          </button>
-          <button className="rounded-full bg-secondary p-2 transition-transform active:scale-90">
-            <Video className="h-4 w-4 text-muted-foreground" />
-          </button>
+        <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">
+          <Clock className="h-3 w-3 text-accent" />
+          <span className={displayBalance <= 2 ? "text-destructive" : "text-foreground"}>
+            {Math.floor(displayBalance)}m
+          </span>
         </div>
       </div>
+
+      {/* Out of balance banner */}
+      {outOfBalance && (
+        <div className="flex items-center justify-between bg-destructive/10 px-4 py-2.5">
+          <div className="flex items-center gap-2 text-xs font-medium text-destructive">
+            <Zap className="h-4 w-4" />
+            Out of chat minutes!
+          </div>
+          <button
+            onClick={() => navigate("/recharge")}
+            className="rounded-lg gradient-primary px-3 py-1.5 text-xs font-bold text-primary-foreground"
+          >
+            Recharge
+          </button>
+        </div>
+      )}
 
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
@@ -402,22 +489,14 @@ const ChatPage = () => {
                   : "bg-card shadow-card rounded-bl-md"
               }`}
             >
-              {/* Image */}
               {msg.imageUrl && (
-                <img
-                  src={msg.imageUrl}
-                  alt="Shared"
-                  className="max-h-60 w-full object-cover"
-                  loading="lazy"
-                />
+                <img src={msg.imageUrl} alt="Shared" className="max-h-60 w-full object-cover" loading="lazy" />
               )}
-              {/* Text */}
               {(msg.text || (!msg.imageUrl && msg.sender === "companion")) && (
                 <div className="px-4 py-2.5">
                   <p className="whitespace-pre-wrap">{msg.text || "..."}</p>
                 </div>
               )}
-              {/* Footer */}
               <div className={`flex items-center gap-1 px-4 pb-2 ${!msg.text && msg.imageUrl ? "pt-1" : ""}`}>
                 <p className={`text-[9px] ${msg.sender === "user" ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                   {msg.time}
@@ -441,7 +520,7 @@ const ChatPage = () => {
       </div>
 
       {/* Quick replies */}
-      {messages.length <= 1 && (
+      {messages.length <= 1 && !outOfBalance && (
         <div className="flex gap-2 overflow-x-auto px-4 pb-2">
           {quickReplies.map((qr) => (
             <button
@@ -482,7 +561,7 @@ const ChatPage = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={streaming}
+            disabled={streaming || outOfBalance}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-all hover:text-foreground active:scale-90 disabled:opacity-40"
           >
             <ImageIcon className="h-5 w-5" />
@@ -492,13 +571,13 @@ const ChatPage = () => {
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-            placeholder={pendingImage ? "Add a caption..." : "Type a message..."}
-            disabled={streaming}
+            placeholder={outOfBalance ? "Recharge to continue chatting..." : pendingImage ? "Add a caption..." : "Type a message..."}
+            disabled={streaming || outOfBalance}
             className="flex-1 rounded-full bg-secondary px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={(!input.trim() && !pendingImage) || streaming}
+            disabled={(!input.trim() && !pendingImage) || streaming || outOfBalance}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-primary text-primary-foreground transition-transform active:scale-90 disabled:opacity-40"
           >
             <Send className="h-4 w-4" />

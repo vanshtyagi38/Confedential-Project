@@ -5,32 +5,42 @@ import type { Companion } from "@/data/companions";
 interface CompanionCardProps {
   companion: Companion;
   index: number;
+  compact?: boolean;
 }
 
-const CompanionCard = ({ companion, index }: CompanionCardProps) => {
+const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
   const navigate = useNavigate();
+
+  if (compact) {
+    return (
+      <div
+        onClick={() => navigate(`/chat/${companion.id}`)}
+        className="animate-fade-in-up cursor-pointer overflow-hidden rounded-xl bg-card shadow-card transition-transform active:scale-95"
+        style={{ animationDelay: `${index * 60}ms` }}
+      >
+        <div className="relative aspect-[3/4] overflow-hidden">
+          <img src={companion.image} alt={companion.name} className="h-full w-full object-cover" loading="lazy" />
+          <div className="gradient-card-overlay absolute inset-0" />
+          <div className="absolute bottom-2 left-2">
+            <p className="text-sm font-bold text-primary-foreground">{companion.name}, {companion.age}</p>
+            <p className="text-[10px] text-primary-foreground/80">{companion.city}</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
       className="animate-fade-in-up overflow-hidden rounded-xl bg-card shadow-card"
       style={{ animationDelay: `${index * 80}ms` }}
     >
-      {/* Image with overlay */}
       <div className="relative aspect-[3/4] overflow-hidden">
-        <img
-          src={companion.image}
-          alt={companion.name}
-          className="h-full w-full object-cover"
-          loading="lazy"
-        />
+        <img src={companion.image} alt={companion.name} className="h-full w-full object-cover" loading="lazy" />
         <div className="gradient-card-overlay absolute inset-0" />
-
-        {/* Tag badge */}
         <span className="absolute right-2 top-2 rounded-full gradient-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground">
           {companion.tag}
         </span>
-
-        {/* Name overlay */}
         <div className="absolute bottom-3 left-3">
           <h3 className="text-lg font-bold text-primary-foreground">
             {companion.name}, {companion.age}
@@ -38,7 +48,6 @@ const CompanionCard = ({ companion, index }: CompanionCardProps) => {
         </div>
       </div>
 
-      {/* Info */}
       <div className="p-3">
         <div className="flex items-center gap-3 text-xs text-muted-foreground">
           <span className="flex items-center gap-1">

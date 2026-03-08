@@ -14,7 +14,99 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      chat_messages: {
+        Row: {
+          companion_slug: string
+          content: string
+          created_at: string | null
+          id: string
+          image_url: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          companion_slug: string
+          content: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          companion_slug?: string
+          content?: string
+          created_at?: string | null
+          id?: string
+          image_url?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_profiles: {
+        Row: {
+          age: number
+          balance_minutes: number
+          created_at: string | null
+          display_name: string | null
+          gender: string
+          id: string
+          preferred_gender: string
+          user_id: string
+        }
+        Insert: {
+          age: number
+          balance_minutes?: number
+          created_at?: string | null
+          display_name?: string | null
+          gender: string
+          id?: string
+          preferred_gender: string
+          user_id: string
+        }
+        Update: {
+          age?: number
+          balance_minutes?: number
+          created_at?: string | null
+          display_name?: string | null
+          gender?: string
+          id?: string
+          preferred_gender?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      wallet_transactions: {
+        Row: {
+          amount: number | null
+          created_at: string | null
+          description: string | null
+          id: string
+          minutes: number
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          minutes: number
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          minutes?: number
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
