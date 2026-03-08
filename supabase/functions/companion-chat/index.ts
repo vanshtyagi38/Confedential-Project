@@ -268,6 +268,15 @@ serve(async (req) => {
 
     const systemPrompt = `${profile}\n\n${commonInstructions}`;
 
+    // Process messages — support multimodal (text + image_url)
+    // Messages can have content as string or as array of {type, text/image_url}
+    const processedMessages = messages.map((msg: any) => {
+      // Already multimodal format
+      if (Array.isArray(msg.content)) return msg;
+      // Plain text
+      return msg;
+    });
+
     const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
       method: "POST",
       headers: {
@@ -275,14 +284,14 @@ serve(async (req) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "google/gemini-3-flash-preview",
+        model: "google/gemini-2.5-flash",
         messages: [
           { role: "system", content: systemPrompt },
-          ...messages,
+          ...processedMessages,
         ],
         stream: true,
         temperature: 0.9,
-        max_tokens: 200,
+        max_tokens: 250,
       }),
     });
 
