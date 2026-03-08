@@ -282,11 +282,11 @@ const OnboardingPage = () => {
               disabled={loading || !email.trim()}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Send OTP Code"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Continue"}
             </button>
             <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
               <Lock className="h-3 w-3" />
-              No login links. Just a simple 6-digit code.
+              We'll verify your email to keep your account safe.
             </p>
           </div>
         )}
