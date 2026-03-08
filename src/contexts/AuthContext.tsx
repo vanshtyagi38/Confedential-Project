@@ -41,25 +41,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   useEffect(() => {
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_, session) => {
+    let initialized = false;
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state change:", event);
       setSession(session);
       if (session?.user) {
-        await loadProfile(session.user.id);
+        // Use setTimeout to avoid Supabase client deadlock
+        setTimeout(async () => {
+          await loadProfile(session.user.id);
+          if (!initialized) {
+            initialized = true;
+            setLoading(false);
+          }
+        }, 0);
       } else {
         setProfile(null);
+        if (!initialized) {
+          initialized = true;
+          setLoading(false);
+        }
       }
-      setLoading(false);
     });
 
-    supabase.auth.getSession().then(async ({ data: { session } }) => {
-      setSession(session);
-      if (session?.user) {
-        await loadProfile(session.user.id);
+    // Fallback: if auth state doesn't fire within 3s, stop loading
+    const timeout = setTimeout(() => {
+      if (!initialized) {
+        console.log("Auth timeout - forcing loading=false");
+        initialized = true;
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    }, 3000);
 
-    return () => subscription.unsubscribe();
+    return () => {
+      subscription.unsubscribe();
+      clearTimeout(timeout);
+    };
   }, []);
 
   // New user: signUp with auto-generated password (auto-confirm creates session instantly)
