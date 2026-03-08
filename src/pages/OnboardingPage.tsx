@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { Loader2, ArrowLeft, Shield, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, Shield, Sparkles, Lock, Headphones } from "lucide-react";
 import { toast } from "sonner";
 
 type Step = "gender" | "preference" | "age" | "email" | "otp";
@@ -18,7 +18,6 @@ const OnboardingPage = () => {
   const [loading, setLoading] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
 
-  // If already logged in with profile, go home
   if (session && profile) {
     navigate("/", { replace: true });
     return null;
@@ -54,7 +53,7 @@ const OnboardingPage = () => {
       toast.error(error.message || "Failed to send OTP");
       return;
     }
-    toast.success("OTP sent to your email! 📩");
+    toast.success("Check your inbox for the 6-digit code! 📩");
     setStep("otp");
   };
 
@@ -71,14 +70,12 @@ const OnboardingPage = () => {
       return;
     }
 
-    // If returning user, profile already exists
     if (isReturning) {
       setLoading(false);
       navigate("/", { replace: true });
       return;
     }
 
-    // Create profile for new user
     const { error: profileError } = await createProfile({
       gender,
       preferred_gender: preferredGender,
@@ -105,68 +102,74 @@ const OnboardingPage = () => {
     setStep("email");
   };
 
+  const stepIndex = step === "gender" ? 0 : step === "preference" ? 1 : step === "age" ? 2 : step === "email" ? 3 : 4;
+  const progressPct = `${((stepIndex) / 4) * 100}%`;
+
   return (
-    <div className="mx-auto flex min-h-screen max-w-lg flex-col bg-background">
-      {/* Header */}
+    <div className="mx-auto flex min-h-[100dvh] max-w-lg flex-col bg-background">
+      {/* Progress bar */}
       {step !== "gender" && (
         <div className="flex items-center gap-3 px-4 py-4">
-          <button onClick={goBack} className="p-1">
-            <ArrowLeft className="h-5 w-5" />
+          <button onClick={goBack} className="rounded-full bg-secondary p-2 transition-transform active:scale-90">
+            <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="flex-1">
-            <div className="h-1.5 rounded-full bg-secondary">
+            <div className="h-2 rounded-full bg-secondary overflow-hidden">
               <div
-                className="h-full rounded-full gradient-primary transition-all duration-500"
-                style={{
-                  width: step === "preference" ? "25%" : step === "age" ? "50%" : step === "email" ? "75%" : "100%",
-                }}
+                className="h-full rounded-full gradient-primary transition-all duration-500 ease-out"
+                style={{ width: progressPct }}
               />
             </div>
           </div>
+          <span className="text-[10px] font-bold text-muted-foreground">{stepIndex}/4</span>
         </div>
       )}
 
-      <div className="flex flex-1 flex-col justify-center px-6">
+      <div className="flex flex-1 flex-col justify-center px-5 sm:px-8">
         {/* Step 1: Gender */}
         {step === "gender" && (
           <div className="animate-fade-in-up text-center">
-            <div className="mx-auto mb-6 flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary">
-              <Sparkles className="h-8 w-8 text-primary-foreground" />
+            <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-2xl gradient-primary shadow-elevated">
+              <Headphones className="h-8 w-8 text-primary-foreground" />
             </div>
-            <h1 className="text-3xl font-extrabold tracking-tight">
+            <h1 className="text-3xl sm:text-4xl font-extrabold tracking-tight">
               Welcome to{" "}
-              <span className="gradient-primary bg-clip-text text-transparent">BaatCheet</span>
+              <span className="gradient-primary bg-clip-text text-transparent">SingleTape</span>
             </h1>
-            <p className="mt-2 text-muted-foreground">Your chats are 100% private & encrypted 🔒</p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Private chats. Real vibes. Zero boring. 🔒
+            </p>
 
-            <p className="mt-8 text-lg font-bold">I am a...</p>
-            <div className="mt-4 grid grid-cols-2 gap-4">
-              <button
-                onClick={() => handleGender("male")}
-                className="flex flex-col items-center gap-3 rounded-2xl border-2 border-transparent bg-card p-6 shadow-card transition-all hover:border-primary active:scale-95"
-              >
-                <span className="text-5xl">👦</span>
-                <span className="text-lg font-bold">Boy</span>
-              </button>
-              <button
-                onClick={() => handleGender("female")}
-                className="flex flex-col items-center gap-3 rounded-2xl border-2 border-transparent bg-card p-6 shadow-card transition-all hover:border-primary active:scale-95"
-              >
-                <span className="text-5xl">👧</span>
-                <span className="text-lg font-bold">Girl</span>
-              </button>
+            <div className="mt-8">
+              <p className="text-base font-bold">I am a...</p>
+              <div className="mt-4 grid grid-cols-2 gap-3 sm:gap-4">
+                <button
+                  onClick={() => handleGender("male")}
+                  className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-5 sm:p-6 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
+                >
+                  <span className="text-5xl transition-transform group-hover:scale-110">👦</span>
+                  <span className="text-base font-bold">Boy</span>
+                </button>
+                <button
+                  onClick={() => handleGender("female")}
+                  className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-5 sm:p-6 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
+                >
+                  <span className="text-5xl transition-transform group-hover:scale-110">👧</span>
+                  <span className="text-base font-bold">Girl</span>
+                </button>
+              </div>
             </div>
 
             <button
               onClick={startReturning}
-              className="mt-8 text-sm font-medium text-primary underline-offset-4 hover:underline"
+              className="mt-8 rounded-full bg-secondary px-6 py-2.5 text-sm font-semibold transition-all hover:bg-secondary/80 active:scale-95"
             >
               Already have an account? Sign in →
             </button>
 
-            <div className="mt-6 flex items-center justify-center gap-2 text-xs text-muted-foreground">
-              <Shield className="h-3.5 w-3.5" />
-              <span>Your data is safe. We never share your info.</span>
+            <div className="mt-5 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              <span>End-to-end encrypted. We never share your data.</span>
             </div>
           </div>
         )}
@@ -174,23 +177,27 @@ const OnboardingPage = () => {
         {/* Step 2: Preference */}
         {step === "preference" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-lg font-bold">Who do you wanna chat with? 😏</p>
-            <p className="mt-1 text-sm text-muted-foreground">Pick your vibe</p>
-            <div className="mt-6 grid grid-cols-2 gap-4">
+            <p className="text-xl font-extrabold">Who do you wanna vibe with? 😏</p>
+            <p className="mt-1 text-sm text-muted-foreground">Pick your match type</p>
+            <div className="mt-6 grid grid-cols-2 gap-3 sm:gap-4">
               <button
                 onClick={() => handlePreference("male")}
-                className="flex flex-col items-center gap-3 rounded-2xl border-2 border-transparent bg-card p-6 shadow-card transition-all hover:border-primary active:scale-95"
+                className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-5 sm:p-6 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
               >
-                <span className="text-5xl">🧑</span>
-                <span className="text-lg font-bold">Boys</span>
+                <span className="text-5xl transition-transform group-hover:scale-110">🧑</span>
+                <span className="text-base font-bold">Boys</span>
               </button>
               <button
                 onClick={() => handlePreference("female")}
-                className="flex flex-col items-center gap-3 rounded-2xl border-2 border-transparent bg-card p-6 shadow-card transition-all hover:border-primary active:scale-95"
+                className="group flex flex-col items-center gap-2 rounded-2xl border-2 border-transparent bg-card p-5 sm:p-6 shadow-card transition-all hover:border-primary hover:shadow-elevated active:scale-[0.96]"
               >
-                <span className="text-5xl">👩</span>
-                <span className="text-lg font-bold">Girls</span>
+                <span className="text-5xl transition-transform group-hover:scale-110">👩</span>
+                <span className="text-base font-bold">Girls</span>
               </button>
+            </div>
+            <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
+              <Shield className="h-3 w-3" />
+              <span>Your preferences stay private, always.</span>
             </div>
           </div>
         )}
@@ -198,26 +205,28 @@ const OnboardingPage = () => {
         {/* Step 3: Age */}
         {step === "age" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-lg font-bold">How old are you? 🎂</p>
-            <p className="mt-1 text-sm text-muted-foreground">Must be 18+ to use BaatCheet</p>
+            <p className="text-xl font-extrabold">How old are you? 🎂</p>
+            <p className="mt-1 text-sm text-muted-foreground">Must be 18+ to join SingleTape</p>
             <div className="mt-8 flex items-center justify-center gap-6">
               <button
                 onClick={() => setAge((a) => Math.max(18, a - 1))}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-2xl font-bold transition-transform active:scale-90"
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-2xl font-bold transition-all active:scale-90 hover:bg-secondary/80"
               >
-                -
+                −
               </button>
-              <span className="text-6xl font-extrabold gradient-primary bg-clip-text text-transparent">{age}</span>
+              <span className="min-w-[80px] text-6xl font-extrabold gradient-primary bg-clip-text text-transparent tabular-nums">
+                {age}
+              </span>
               <button
                 onClick={() => setAge((a) => Math.min(60, a + 1))}
-                className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-2xl font-bold transition-transform active:scale-90"
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-secondary text-2xl font-bold transition-all active:scale-90 hover:bg-secondary/80"
               >
                 +
               </button>
             </div>
             <button
               onClick={handleAge}
-              className="mt-10 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground transition-transform active:scale-[0.97]"
+              className="mt-10 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97]"
             >
               Continue →
             </button>
@@ -227,11 +236,11 @@ const OnboardingPage = () => {
         {/* Step 4: Email */}
         {step === "email" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-lg font-bold">
+            <p className="text-xl font-extrabold">
               {isReturning ? "Welcome back! 🎉" : "Almost there! 📧"}
             </p>
             <p className="mt-1 text-sm text-muted-foreground">
-              We'll send a verification code to your email
+              We'll send a 6-digit OTP code to verify you
             </p>
             <input
               type="email"
@@ -239,18 +248,19 @@ const OnboardingPage = () => {
               onChange={(e) => setEmail(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSendOtp()}
               placeholder="your@email.com"
-              className="mt-6 w-full rounded-xl bg-card px-4 py-3.5 text-center text-base outline-none ring-2 ring-transparent transition-all focus:ring-primary"
+              className="mt-6 w-full rounded-xl bg-card px-4 py-3.5 text-center text-base outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
               autoFocus
             />
             <button
               onClick={handleSendOtp}
               disabled={loading || !email.trim()}
-              className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground transition-transform active:scale-[0.97] disabled:opacity-50"
+              className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Send OTP 🚀"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Send OTP Code 🚀"}
             </button>
-            <p className="mt-4 text-xs text-muted-foreground">
-              🔒 We'll never spam you. Promise.
+            <p className="mt-4 flex items-center justify-center gap-1.5 text-xs text-muted-foreground">
+              <Lock className="h-3 w-3" />
+              No login links. Just a simple 6-digit code.
             </p>
           </div>
         )}
@@ -258,9 +268,9 @@ const OnboardingPage = () => {
         {/* Step 5: OTP */}
         {step === "otp" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-lg font-bold">Enter the magic code ✨</p>
+            <p className="text-xl font-extrabold">Enter the magic code ✨</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Sent to <span className="font-medium text-foreground">{email}</span>
+              6-digit code sent to <span className="font-semibold text-foreground">{email}</span>
             </p>
             <input
               type="text"
@@ -270,22 +280,25 @@ const OnboardingPage = () => {
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
               onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
               placeholder="000000"
-              className="mt-6 w-full rounded-xl bg-card px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none ring-2 ring-transparent transition-all focus:ring-primary"
+              className="mt-6 w-full rounded-xl bg-card px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
               autoFocus
             />
             <button
               onClick={handleVerifyOtp}
               disabled={loading || otp.length < 6}
-              className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground transition-transform active:scale-[0.97] disabled:opacity-50"
+              className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Go 🎉"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Start Chatting 🎉"}
             </button>
             <button
               onClick={() => { setOtp(""); handleSendOtp(); }}
-              className="mt-3 text-sm font-medium text-primary"
+              className="mt-3 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
             >
               Didn't get the code? Resend
             </button>
+            <p className="mt-3 text-[11px] text-muted-foreground">
+              Check spam folder if you don't see it
+            </p>
           </div>
         )}
       </div>
