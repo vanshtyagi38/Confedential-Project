@@ -294,9 +294,9 @@ const OnboardingPage = () => {
         {/* Step 5: OTP */}
         {step === "otp" && (
           <div className="animate-fade-in-up text-center">
-            <p className="text-xl font-extrabold">Enter the magic code</p>
+            <p className="text-xl font-extrabold">Verify your email</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              6-digit code sent to <span className="font-semibold text-foreground">{email}</span>
+              We sent a verification to <span className="font-semibold text-foreground">{email}</span>
             </p>
             <input
               type="text"
@@ -317,14 +317,18 @@ const OnboardingPage = () => {
               {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Verify & Start Chatting"}
             </button>
             <button
+              onClick={handleSkipVerification}
+              disabled={loading}
+              className="mt-3 w-full rounded-xl border border-border py-3 text-sm font-semibold text-foreground transition-all active:scale-[0.97] hover:bg-secondary disabled:opacity-50"
+            >
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Skip verification — start chatting now"}
+            </button>
+            <button
               onClick={() => { setOtp(""); handleSendOtp(); }}
               className="mt-3 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
             >
-              Didn't get the code? Resend
+              Didn't get it? Resend
             </button>
-            <p className="mt-3 text-[11px] text-muted-foreground">
-              Check spam folder if you don't see it
-            </p>
           </div>
         )}
       </div>
