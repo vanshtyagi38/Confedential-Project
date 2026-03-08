@@ -53,13 +53,36 @@ const OnboardingPage = () => {
     }
     setLoading(true);
     const { error } = await sendOtp(email.trim());
-    setLoading(false);
     if (error) {
-      toast.error(error.message || "Failed to send OTP");
+      setLoading(false);
+      toast.error(error.message || "Failed to send verification email");
       return;
     }
-    toast.success("Check your inbox for the 6-digit code! 📩");
+    toast.success("Check your email — click the link or enter the code!");
     setStep("otp");
+    setLoading(false);
+  };
+
+  const handleSkipVerification = async () => {
+    // With auto-confirm, the OTP call already signed the user in
+    // Just create profile and navigate
+    if (isReturning) {
+      navigate("/", { replace: true });
+      return;
+    }
+    setLoading(true);
+    const { error: profileError } = await createProfile({
+      gender,
+      preferred_gender: preferredGender,
+      age,
+      display_name: email.split("@")[0],
+    });
+    setLoading(false);
+    if (profileError) {
+      toast.error("Failed to create profile. Try again.");
+      return;
+    }
+    navigate("/", { replace: true });
   };
 
   const handleVerifyOtp = async () => {
@@ -71,7 +94,7 @@ const OnboardingPage = () => {
     const { error } = await verifyOtp(email.trim(), otp);
     if (error) {
       setLoading(false);
-      toast.error(error.message || "Invalid OTP. Try again.");
+      toast.error(error.message || "Invalid code. Try again.");
       return;
     }
 
