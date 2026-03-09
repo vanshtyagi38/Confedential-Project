@@ -32,7 +32,7 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
 
   return (
     <div
-      className="animate-fade-in-up overflow-hidden rounded-xl bg-card shadow-card"
+      className="animate-fade-in-up overflow-hidden rounded-2xl bg-card shadow-card hover:shadow-elevated transition-all"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="relative aspect-[3/4] overflow-hidden">
