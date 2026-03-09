@@ -10,7 +10,7 @@ const BalanceCard = () => {
   return (
     <div className="mx-4 flex items-center justify-between rounded-2xl bg-card p-4 shadow-card">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
           <Clock className="h-5 w-5 text-accent" />
         </div>
         <div>
