@@ -155,6 +155,7 @@ const ChatPage = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
+  const streakUpdatedRef = useRef(false);
 
   // Online tracking
   useEffect(() => {
