@@ -26,7 +26,7 @@ const Index = () => {
   const bestMatches = matchedCompanions.slice(0, 4);
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-24">
+    <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
       <AppHeader />
       <BalanceCard />
 
@@ -40,7 +40,7 @@ const Index = () => {
           Based on your age & preferences
         </p>
       </div>
-      <div className="mt-3 flex gap-3 overflow-x-auto px-4 pb-2">
+      <div className="mt-3 flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar">
         {bestMatches.map((companion, i) => (
           <div key={companion.id} className="w-36 shrink-0">
             <CompanionCard companion={companion} index={i} compact />
@@ -62,7 +62,7 @@ const Index = () => {
         </p>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 px-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 px-4 sm:grid-cols-3">
         {filtered.map((companion, i) => (
           <CompanionCard key={companion.id} companion={companion} index={i} />
         ))}

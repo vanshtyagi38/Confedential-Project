@@ -75,7 +75,7 @@ const ChatsListPage = () => {
     .slice(0, 3);
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-24">
+    <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
       {/* Header */}
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">

@@ -24,7 +24,7 @@ const FilterSheet = ({ activeFilter, onFilterChange }: FilterSheetProps) => {
       {open && (
         <div className="fixed inset-0 z-50 flex items-end justify-center">
           <div className="absolute inset-0 bg-foreground/30" onClick={() => setOpen(false)} />
-          <div className="relative w-full max-w-lg rounded-t-2xl bg-card p-5 pb-8">
+          <div className="relative w-full max-w-2xl rounded-t-2xl bg-card p-5 pb-8">
             <div className="mb-4 flex items-center justify-between">
               <h3 className="text-lg font-bold">Filter Companions</h3>
               <button onClick={() => setOpen(false)}>

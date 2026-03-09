@@ -87,7 +87,7 @@ const RechargePage = () => {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-32">
+    <div className="mx-auto min-h-screen w-full max-w-2xlax-w-2xl bg-background pb-32">
 
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-3">
@@ -224,7 +224,7 @@ const RechargePage = () => {
       </p>
 
       {/* Sticky CTA */}
-      <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-lg px-4 z-20">
+      <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-ful2xlmax-w-lg px-4 z-20">
         <div className="rounded-3xl bg-card/80 backdrop-blur-lg border border-border p-3 shadow-elevated">
           <button
             onClick={handlePurchase}

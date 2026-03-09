@@ -8,9 +8,9 @@ const BalanceCard = () => {
   const balance = profile?.balance_minutes || 0;
 
   return (
-    <div className="mx-4 flex items-center justify-between rounded-xl bg-card p-4 shadow-card">
+    <div className="mx-4 flex items-center justify-between rounded-2xl bg-card p-4 shadow-card">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-secondary">
+        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
           <Clock className="h-5 w-5 text-accent" />
         </div>
         <div>
@@ -20,7 +20,7 @@ const BalanceCard = () => {
       </div>
       <button
         onClick={() => navigate("/recharge")}
-        className="gradient-primary flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-transform active:scale-95"
+        className="gradient-primary flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all active:scale-95 hover:brightness-110"
       >
         <Plus className="h-4 w-4" />
         Recharge

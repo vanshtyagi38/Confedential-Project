@@ -222,7 +222,7 @@ const EarnPage = () => {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-24">
+    <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
       {/* Header */}
       <div className="px-4 py-4">
         <h1 className="text-lg font-bold">Earn Free Minutes</h1>

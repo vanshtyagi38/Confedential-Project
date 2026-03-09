@@ -15,7 +15,7 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
     return (
       <div
         onClick={() => navigate(`/chat/${companion.id}`)}
-        className="animate-fade-in-up cursor-pointer overflow-hidden rounded-xl bg-card shadow-card transition-transform active:scale-95"
+        className="animate-fade-in-up cursor-pointer overflow-hidden rounded-2xl bg-card shadow-card transition-all active:scale-95 hover:shadow-elevated"
         style={{ animationDelay: `${index * 60}ms` }}
       >
         <div className="relative aspect-[3/4] overflow-hidden">
@@ -32,7 +32,7 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
 
   return (
     <div
-      className="animate-fade-in-up overflow-hidden rounded-xl bg-card shadow-card"
+      className="animate-fade-in-up overflow-hidden rounded-2xl bg-card shadow-card hover:shadow-elevated transition-all"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="relative aspect-[3/4] overflow-hidden">
@@ -67,7 +67,7 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
 
         <button
           onClick={() => navigate(`/chat/${companion.id}`)}
-          className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg gradient-primary py-2.5 text-sm font-semibold text-primary-foreground transition-transform active:scale-[0.97]"
+          className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl gradient-primary py-2.5 text-sm font-semibold text-primary-foreground transition-all active:scale-[0.97] hover:brightness-110"
         >
           <MessageCircle className="h-4 w-4" />
           Chat Now
