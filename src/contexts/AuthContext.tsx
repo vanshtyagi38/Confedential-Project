@@ -9,6 +9,8 @@ export type UserProfile = {
   preferred_gender: string;
   age: number;
   balance_minutes: number;
+  referral_code: string | null;
+  spin_credits: number;
 };
 
 type AuthContextType = {
