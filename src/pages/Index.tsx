@@ -40,7 +40,7 @@ const Index = () => {
           Based on your age & preferences
         </p>
       </div>
-      <div className="mt-3 flex gap-3 overflow-x-auto px-4 pb-2">
+      <div className="mt-3 flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar">
         {bestMatches.map((companion, i) => (
           <div key={companion.id} className="w-36 shrink-0">
             <CompanionCard companion={companion} index={i} compact />
