@@ -87,7 +87,7 @@ const RechargePage = () => {
   };
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-32">
+    <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-32">
 
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-3">
