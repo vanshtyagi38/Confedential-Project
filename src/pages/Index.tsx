@@ -62,7 +62,7 @@ const Index = () => {
         </p>
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-3 px-4">
+      <div className="mt-4 grid grid-cols-2 gap-3 px-4 sm:grid-cols-3">
         {filtered.map((companion, i) => (
           <CompanionCard key={companion.id} companion={companion} index={i} />
         ))}

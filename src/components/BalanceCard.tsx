@@ -20,7 +20,7 @@ const BalanceCard = () => {
       </div>
       <button
         onClick={() => navigate("/recharge")}
-        className="gradient-primary flex items-center gap-1.5 rounded-lg px-4 py-2.5 text-sm font-semibold text-primary-foreground transition-transform active:scale-95"
+        className="gradient-primary flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all active:scale-95 hover:brightness-110"
       >
         <Plus className="h-4 w-4" />
         Recharge
