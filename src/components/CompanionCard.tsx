@@ -15,7 +15,7 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
     return (
       <div
         onClick={() => navigate(`/chat/${companion.id}`)}
-        className="animate-fade-in-up cursor-pointer overflow-hidden rounded-xl bg-card shadow-card transition-transform active:scale-95"
+        className="animate-fade-in-up cursor-pointer overflow-hidden rounded-2xl bg-card shadow-card transition-all active:scale-95 hover:shadow-elevated"
         style={{ animationDelay: `${index * 60}ms` }}
       >
         <div className="relative aspect-[3/4] overflow-hidden">
