@@ -26,7 +26,7 @@ const Index = () => {
   const bestMatches = matchedCompanions.slice(0, 4);
 
   return (
-    <div className="mx-auto min-h-screen max-w-lg bg-background pb-24">
+    <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
       <AppHeader />
       <BalanceCard />
 
