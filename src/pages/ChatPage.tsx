@@ -5,6 +5,7 @@ import { companions, getCompanionById } from "@/data/companions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { updateStreak } from "@/lib/streakEngine";
 
 type MessageStatus = "sending" | "sent" | "delivered" | "seen";
 
