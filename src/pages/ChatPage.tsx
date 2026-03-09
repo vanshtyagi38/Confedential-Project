@@ -337,6 +337,17 @@ const ChatPage = () => {
     // Save user message to DB
     await saveMessage(companion.id, "user", trimmed || "[image]", imageUrl);
 
+    // Update daily streak (once per session)
+    if (!streakUpdatedRef.current && session?.user) {
+      streakUpdatedRef.current = true;
+      updateStreak(session.user.id).then(({ bonusAwarded, milestoneReached }) => {
+        if (milestoneReached && bonusAwarded > 0) {
+          toast.success(`🔥 Streak milestone! +${bonusAwarded} free minutes!`);
+          refreshProfile();
+        }
+      });
+    }
+
     let userContent: ChatContent;
     if (imageUrl) {
       const parts: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> = [];
