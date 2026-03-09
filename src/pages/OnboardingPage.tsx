@@ -237,7 +237,7 @@ const OnboardingPage = () => {
   const progressPct = `${(stepIndex / 4) * 100}%`;
 
   return (
-    <div className="mx-auto flex min-h-[100dvh] max-w-lg flex-col bg-background">
+    <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col bg-background">
       {/* Progress bar */}
       {step !== "gender" && (
         <div className="flex items-center gap-3 px-4 py-4">

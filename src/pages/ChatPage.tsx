@@ -433,7 +433,7 @@ const ChatPage = () => {
   };
 
   return (
-    <div className="mx-auto flex h-screen max-w-lg flex-col bg-background">
+    <div className="mx-auto flex h-screen w-full max-w-2xl flex-col bg-background">
       {!online && (
         <div className="bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground">
           You're offline. Messages will send when connected.
