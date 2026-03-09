@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { Loader2, ArrowLeft, Shield, Lock } from "lucide-react";
@@ -14,6 +14,8 @@ type Step = "gender" | "preference" | "age" | "email" | "otp";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const refCode = searchParams.get("ref");
   const { session, profile, signUpWithEmail, sendOtp, verifyOtp, createProfile } = useAuth();
   const [step, setStep] = useState<Step>("gender");
   const [gender, setGender] = useState("");
@@ -93,11 +95,23 @@ const OnboardingPage = () => {
         age,
         display_name: email.split("@")[0],
       });
-      setLoading(false);
       if (profileError) {
+        setLoading(false);
         toast.error("Failed to create profile. Try again.");
         return;
       }
+      // Process referral if code present
+      if (refCode) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData?.session?.user?.id;
+        if (userId) {
+          await (supabase as any).rpc("process_referral", {
+            p_referral_code: refCode,
+            p_referred_user_id: userId,
+          });
+        }
+      }
+      setLoading(false);
       toast.success("Welcome to SingleTape! 🎉");
       navigate("/", { replace: true });
     }
@@ -145,6 +159,17 @@ const OnboardingPage = () => {
             age,
             display_name: email.split("@")[0],
           });
+          // Process referral if code present
+          if (refCode) {
+            const { data: sessionData } = await supabase.auth.getSession();
+            const userId = sessionData?.session?.user?.id;
+            if (userId) {
+              await (supabase as any).rpc("process_referral", {
+                p_referral_code: refCode,
+                p_referred_user_id: userId,
+              });
+            }
+          }
         }
         setLoading(false);
         toast.success("Welcome to SingleTape! 🎉");
@@ -176,11 +201,23 @@ const OnboardingPage = () => {
       age,
       display_name: email.split("@")[0],
     });
-    setLoading(false);
     if (profileError) {
+      setLoading(false);
       toast.error("Failed to create profile. Try again.");
       return;
     }
+    // Process referral if code present
+    if (refCode) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData?.session?.user?.id;
+      if (userId) {
+        await (supabase as any).rpc("process_referral", {
+          p_referral_code: refCode,
+          p_referred_user_id: userId,
+        });
+      }
+    }
+    setLoading(false);
     navigate("/", { replace: true });
   };
 

@@ -44,6 +44,33 @@ export type Database = {
         }
         Relationships: []
       }
+      referrals: {
+        Row: {
+          created_at: string
+          id: string
+          referral_code: string
+          referred_user_id: string | null
+          referrer_user_id: string
+          status: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referral_code: string
+          referred_user_id?: string | null
+          referrer_user_id: string
+          status?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referral_code?: string
+          referred_user_id?: string | null
+          referrer_user_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       user_profiles: {
         Row: {
           age: number
@@ -53,6 +80,8 @@ export type Database = {
           gender: string
           id: string
           preferred_gender: string
+          referral_code: string | null
+          spin_credits: number
           user_id: string
         }
         Insert: {
@@ -63,6 +92,8 @@ export type Database = {
           gender: string
           id?: string
           preferred_gender: string
+          referral_code?: string | null
+          spin_credits?: number
           user_id: string
         }
         Update: {
@@ -73,6 +104,38 @@ export type Database = {
           gender?: string
           id?: string
           preferred_gender?: string
+          referral_code?: string | null
+          spin_credits?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_streaks: {
+        Row: {
+          created_at: string
+          current_streak: number
+          id: string
+          last_activity_date: string | null
+          longest_streak: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_streak?: number
+          id?: string
+          last_activity_date?: string | null
+          longest_streak?: number
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
@@ -112,7 +175,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      process_referral: {
+        Args: { p_referral_code: string; p_referred_user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

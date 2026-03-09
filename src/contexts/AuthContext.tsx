@@ -9,6 +9,8 @@ export type UserProfile = {
   preferred_gender: string;
   age: number;
   balance_minutes: number;
+  referral_code: string | null;
+  spin_credits: number;
 };
 
 type AuthContextType = {
@@ -119,10 +121,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
     if (!userId) return { error: "Not authenticated" };
     
+    // Generate unique referral code
+    const referralCode = Math.random().toString(36).substring(2, 8).toUpperCase();
+    
     const { error } = await (supabase as any).from("user_profiles").insert({
       user_id: userId,
       ...data,
       balance_minutes: 5,
+      referral_code: referralCode,
+      spin_credits: 0,
     });
     if (!error) await loadProfile(userId);
     return { error };

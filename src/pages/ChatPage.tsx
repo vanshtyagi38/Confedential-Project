@@ -5,6 +5,7 @@ import { companions, getCompanionById } from "@/data/companions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { updateStreak } from "@/lib/streakEngine";
 
 type MessageStatus = "sending" | "sent" | "delivered" | "seen";
 
@@ -154,6 +155,7 @@ const ChatPage = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
+  const streakUpdatedRef = useRef(false);
 
   // Online tracking
   useEffect(() => {
@@ -334,6 +336,17 @@ const ChatPage = () => {
 
     // Save user message to DB
     await saveMessage(companion.id, "user", trimmed || "[image]", imageUrl);
+
+    // Update daily streak (once per session)
+    if (!streakUpdatedRef.current && session?.user) {
+      streakUpdatedRef.current = true;
+      updateStreak(session.user.id).then(({ bonusAwarded, milestoneReached }) => {
+        if (milestoneReached && bonusAwarded > 0) {
+          toast.success(`🔥 Streak milestone! +${bonusAwarded} free minutes!`);
+          refreshProfile();
+        }
+      });
+    }
 
     let userContent: ChatContent;
     if (imageUrl) {
