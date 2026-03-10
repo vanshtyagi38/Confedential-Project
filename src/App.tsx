@@ -12,6 +12,15 @@ import EarnPage from "./pages/EarnPage";
 import ProfilePage from "./pages/ProfilePage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
+import AdminLogin from "./pages/admin/AdminLogin";
+import AdminLayout from "./components/admin/AdminLayout";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AdminUsers from "./pages/admin/AdminUsers";
+import AdminConversations from "./pages/admin/AdminConversations";
+import AdminPayments from "./pages/admin/AdminPayments";
+import AdminStats from "./pages/admin/AdminStats";
+import AdminActivity from "./pages/admin/AdminActivity";
+import AdminSettings from "./pages/admin/AdminSettings";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -49,6 +58,19 @@ const App = () => (
             <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
             <Route path="/earn" element={<ProtectedRoute><EarnPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+
+            {/* Admin routes */}
+            <Route path="/admin/login" element={<AdminLogin />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboard />} />
+              <Route path="users" element={<AdminUsers />} />
+              <Route path="conversations" element={<AdminConversations />} />
+              <Route path="payments" element={<AdminPayments />} />
+              <Route path="stats" element={<AdminStats />} />
+              <Route path="activity" element={<AdminActivity />} />
+              <Route path="settings" element={<AdminSettings />} />
+            </Route>
+
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
