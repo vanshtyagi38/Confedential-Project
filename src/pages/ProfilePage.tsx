@@ -324,7 +324,10 @@ const ProfilePage = () => {
           <span className="flex-1 text-left">Privacy & Security</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
-        <button className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
+        <button
+          onClick={() => navigate("/support")}
+          className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary"
+        >
           <HelpCircle className="h-5 w-5 text-muted-foreground" />
           <span className="flex-1 text-left">Help & Support</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />

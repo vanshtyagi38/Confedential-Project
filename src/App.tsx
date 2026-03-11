@@ -22,6 +22,8 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminStats from "./pages/admin/AdminStats";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminSupport from "./pages/admin/AdminSupport";
+import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -59,6 +61,7 @@ const App = () => (
             <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
             <Route path="/earn" element={<ProtectedRoute><EarnPage /></ProtectedRoute>} />
             <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+            <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
 
             {/* Admin routes */}
             <Route path="/admin/login" element={<AdminLogin />} />
@@ -70,6 +73,7 @@ const App = () => (
               <Route path="payments" element={<AdminPayments />} />
               <Route path="stats" element={<AdminStats />} />
               <Route path="activity" element={<AdminActivity />} />
+              <Route path="support" element={<AdminSupport />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
 
