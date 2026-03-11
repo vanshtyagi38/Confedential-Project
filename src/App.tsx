@@ -75,6 +75,7 @@ const App = () => (
               <Route path="stats" element={<AdminStats />} />
               <Route path="activity" element={<AdminActivity />} />
               <Route path="support" element={<AdminSupport />} />
+              <Route path="wishlist" element={<AdminWishlist />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
 
