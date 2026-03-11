@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Gift, Share2, Star, Users, Coins, ChevronRight, UserPlus,
+  Gift, Share2, Star, Users, Coins, ChevronRight,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import SpinWheel, { SEGMENTS, segAngles } from "@/components/SpinWheel";
 import InvitePopup from "@/components/InvitePopup";
-import CompanionRegistration from "@/components/CompanionRegistration";
 
 function getRandomPrize(hasReferral10: boolean): number {
   const eligible = SEGMENTS.map((s, i) => ({
@@ -28,7 +27,6 @@ const EarnPage = () => {
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<number | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
-  const [registerOpen, setRegisterOpen] = useState(false);
   const [referralCount, setReferralCount] = useState(0);
 
   const spinCredits = profile?.spin_credits || 0;
@@ -89,23 +87,6 @@ const EarnPage = () => {
           <Coins className="h-4 w-4 text-accent" />
           <span className="text-sm font-semibold text-accent">{spinCredits} spin{spinCredits !== 1 ? "s" : ""} available</span>
         </div>
-      </div>
-
-      {/* Register as Companion CTA */}
-      <div className="mx-4 mb-4">
-        <button
-          onClick={() => setRegisterOpen(true)}
-          className="flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-accent/40 bg-accent/5 p-4 transition-colors hover:bg-accent/10 active:scale-[0.98]"
-        >
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/20">
-            <UserPlus className="h-6 w-6 text-accent" />
-          </div>
-          <div className="flex-1 text-left">
-            <h3 className="text-sm font-bold text-foreground">Become a Companion 💫</h3>
-            <p className="text-xs text-muted-foreground">Get listed & earn by chatting. Just ₹199 one-time fee</p>
-          </div>
-          <ChevronRight className="h-5 w-5 text-accent" />
-        </button>
       </div>
 
       {/* Wheel */}
@@ -174,7 +155,6 @@ const EarnPage = () => {
       </div>
 
       <InvitePopup open={inviteOpen} onClose={() => setInviteOpen(false)} referralCode={referralCode} referralLink={referralLink} />
-      <CompanionRegistration open={registerOpen} onClose={() => setRegisterOpen(false)} />
       <BottomNav />
     </div>
   );

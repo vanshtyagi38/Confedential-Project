@@ -8,6 +8,7 @@ import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import CompanionPopup from "@/components/CompanionPopup";
 import { useCompanions } from "@/hooks/useCompanions";
+import Footer from "@/components/Footer";
 
 function shuffleArray<T>(arr: T[], seed: number): T[] {
   const shuffled = [...arr];
@@ -27,16 +28,17 @@ const Index = () => {
   const [activeUsers, setActiveUsers] = useState(28900);
   const [shuffleSeed, setShuffleSeed] = useState(() => Date.now());
 
+  // Active user count changes every 1-5 seconds
   useEffect(() => {
     const tick = () => {
       setActiveUsers((prev) => {
-        const delta = Math.floor(Math.random() * 201) - 100;
+        const delta = Math.floor(Math.random() * 301) - 150;
         return Math.max(28400, Math.min(29400, prev + delta));
       });
-      const next = (Math.random() * 57 + 3) * 1000;
+      const next = (Math.random() * 4 + 1) * 1000; // 1-5 seconds
       timeout = window.setTimeout(tick, next);
     };
-    let timeout = window.setTimeout(tick, (Math.random() * 5 + 2) * 1000);
+    let timeout = window.setTimeout(tick, (Math.random() * 2 + 0.5) * 1000);
     return () => clearTimeout(timeout);
   }, []);
 
@@ -119,6 +121,7 @@ const Index = () => {
         </div>
       )}
 
+      <Footer />
       <CompanionPopup companions={companions} />
       <BottomNav />
     </div>
