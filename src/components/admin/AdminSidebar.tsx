@@ -12,6 +12,7 @@ const links = [
   { to: "/admin/payments", icon: CreditCard, label: "Payments" },
   { to: "/admin/stats", icon: BarChart3, label: "Statistics" },
   { to: "/admin/activity", icon: Activity, label: "Activity Log" },
+  { to: "/admin/support", icon: HelpCircle, label: "Help & Support" },
   { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 

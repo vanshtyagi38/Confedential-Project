@@ -45,7 +45,7 @@ const CompanionPopup = ({ companions }: { companions: Companion[] }) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogContent className="mx-4 max-w-sm rounded-3xl border-primary/20 bg-card p-0 overflow-hidden gap-0">
+      <DialogContent className="max-w-[340px] rounded-3xl border-primary/20 bg-card p-0 overflow-hidden gap-0 left-[50%] top-[50%] translate-x-[-50%] translate-y-[-50%]">
         <DialogTitle className="sr-only">Chat with {companion.name}</DialogTitle>
         <div className="flex items-center gap-3 px-5 pt-5 pb-3">
           <div className="relative">

@@ -47,7 +47,7 @@ const EngagementSections = () => {
           >
             <div className="flex items-center gap-3">
               {companion && (
-                <img src={companion.image_url || companion.image} alt="" className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20" />
+                <img src={companion.image} alt="" className="h-12 w-12 rounded-full object-cover ring-2 ring-primary/20" />
               )}
               <div className="flex-1">
                 <p className="text-sm font-bold text-foreground flex items-center gap-1.5">

@@ -9,6 +9,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import CompanionPopup from "@/components/CompanionPopup";
 import { useCompanions } from "@/hooks/useCompanions";
 import Footer from "@/components/Footer";
+import EngagementSections from "@/components/EngagementSections";
 
 function shuffleArray<T>(arr: T[], seed: number): T[] {
   const shuffled = [...arr];
