@@ -1,5 +1,5 @@
-import { useState, useMemo } from "react";
-import { Heart, Sparkles } from "lucide-react";
+import { useState, useMemo, useEffect, useCallback } from "react";
+import { Heart, Sparkles, Users, Circle } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BalanceCard from "@/components/BalanceCard";
 import CompanionCard from "@/components/CompanionCard";
@@ -11,6 +11,20 @@ import { useAuth } from "@/contexts/AuthContext";
 const Index = () => {
   const { profile } = useAuth();
   const [filter, setFilter] = useState("All");
+  const [activeUsers, setActiveUsers] = useState(28900);
+
+  useEffect(() => {
+    const tick = () => {
+      setActiveUsers((prev) => {
+        const delta = Math.floor(Math.random() * 201) - 100; // -100 to +100
+        return Math.max(28400, Math.min(29400, prev + delta));
+      });
+      const next = (Math.random() * 57 + 3) * 1000; // 3–60s
+      timeout = window.setTimeout(tick, next);
+    };
+    let timeout = window.setTimeout(tick, (Math.random() * 5 + 2) * 1000);
+    return () => clearTimeout(timeout);
+  }, []);
 
   const matchedCompanions = useMemo(() => {
     if (!profile) return companions;
