@@ -74,6 +74,132 @@ export type Database = {
         }
         Relationships: []
       }
+      companion_applications: {
+        Row: {
+          admin_status: string
+          age: number
+          bio: string
+          city: string
+          created_at: string
+          gender: string
+          id: string
+          image_url: string | null
+          languages: string
+          name: string
+          payment_amount: number
+          payment_reference: string | null
+          payment_status: string
+          rejection_reason: string | null
+          tag: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_status?: string
+          age: number
+          bio?: string
+          city?: string
+          created_at?: string
+          gender?: string
+          id?: string
+          image_url?: string | null
+          languages?: string
+          name: string
+          payment_amount?: number
+          payment_reference?: string | null
+          payment_status?: string
+          rejection_reason?: string | null
+          tag?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_status?: string
+          age?: number
+          bio?: string
+          city?: string
+          created_at?: string
+          gender?: string
+          id?: string
+          image_url?: string | null
+          languages?: string
+          name?: string
+          payment_amount?: number
+          payment_reference?: string | null
+          payment_status?: string
+          rejection_reason?: string | null
+          tag?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      companions: {
+        Row: {
+          age: number
+          banned_at: string | null
+          bio: string
+          city: string
+          created_at: string
+          gender: string
+          id: string
+          image_key: string | null
+          image_url: string | null
+          is_real_user: boolean
+          languages: string
+          name: string
+          owner_user_id: string | null
+          rate_per_min: number
+          slug: string
+          status: string
+          tag: string
+          updated_at: string
+          upi_id: string | null
+        }
+        Insert: {
+          age: number
+          banned_at?: string | null
+          bio?: string
+          city?: string
+          created_at?: string
+          gender?: string
+          id?: string
+          image_key?: string | null
+          image_url?: string | null
+          is_real_user?: boolean
+          languages?: string
+          name: string
+          owner_user_id?: string | null
+          rate_per_min?: number
+          slug: string
+          status?: string
+          tag?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Update: {
+          age?: number
+          banned_at?: string | null
+          bio?: string
+          city?: string
+          created_at?: string
+          gender?: string
+          id?: string
+          image_key?: string | null
+          image_url?: string | null
+          is_real_user?: boolean
+          languages?: string
+          name?: string
+          owner_user_id?: string | null
+          rate_per_min?: number
+          slug?: string
+          status?: string
+          tag?: string
+          updated_at?: string
+          upi_id?: string | null
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           created_at: string

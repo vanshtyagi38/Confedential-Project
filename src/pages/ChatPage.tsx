@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Phone, Video, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap } from "lucide-react";
-import { companions, getCompanionById } from "@/data/companions";
+import { ArrowLeft, Send, Phone, Video, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap, Ban } from "lucide-react";
+import { useCompanionStatus } from "@/hooks/useCompanions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
@@ -137,7 +137,7 @@ const ChatPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
-  const companion = getCompanionById(id || "");
+  const { companion, loading: companionLoading, isBanned, isDeleted, banExpired } = useCompanionStatus(id);
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
@@ -285,16 +285,29 @@ const ChatPage = () => {
     setPendingImagePreview(null);
   };
 
-  if (!companion) {
+  const chatLocked = isBanned || (isDeleted && !banExpired);
+
+  if (companionLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Companion not found</p>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!companion || (isDeleted && banExpired)) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background">
+        <p className="text-muted-foreground">This profile is no longer available</p>
+        <button onClick={() => navigate("/")} className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
+          Browse Companions
+        </button>
       </div>
     );
   }
 
   const sendMessage = async (text: string) => {
-    if (streaming) return;
+    if (streaming || chatLocked) return;
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
     if (outOfBalance) {
@@ -469,8 +482,18 @@ const ChatPage = () => {
         </div>
       </div>
 
+      {/* Banned banner */}
+      {chatLocked && (
+        <div className="flex items-center justify-center gap-2 bg-destructive/10 px-4 py-3">
+          <Ban className="h-4 w-4 text-destructive" />
+          <span className="text-xs font-bold text-destructive">
+            {isBanned ? "🚫 This profile is banned for 24 hours" : "🚫 This profile has been removed"}
+          </span>
+        </div>
+      )}
+
       {/* Out of balance banner */}
-      {outOfBalance && (
+      {outOfBalance && !chatLocked && (
         <div className="flex items-center justify-between bg-destructive/10 px-4 py-2.5">
           <div className="flex items-center gap-2 text-xs font-medium text-destructive">
             <Zap className="h-4 w-4" />
