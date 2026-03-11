@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { updateStreak } from "@/lib/streakEngine";
+import InstallAppPopup from "@/components/InstallAppPopup";
 
 type MessageStatus = "sending" | "sent" | "delivered" | "seen";
 
