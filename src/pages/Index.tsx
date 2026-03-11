@@ -9,35 +9,60 @@ import { companions } from "@/data/companions";
 import { useAuth } from "@/contexts/AuthContext";
 import CompanionPopup from "@/components/CompanionPopup";
 
+// Seeded shuffle using Fisher-Yates with a seed
+function shuffleArray<T>(arr: T[], seed: number): T[] {
+  const shuffled = [...arr];
+  let s = seed;
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    s = (s * 9301 + 49297) % 233280;
+    const j = Math.floor((s / 233280) * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 const Index = () => {
   const { profile } = useAuth();
   const [filter, setFilter] = useState("All");
   const [activeUsers, setActiveUsers] = useState(28900);
+  const [shuffleSeed, setShuffleSeed] = useState(() => Date.now());
 
+  // Active users counter
   useEffect(() => {
     const tick = () => {
       setActiveUsers((prev) => {
-        const delta = Math.floor(Math.random() * 201) - 100; // -100 to +100
+        const delta = Math.floor(Math.random() * 201) - 100;
         return Math.max(28400, Math.min(29400, prev + delta));
       });
-      const next = (Math.random() * 57 + 3) * 1000; // 3–60s
+      const next = (Math.random() * 57 + 3) * 1000;
       timeout = window.setTimeout(tick, next);
     };
     let timeout = window.setTimeout(tick, (Math.random() * 5 + 2) * 1000);
     return () => clearTimeout(timeout);
   }, []);
 
+  // Shuffle profiles every 3–10 minutes
+  useEffect(() => {
+    const tick = () => {
+      setShuffleSeed(Date.now());
+      const next = (Math.random() * 420 + 180) * 1000; // 3–10 min
+      timeout = window.setTimeout(tick, next);
+    };
+    let timeout = window.setTimeout(tick, (Math.random() * 420 + 180) * 1000);
+    return () => clearTimeout(timeout);
+  }, []);
+
   const matchedCompanions = useMemo(() => {
-    if (!profile) return companions;
-    // Filter by preferred gender
-    const preferred = companions.filter((c) => c.gender === profile.preferred_gender);
-    // Sort by age proximity (best match first)
-    return preferred.sort((a, b) => Math.abs(a.age - profile.age) - Math.abs(b.age - profile.age));
-  }, [profile]);
+    const base = profile
+      ? companions.filter((c) => c.gender === profile.preferred_gender)
+      : companions;
+    // Shuffle using seed so it re-shuffles periodically
+    return shuffleArray(base, shuffleSeed);
+  }, [profile, shuffleSeed]);
 
   const filtered = filter === "All" ? matchedCompanions : matchedCompanions.filter((c) => c.tag === filter);
 
-  // Get best matches (top 4 closest in age)
+  // Best matches (first 4 from shuffled list)
   const bestMatches = matchedCompanions.slice(0, 4);
 
   return (
