@@ -285,10 +285,23 @@ const ChatPage = () => {
     setPendingImagePreview(null);
   };
 
-  if (!companion) {
+  const chatLocked = isBanned || (isDeleted && !banExpired);
+
+  if (companionLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <p className="text-muted-foreground">Companion not found</p>
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (!companion || (isDeleted && banExpired)) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background">
+        <p className="text-muted-foreground">This profile is no longer available</p>
+        <button onClick={() => navigate("/")} className="rounded-xl bg-primary px-4 py-2 text-sm font-bold text-primary-foreground">
+          Browse Companions
+        </button>
       </div>
     );
   }
