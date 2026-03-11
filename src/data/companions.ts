@@ -1,3 +1,19 @@
+import companion01 from "@/assets/companion-01.jpg";
+import companion02 from "@/assets/companion-02.jpg";
+import companion03 from "@/assets/companion-03.jpg";
+import companion04 from "@/assets/companion-04.jpg";
+import companion05 from "@/assets/companion-05.jpg";
+import companion06 from "@/assets/companion-06.jpg";
+import companion07 from "@/assets/companion-07.jpg";
+import companion08 from "@/assets/companion-08.jpg";
+import companion09 from "@/assets/companion-09.jpg";
+import companion10 from "@/assets/companion-10.jpg";
+import companion11 from "@/assets/companion-11.jpg";
+import companion12 from "@/assets/companion-12.jpg";
+import companion13 from "@/assets/companion-13.jpg";
+import companion14 from "@/assets/companion-14.jpg";
+import companion15 from "@/assets/companion-15.jpg";
+
 export type Companion = {
   id: string;
   name: string;
@@ -11,28 +27,26 @@ export type Companion = {
   bio: string;
 };
 
+const femaleImages = [
+  companion01, companion02, companion03, companion04, companion05,
+  companion06, companion07, companion08, companion09, companion10,
+  companion11, companion12, companion13, companion14, companion15,
+];
+
 const fNames = [
   "Aadhya","Aanya","Aarohi","Aditi","Aisha","Akshara","Amara","Ananya","Anika","Anvi",
-  "Aradhya","Avni","Bhavya","Charvi","Diya","Divya","Esha","Fatima","Gauri","Hina",
-  "Isha","Ishita","Jiya","Kajal","Kavya","Khushi","Kiara","Kritika","Lakshmi","Mahika",
-  "Mansi","Meera","Mira","Myra","Naina","Navya","Neha","Nisha","Nithya","Palak",
-  "Pooja","Prisha","Priya","Radhika","Rhea","Riya","Ruhi","Saanvi","Sakshi","Sanya",
-  "Sara","Shreya","Simran","Sneha","Tanya","Trisha","Vaani","Vidya","Zara","Zoya",
+  "Aradhya","Avni","Bhavya","Charvi","Diya",
 ];
 
 const mNames = [
   "Aarav","Aditya","Ajay","Akash","Aman","Amit","Ankit","Arjun","Arnav","Aryan",
-  "Ayush","Deepak","Dev","Dhruv","Gaurav","Harsh","Ishaan","Jai","Kabir","Karan",
-  "Kartik","Krishna","Kunal","Laksh","Manan","Manav","Mohit","Nakul","Neil","Nikhil",
-  "Om","Parth","Pranav","Prateek","Raj","Rahul","Rajat","Rakesh","Ravi","Rehan",
-  "Rohan","Rohit","Sahil","Samar","Siddharth","Surya","Tanmay","Varun","Veer","Vikram",
-  "Virat","Vivek","Yash","Zain","Krish",
+  "Ayush","Deepak","Dev","Dhruv","Gaurav",
 ];
 
 const fTags = [
   "Cheerful & Witty","Confident & Bold","College Buddy","Creative Soul","Bookworm",
   "Boss Vibes","Fitness Freak","Free Spirit","Night Owl","Foodie","Dreamer",
-  "Travel Junkie","Music Lover",
+  "Travel Junkie","Music Lover","Fun & Playful","Shy College Girl",
 ];
 
 const mTags = [
@@ -65,6 +79,8 @@ const fBios = [
   "Just a small town girl with big city dreams and bigger opinions 💫",
   "Travel stories, food pics, and real talk — that's what I bring 🌍",
   "Not your regular girl next door. Try me and find out 🔥",
+  "Sweet but savage. You'll love my energy 💕",
+  "Quiet vibes, deep thoughts. Let's see if you can keep up 🤫",
 ];
 
 const mBios = [
@@ -83,69 +99,59 @@ const mBios = [
   "Night owl who makes amazing chai. What more do you need? 🌙",
 ];
 
-const ages = [18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,38];
-
-// Curated Unsplash photo IDs of Indian women & men portraits
-const indianWomenPhotos = [
-  "photo-1611516491426-03025e6043c8", // Indian woman portrait
-  "photo-1594819047050-99defca82545", // Indian woman smiling
-  "photo-1616091216791-a5360fb13982", // Indian girl casual
-  "photo-1588516903720-8ceb67f9ef84", // Indian woman traditional
-  "photo-1609505848912-b7c3b8b4beda", // Indian woman modern
-  "photo-1592621385612-4d7129426394", // Young Indian woman
-  "photo-1617330527657-a3c2d05b9d50", // Indian woman portrait
-  "photo-1580489944761-15a19d654956", // Indian woman smiling
-  "photo-1531746020798-e6953c6e8e04", // Woman portrait
-  "photo-1544005313-94ddf0286df2", // Woman face portrait
-  "photo-1494790108377-be9c29b29330", // Woman smiling
-  "photo-1524504388940-b1c1722653e1", // Woman casual
-  "photo-1529626455594-4ff0802cfb7e", // Indian woman
-  "photo-1614283233556-f35b0c801ef1", // Indian girl modern
-  "photo-1618835962148-cf177563c6c0", // Indian woman portrait
-];
+const ages = [18,19,20,21,22,23,24,25,26,27,28,29,30,31,32];
 
 const indianMenPhotos = [
-  "photo-1618641986557-1ecd230959aa", // Indian man portrait
-  "photo-1506794778202-cad84cf45f1d", // Man portrait
-  "photo-1507003211169-0a1dd7228f2d", // Man smiling
-  "photo-1500648767791-00dcc994a43e", // Man casual
-  "photo-1492562080023-ab3db95bfbce", // Man portrait
-  "photo-1603415526960-f7e0328c63b1", // Indian man
-  "photo-1566492031773-4f4e44671857", // Man portrait
-  "photo-1583195764036-6dc248ac07d9", // Indian man modern
-  "photo-1614890107637-7d8e4f0d068f", // Indian man casual
-  "photo-1615813967515-e1468c1b4b06", // Indian man portrait
-  "photo-1564564321837-a57b7070ac4f", // Man smiling
-  "photo-1542909168-180c6fdbb7e6", // Man portrait
-  "photo-1548449112-96a38a643324", // Man casual
-  "photo-1570295999919-56ceb5ecca61", // Man portrait
-  "photo-1590086782957-93c06ef21604", // Indian man
+  "photo-1618641986557-1ecd230959aa",
+  "photo-1506794778202-cad84cf45f1d",
+  "photo-1507003211169-0a1dd7228f2d",
+  "photo-1500648767791-00dcc994a43e",
+  "photo-1492562080023-ab3db95bfbce",
+  "photo-1603415526960-f7e0328c63b1",
+  "photo-1566492031773-4f4e44671857",
+  "photo-1583195764036-6dc248ac07d9",
+  "photo-1614890107637-7d8e4f0d068f",
+  "photo-1615813967515-e1468c1b4b06",
+  "photo-1564564321837-a57b7070ac4f",
+  "photo-1542909168-180c6fdbb7e6",
+  "photo-1548449112-96a38a643324",
+  "photo-1570295999919-56ceb5ecca61",
+  "photo-1590086782957-93c06ef21604",
 ];
 
-function generate(
-  names: string[],
-  gender: "male" | "female",
-  tags: string[],
-  bios: string[]
-): Companion[] {
-  const photos = gender === "female" ? indianWomenPhotos : indianMenPhotos;
+function generateFemale(names: string[]): Companion[] {
   return names.map((name, i) => ({
-    id: `${name.toLowerCase()}-${gender[0]}`,
+    id: `${name.toLowerCase()}-f`,
     name,
     age: ages[i % ages.length],
-    gender,
-    tag: tags[i % tags.length],
+    gender: "female" as const,
+    tag: fTags[i % fTags.length],
+    city: cities[i % cities.length],
+    languages: langs[i % langs.length],
+    ratePerMin: [3, 4, 5, 6, 8][i % 5],
+    image: femaleImages[i], // Each gets a unique image — no repeats
+    bio: fBios[i % fBios.length],
+  }));
+}
+
+function generateMale(names: string[]): Companion[] {
+  return names.map((name, i) => ({
+    id: `${name.toLowerCase()}-m`,
+    name,
+    age: ages[i % ages.length],
+    gender: "male" as const,
+    tag: mTags[i % mTags.length],
     city: cities[i % cities.length],
     languages: langs[i % langs.length],
     ratePerMin: [3, 4, 5][i % 3],
-    image: `https://images.unsplash.com/${photos[i % photos.length]}?w=400&h=530&fit=crop&crop=face`,
-    bio: bios[i % bios.length],
+    image: `https://images.unsplash.com/${indianMenPhotos[i % indianMenPhotos.length]}?w=400&h=530&fit=crop&crop=face`,
+    bio: mBios[i % mBios.length],
   }));
 }
 
 export const companions: Companion[] = [
-  ...generate(fNames, "female", fTags, fBios),
-  ...generate(mNames, "male", mTags, mBios),
+  ...generateFemale(fNames),
+  ...generateMale(mNames),
 ];
 
 export const getCompanionById = (id: string): Companion | undefined =>
