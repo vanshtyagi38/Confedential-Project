@@ -137,7 +137,7 @@ const ChatPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
-  const companion = getCompanionById(id || "");
+  const { companion, loading: companionLoading, isBanned, isDeleted, banExpired } = useCompanionStatus(id);
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatHistory, setChatHistory] = useState<ChatMsg[]>([]);
   const [input, setInput] = useState("");
