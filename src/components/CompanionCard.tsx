@@ -21,7 +21,6 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
         <div className="relative aspect-[3/4] overflow-hidden">
           <img src={companion.image} alt={companion.name} className="h-full w-full object-cover scale-105 hover:scale-110 transition-transform duration-500" loading="lazy" />
           <div className="gradient-card-overlay absolute inset-0" />
-          {/* Online dot */}
           <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-green-500/90 px-1.5 py-0.5">
             <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-soft" />
             <span className="text-[8px] font-bold text-white">LIVE</span>
@@ -43,7 +42,6 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
       <div className="relative aspect-[3/4] overflow-hidden group">
         <img src={companion.image} alt={companion.name} className="h-full w-full object-cover scale-105 group-hover:scale-115 transition-transform duration-700" loading="lazy" />
         <div className="gradient-card-overlay absolute inset-0" />
-        {/* Online indicator */}
         <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-green-500/90 px-2 py-0.5 backdrop-blur-sm">
           <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-soft" />
           <span className="text-[9px] font-bold text-white">ONLINE</span>
@@ -69,11 +67,6 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
             <Languages className="h-3 w-3" />
             {companion.languages}
           </span>
-        </div>
-
-        <div className="mt-2 flex items-center gap-1 text-xs">
-          <MessageCircle className="h-3 w-3 text-accent" />
-          <span className="font-semibold text-accent">₹{companion.ratePerMin}/min</span>
         </div>
 
         <button

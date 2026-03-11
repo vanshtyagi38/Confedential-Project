@@ -1,5 +1,8 @@
-import { useState } from "react";
-import { Shield } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Shield, Share2, Copy, Zap, Clock, ChevronRight } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
+import { useCompanions } from "@/hooks/useCompanions";
 import {
   Dialog,
   DialogContent,
@@ -7,6 +10,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import SpinWheel, { SEGMENTS, segAngles } from "@/components/SpinWheel";
+import InvitePopup from "@/components/InvitePopup";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const PRIVACY_POLICY = `Privacy Policy
 
@@ -310,9 +317,43 @@ Location: Bengaluru, Karnataka, India`;
 
 type PolicyType = "privacy" | "terms" | "refund";
 
+function getRandomPrize(hasReferral10: boolean): number {
+  const eligible = SEGMENTS.map((s, i) => ({
+    ...s, idx: i, w: s.type === "locked" && !hasReferral10 ? 0 : s.weight,
+  }));
+  const total = eligible.reduce((sum, s) => sum + s.w, 0);
+  let rand = Math.random() * total;
+  for (const s of eligible) { rand -= s.w; if (rand <= 0) return s.idx; }
+  return 0;
+}
+
 const Footer = () => {
+  const navigate = useNavigate();
+  const { session, profile, refreshProfile } = useAuth();
+  const { companions } = useCompanions();
   const [clickCounts, setClickCounts] = useState({ privacy: 0, terms: 0, refund: 0 });
   const [openPolicy, setOpenPolicy] = useState<PolicyType | null>(null);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [spinning, setSpinning] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [winner, setWinner] = useState<number | null>(null);
+
+  const spinCredits = profile?.spin_credits || 0;
+  const referralCode = profile?.referral_code || "";
+  const referralLink = `${window.location.origin}/onboarding?ref=${referralCode}`;
+
+  const topMatches = useMemo(() => {
+    if (!profile) return companions.slice(0, 6);
+    return companions
+      .filter((c) => c.gender === profile.preferred_gender)
+      .slice(0, 6);
+  }, [companions, profile]);
+
+  const rechargeOffers = [
+    { label: "30 min", price: "₹199", original: "₹299", tag: "STARTER" },
+    { label: "60 min", price: "₹249", original: "₹399", tag: "POPULAR 🔥" },
+    { label: "3 Hours", price: "₹499", original: "₹799", tag: "BEST VALUE" },
+  ];
 
   const handlePolicyClick = (type: PolicyType) => {
     const newCount = clickCounts[type] + 1;
@@ -339,8 +380,129 @@ const Footer = () => {
     }
   };
 
+  const handleSpinClick = async () => {
+    if (spinning) return;
+    if (spinCredits <= 0) { setInviteOpen(true); return; }
+
+    const winnerIndex = getRandomPrize(false);
+    const centerAngle = segAngles[winnerIndex].center;
+    const targetRotation = rotation + 1800 + (360 - centerAngle);
+    setRotation(targetRotation);
+    setSpinning(true);
+    setWinner(null);
+
+    if (session?.user) {
+      await (supabase as any).from("user_profiles").update({ spin_credits: spinCredits - 1 }).eq("user_id", session.user.id);
+      await refreshProfile();
+    }
+
+    setTimeout(async () => {
+      setSpinning(false);
+      setWinner(winnerIndex);
+      const prize = SEGMENTS[winnerIndex];
+      if (session?.user && profile) {
+        if (prize.type === "free_spin") {
+          await (supabase as any).from("user_profiles").update({ spin_credits: (profile.spin_credits || 0) }).eq("user_id", session.user.id);
+          await refreshProfile();
+          toast.success("🎡 You won a Free Spin!");
+        } else {
+          await Promise.all([
+            (supabase as any).from("user_profiles").update({ balance_minutes: profile.balance_minutes + prize.minutes }).eq("user_id", session.user.id),
+            (supabase as any).from("wallet_transactions").insert({ user_id: session.user.id, type: "credit", minutes: prize.minutes, amount: 0, description: `🎡 Spin wheel prize: +${prize.minutes} minutes!` }),
+          ]);
+          await refreshProfile();
+          toast.success(`🎉 You won ${prize.minutes} free minutes!`);
+        }
+      }
+    }, 4000);
+  };
+
   return (
     <>
+      {/* Spin Wheel Section */}
+      <div className="mx-4 mt-8 rounded-2xl border border-border bg-card/50 p-4 text-center">
+        <h3 className="text-sm font-bold mb-1">🎡 Spin & Win Free Minutes</h3>
+        <p className="text-[11px] text-muted-foreground mb-3">
+          {spinCredits > 0 ? `You have ${spinCredits} spin${spinCredits !== 1 ? "s" : ""}!` : "Invite friends to earn spins!"}
+        </p>
+        <div className="flex justify-center">
+          <div className="scale-[0.65] -my-12">
+            <SpinWheel spinning={spinning} rotation={rotation} onSpinClick={handleSpinClick} disabled={spinning} hasReferral10={false} />
+          </div>
+        </div>
+        {winner !== null && !spinning && (
+          <div className="mt-2 animate-fade-in rounded-xl bg-primary/10 px-4 py-2">
+            <p className="text-sm font-bold text-primary">
+              {SEGMENTS[winner].type === "free_spin" ? "🎡 Free Spin! Go again!" : `🎉 You won ${SEGMENTS[winner].minutes} minutes!`}
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Invite Section */}
+      <div className="mx-4 mt-4 rounded-2xl border border-primary/20 bg-primary/5 p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <Share2 className="h-4 w-4 text-primary" />
+          <h3 className="text-sm font-bold">Invite & Earn Free Spins 🎡</h3>
+        </div>
+        <p className="text-xs text-muted-foreground mb-3">Share via social apps. Your friend gets 5 min free, you get a spin!</p>
+        <button
+          onClick={() => setInviteOpen(true)}
+          className="flex w-full items-center justify-center gap-2 rounded-xl gradient-primary py-3 text-sm font-bold text-primary-foreground transition-transform active:scale-95"
+        >
+          <Share2 className="h-4 w-4" />
+          Invite Now
+        </button>
+      </div>
+
+      {/* Recharge Offers */}
+      <div className="mx-4 mt-4">
+        <h3 className="text-sm font-bold px-1 mb-2">⚡ Quick Recharge Offers</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {rechargeOffers.map((offer) => (
+            <button
+              key={offer.label}
+              onClick={() => navigate("/recharge")}
+              className="rounded-2xl border border-border bg-card p-3 text-center transition-all active:scale-95 hover:border-primary/30"
+            >
+              <span className="block text-[9px] font-bold text-primary">{offer.tag}</span>
+              <span className="block text-sm font-extrabold mt-1">{offer.label}</span>
+              <span className="block text-xs font-bold text-primary mt-0.5">{offer.price}</span>
+              <span className="block text-[10px] text-muted-foreground line-through">{offer.original}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Top Match Profiles Grid */}
+      {topMatches.length > 0 && (
+        <div className="mx-4 mt-4">
+          <h3 className="text-sm font-bold px-1 mb-2">🔥 Top Matches</h3>
+          <div className="grid grid-cols-3 gap-2">
+            {topMatches.map((c) => (
+              <button
+                key={c.id}
+                onClick={() => navigate(`/chat/${c.id}`)}
+                className="overflow-hidden rounded-2xl bg-card shadow-card transition-all active:scale-95"
+              >
+                <div className="relative aspect-[3/4]">
+                  <img src={c.image} alt={c.name} className="h-full w-full object-cover" loading="lazy" />
+                  <div className="gradient-card-overlay absolute inset-0" />
+                  <div className="absolute bottom-1.5 left-1.5">
+                    <p className="text-[11px] font-bold text-white drop-shadow-md">{c.name}, {c.age}</p>
+                  </div>
+                  <div className="absolute right-1 top-1 flex items-center gap-0.5 rounded-full bg-green-500/90 px-1 py-0.5">
+                    <span className="h-1 w-1 rounded-full bg-white animate-pulse-soft" />
+                    <span className="text-[7px] font-bold text-white">LIVE</span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Policy Footer */}
       <footer className="mx-4 mt-8 mb-28 rounded-2xl border border-border bg-card/50 p-5">
         <div className="flex items-center justify-center gap-2 mb-3">
           <Shield className="h-4 w-4 text-primary" />
@@ -368,28 +530,21 @@ const Footer = () => {
         </p>
 
         <div className="flex items-center justify-center gap-1 text-[10px]">
-          <button
-            onClick={() => handlePolicyClick("privacy")}
-            className="text-primary/70 hover:text-primary transition-colors"
-          >
+          <button onClick={() => handlePolicyClick("privacy")} className="text-primary/70 hover:text-primary transition-colors">
             Privacy policy
           </button>
           <span className="text-muted-foreground">·</span>
-          <button
-            onClick={() => handlePolicyClick("terms")}
-            className="text-primary/70 hover:text-primary transition-colors"
-          >
+          <button onClick={() => handlePolicyClick("terms")} className="text-primary/70 hover:text-primary transition-colors">
             Terms & conditions
           </button>
           <span className="text-muted-foreground">·</span>
-          <button
-            onClick={() => handlePolicyClick("refund")}
-            className="text-primary/70 hover:text-primary transition-colors"
-          >
+          <button onClick={() => handlePolicyClick("refund")} className="text-primary/70 hover:text-primary transition-colors">
             Refund policy
           </button>
         </div>
       </footer>
+
+      <InvitePopup open={inviteOpen} onClose={() => setInviteOpen(false)} referralCode={referralCode} referralLink={referralLink} />
 
       <Dialog open={!!openPolicy} onOpenChange={() => setOpenPolicy(null)}>
         <DialogContent className="max-w-lg max-h-[80vh]">
