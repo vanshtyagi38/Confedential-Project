@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Phone, Video, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap } from "lucide-react";
-import { companions, getCompanionById } from "@/data/companions";
+import { ArrowLeft, Send, Phone, Video, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap, Ban } from "lucide-react";
+import { useCompanionStatus } from "@/hooks/useCompanions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
