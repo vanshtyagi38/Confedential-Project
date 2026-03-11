@@ -40,16 +40,22 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
       className="animate-fade-in-up overflow-hidden rounded-2xl bg-card shadow-card hover:shadow-elevated transition-all"
       style={{ animationDelay: `${index * 80}ms` }}
     >
-      <div className="relative aspect-[3/4] overflow-hidden">
-        <img src={companion.image} alt={companion.name} className="h-full w-full object-cover" loading="lazy" />
+      <div className="relative aspect-[3/4] overflow-hidden group">
+        <img src={companion.image} alt={companion.name} className="h-full w-full object-cover scale-105 group-hover:scale-115 transition-transform duration-700" loading="lazy" />
         <div className="gradient-card-overlay absolute inset-0" />
-        <span className="absolute right-2 top-2 rounded-full gradient-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground">
+        {/* Online indicator */}
+        <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-green-500/90 px-2 py-0.5 backdrop-blur-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-soft" />
+          <span className="text-[9px] font-bold text-white">ONLINE</span>
+        </div>
+        <span className="absolute right-2 top-2 rounded-full gradient-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground shadow-md">
           {companion.tag}
         </span>
         <div className="absolute bottom-3 left-3">
-          <h3 className="text-lg font-bold text-primary-foreground">
+          <h3 className="text-lg font-extrabold text-primary-foreground drop-shadow-lg">
             {companion.name}, {companion.age}
           </h3>
+          <p className="text-[11px] text-primary-foreground/80 drop-shadow-md">Tap to chat now 💬</p>
         </div>
       </div>
 
