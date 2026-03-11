@@ -22,6 +22,8 @@ import AdminPayments from "./pages/admin/AdminPayments";
 import AdminStats from "./pages/admin/AdminStats";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminSettings from "./pages/admin/AdminSettings";
+import AdminSupport from "./pages/admin/AdminSupport";
+import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
