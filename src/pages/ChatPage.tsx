@@ -600,6 +600,8 @@ const ChatPage = () => {
         </div>
       )}
 
+      <InstallAppPopup open={showInstallPopup} onOpenChange={setShowInstallPopup} />
+
       {/* Input */}
       <div className="border-t bg-card px-3 py-3">
         <div className="flex items-center gap-2">

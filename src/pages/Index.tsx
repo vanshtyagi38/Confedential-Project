@@ -123,6 +123,7 @@ const Index = () => {
         </div>
       )}
 
+      <InstallAppBanner />
       <EngagementSections />
       <Footer />
       <CompanionPopup companions={companions} />
