@@ -1,22 +1,23 @@
-import { Download, Smartphone, Zap, Shield } from "lucide-react";
+import { Download, Smartphone, Zap, Shield, Share } from "lucide-react";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useState } from "react";
 
 const InstallAppBanner = () => {
   const { canInstall, isInstalled, install } = usePWAInstall();
+  const [installing, setInstalling] = useState(false);
+  const [showManual, setShowManual] = useState(false);
 
   if (isInstalled) return null;
 
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+
   const handleInstall = async () => {
     if (canInstall) {
+      setInstalling(true);
       await install();
+      setInstalling(false);
     } else {
-      // Fallback: show manual instructions
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        alert("Tap the Share button ↗ then 'Add to Home Screen' to install SingleTape!");
-      } else {
-        alert("Tap the menu ⋮ in your browser, then 'Install app' or 'Add to Home Screen'!");
-      }
+      setShowManual(true);
     }
   };
 
@@ -52,11 +53,23 @@ const InstallAppBanner = () => {
 
         <button
           onClick={handleInstall}
-          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground shadow-lg transition-all active:scale-[0.97] hover:brightness-110"
+          disabled={installing}
+          className="mt-4 flex w-full items-center justify-center gap-2 rounded-2xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground shadow-lg transition-all active:scale-[0.97] hover:brightness-110 disabled:opacity-70"
         >
           <Download className="h-4 w-4" />
-          Install Free App
+          {installing ? "Installing..." : "Install Free App"}
         </button>
+
+        {showManual && !canInstall && (
+          <div className="mt-3 rounded-xl bg-secondary/50 p-3 text-xs text-foreground leading-relaxed">
+            {isIOS ? (
+              <p>Tap the <Share className="inline h-3.5 w-3.5 text-primary" /> <strong>Share</strong> button → then "<strong>Add to Home Screen</strong>"</p>
+            ) : (
+              <p>Tap the <strong>⋮</strong> menu → then "<strong>Install app</strong>" or "<strong>Add to Home Screen</strong>"</p>
+            )}
+          </div>
+        )}
+
         <p className="mt-2 text-center text-[10px] text-muted-foreground">
           No app store needed · Works on all devices · Free forever
         </p>

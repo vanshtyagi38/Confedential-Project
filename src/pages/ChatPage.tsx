@@ -356,7 +356,7 @@ const ChatPage = () => {
     userMsgCountRef.current += 1;
     if (
       !installPromptShownRef.current &&
-      userMsgCountRef.current >= 5 + Math.floor(Math.random() * 6) &&
+      userMsgCountRef.current >= installThresholdRef.current &&
       !window.matchMedia("(display-mode: standalone)").matches
     ) {
       installPromptShownRef.current = true;
