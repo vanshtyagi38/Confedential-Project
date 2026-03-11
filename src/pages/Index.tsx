@@ -7,6 +7,7 @@ import FilterSheet from "@/components/FilterSheet";
 import BottomNav from "@/components/BottomNav";
 import { companions } from "@/data/companions";
 import { useAuth } from "@/contexts/AuthContext";
+import CompanionPopup from "@/components/CompanionPopup";
 
 const Index = () => {
   const { profile } = useAuth();
@@ -97,6 +98,7 @@ const Index = () => {
         </div>
       )}
 
+      <CompanionPopup />
       <BottomNav />
     </div>
   );
