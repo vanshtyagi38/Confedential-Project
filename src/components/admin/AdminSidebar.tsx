@@ -1,11 +1,12 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, MessageSquare, CreditCard,
-  BarChart3, Settings, Shield, LogOut, Activity
+  BarChart3, Settings, Shield, LogOut, Activity, Heart
 } from "lucide-react";
 
 const links = [
   { to: "/admin", icon: LayoutDashboard, label: "Dashboard", end: true },
+  { to: "/admin/companions", icon: Heart, label: "Companions" },
   { to: "/admin/users", icon: Users, label: "Users" },
   { to: "/admin/conversations", icon: MessageSquare, label: "Conversations" },
   { to: "/admin/payments", icon: CreditCard, label: "Payments" },

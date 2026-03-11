@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
-import { companions, type Companion } from "@/data/companions";
+import { dbRowToCompanion, type Companion } from "@/data/companions";
 
 export type ProfileStats = {
   totalMessages: number;
@@ -31,7 +31,7 @@ export function useProfileStats(): ProfileStats {
     const userId = session.user.id;
 
     const load = async () => {
-      const [messagesRes, streakRes, referralsRes] = await Promise.all([
+      const [messagesRes, streakRes, referralsRes, companionsRes] = await Promise.all([
         (supabase as any)
           .from("chat_messages")
           .select("companion_slug")
@@ -47,15 +47,19 @@ export function useProfileStats(): ProfileStats {
           .select("id")
           .eq("referrer_user_id", userId)
           .eq("status", "completed"),
+        (supabase as any)
+          .from("companions")
+          .select("*")
+          .eq("status", "active"),
       ]);
 
       const messages = messagesRes.data || [];
       const totalMessages = messages.length;
+      const allCompanions = (companionsRes.data || []).map(dbRowToCompanion);
 
       const companionCounts: Record<string, number> = {};
       messages.forEach((m: { companion_slug: string }) => {
-        companionCounts[m.companion_slug] =
-          (companionCounts[m.companion_slug] || 0) + 1;
+        companionCounts[m.companion_slug] = (companionCounts[m.companion_slug] || 0) + 1;
       });
 
       const uniqueCompanions = Object.keys(companionCounts).length;
@@ -66,7 +70,7 @@ export function useProfileStats(): ProfileStats {
         .map(([slug]) => slug);
 
       const favoriteCompanions = topSlugs
-        .map((slug) => companions.find((c) => c.id === slug))
+        .map((slug) => allCompanions.find((c) => c.id === slug))
         .filter(Boolean) as Companion[];
 
       const streak = streakRes.data;
