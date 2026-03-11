@@ -157,6 +157,9 @@ const ChatPage = () => {
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
   const streakUpdatedRef = useRef(false);
+  const [showInstallPopup, setShowInstallPopup] = useState(false);
+  const installPromptShownRef = useRef(false);
+  const userMsgCountRef = useRef(0);
 
   // Online tracking
   useEffect(() => {
