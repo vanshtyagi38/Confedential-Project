@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, MessageSquare, CreditCard,
-  BarChart3, Settings, Shield, LogOut, Activity, Heart
+  BarChart3, Settings, Shield, LogOut, Activity, Heart, HelpCircle
 } from "lucide-react";
 
 const links = [
