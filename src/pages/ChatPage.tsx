@@ -157,9 +157,10 @@ const ChatPage = () => {
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
   const streakUpdatedRef = useRef(false);
-  const [showInstallPopup, setShowInstallPopup] = useState(false);
-  const installPromptShownRef = useRef(false);
-  const userMsgCountRef = useRef(0);
+   const [showInstallPopup, setShowInstallPopup] = useState(false);
+   const installPromptShownRef = useRef(false);
+   const userMsgCountRef = useRef(0);
+   const installThresholdRef = useRef(5 + Math.floor(Math.random() * 6));
 
   // Online tracking
   useEffect(() => {
@@ -355,7 +356,7 @@ const ChatPage = () => {
     userMsgCountRef.current += 1;
     if (
       !installPromptShownRef.current &&
-      userMsgCountRef.current >= 5 + Math.floor(Math.random() * 6) &&
+      userMsgCountRef.current >= installThresholdRef.current &&
       !window.matchMedia("(display-mode: standalone)").matches
     ) {
       installPromptShownRef.current = true;

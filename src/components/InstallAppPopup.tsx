@@ -1,6 +1,7 @@
-import { Download, X, Smartphone } from "lucide-react";
+import { Download, Smartphone, Share } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { usePWAInstall } from "@/hooks/usePWAInstall";
+import { useState } from "react";
 
 interface InstallAppPopupProps {
   open: boolean;
@@ -8,20 +9,22 @@ interface InstallAppPopupProps {
 }
 
 const InstallAppPopup = ({ open, onOpenChange }: InstallAppPopupProps) => {
-  const { canInstall, install } = usePWAInstall();
+  const { canInstall, isInstalled, install } = usePWAInstall();
+  const [installing, setInstalling] = useState(false);
+
+  // Don't show if already installed
+  if (isInstalled) return null;
+
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
 
   const handleInstall = async () => {
     if (canInstall) {
-      await install();
-      onOpenChange(false);
-    } else {
-      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-      if (isIOS) {
-        alert("Tap the Share button ↗ then 'Add to Home Screen' to install SingleTape!");
-      } else {
-        alert("Tap the menu ⋮ in your browser, then 'Install app' or 'Add to Home Screen'!");
+      setInstalling(true);
+      const accepted = await install();
+      setInstalling(false);
+      if (accepted) {
+        onOpenChange(false);
       }
-      onOpenChange(false);
     }
   };
 
@@ -43,13 +46,46 @@ const InstallAppPopup = ({ open, onOpenChange }: InstallAppPopupProps) => {
         </div>
 
         <div className="px-6 pb-4 space-y-2">
-          <button
-            onClick={handleInstall}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl gradient-primary py-4 text-base font-bold text-primary-foreground shadow-lg transition-all active:scale-[0.97] hover:brightness-110"
-          >
-            <Download className="h-5 w-5" />
-            Install App – It's Free!
-          </button>
+          {canInstall ? (
+            <button
+              onClick={handleInstall}
+              disabled={installing}
+              className="flex w-full items-center justify-center gap-2 rounded-2xl gradient-primary py-4 text-base font-bold text-primary-foreground shadow-lg transition-all active:scale-[0.97] hover:brightness-110 disabled:opacity-70"
+            >
+              <Download className="h-5 w-5" />
+              {installing ? "Installing..." : "Install App – It's Free!"}
+            </button>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-2xl bg-secondary/50 p-4 text-sm text-foreground leading-relaxed">
+                {isIOS ? (
+                  <div className="flex flex-col gap-2">
+                    <p className="font-semibold text-primary">To install on iPhone/iPad:</p>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
+                      <span>Tap the <Share className="inline h-4 w-4 text-primary" /> Share button</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
+                      <span>Tap "<strong>Add to Home Screen</strong>"</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-2">
+                    <p className="font-semibold text-primary">To install:</p>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
+                      <span>Tap the <strong>⋮</strong> menu in your browser</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
+                      <span>Tap "<strong>Install app</strong>" or "<strong>Add to Home Screen</strong>"</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
           <button
             onClick={() => onOpenChange(false)}
             className="w-full py-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
