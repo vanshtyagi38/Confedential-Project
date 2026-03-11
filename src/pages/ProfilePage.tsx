@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import {
   HelpCircle,
   LogOut,
@@ -14,8 +14,9 @@ import {
   Star,
   UserPlus,
   Edit3,
-  Camera,
   CheckCircle,
+  Trash2,
+  Camera,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -29,6 +30,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
 import onboardBoy from "@/assets/onboard-boy.png";
 import onboardGirl from "@/assets/onboard-girl.png";
 
@@ -49,12 +51,24 @@ const ProfilePage = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [wishlistOpen, setWishlistOpen] = useState(false);
   const [wishlistJoined, setWishlistJoined] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   // Edit profile state
   const [editName, setEditName] = useState(profile?.display_name || "");
   const [editGender, setEditGender] = useState(profile?.gender || "male");
   const [editAge, setEditAge] = useState(profile?.age || 22);
+  const [editContact, setEditContact] = useState("");
+  const [editCity, setEditCity] = useState("");
+  const [editEmail, setEditEmail] = useState("");
   const [editSaving, setEditSaving] = useState(false);
+  const [editImageFile, setEditImageFile] = useState<File | null>(null);
+  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Preferred gender switch
+  const prefersFemale = profile?.preferred_gender === "female";
 
   // Profile completion check
   const isProfileComplete = !!(profile?.display_name && profile?.gender && profile?.age);
@@ -103,14 +117,60 @@ const ProfilePage = () => {
     }
   };
 
+  const openEditDialog = async () => {
+    setEditName(profile?.display_name || "");
+    setEditGender(profile?.gender || "male");
+    setEditAge(profile?.age || 22);
+    setEditImageFile(null);
+    setEditImagePreview(null);
+    // Load extra fields from DB
+    if (session?.user) {
+      const { data } = await (supabase as any).from("user_profiles").select("contact, city, email, image_url").eq("user_id", session.user.id).maybeSingle();
+      if (data) {
+        setEditContact(data.contact || "");
+        setEditCity(data.city || "");
+        setEditEmail(data.email || session.user.email || "");
+      } else {
+        setEditContact("");
+        setEditCity("");
+        setEditEmail(session.user.email || "");
+      }
+    }
+    setEditOpen(true);
+  };
+
+  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
+    setEditImageFile(file);
+    setEditImagePreview(URL.createObjectURL(file));
+  };
+
   const handleSaveProfile = async () => {
     if (!session?.user) return;
     setEditSaving(true);
-    await (supabase as any).from("user_profiles").update({
+
+    let imageUrl: string | undefined;
+    if (editImageFile) {
+      const ext = editImageFile.name.split(".").pop() || "jpg";
+      const path = `profiles/${session.user.id}.${ext}`;
+      await supabase.storage.from("chat-images").upload(path, editImageFile, { contentType: editImageFile.type, upsert: true });
+      const { data: urlData } = supabase.storage.from("chat-images").getPublicUrl(path);
+      imageUrl = urlData.publicUrl;
+    }
+
+    const updateData: any = {
       display_name: editName,
       gender: editGender,
       age: editAge,
-    }).eq("user_id", session.user.id);
+      contact: editContact,
+      city: editCity,
+      email: editEmail,
+    };
+    if (imageUrl) updateData.image_url = imageUrl;
+
+    await (supabase as any).from("user_profiles").update(updateData).eq("user_id", session.user.id);
 
     // Award 10 min if profile newly completed
     if (!profileCompletionRewardClaimed && editName && editGender && editAge) {
@@ -135,6 +195,33 @@ const ProfilePage = () => {
     setEditOpen(false);
   };
 
+  const handleTogglePreference = async () => {
+    if (!session?.user) return;
+    const newPref = prefersFemale ? "male" : "female";
+    await (supabase as any).from("user_profiles").update({ preferred_gender: newPref }).eq("user_id", session.user.id);
+    await refreshProfile();
+    toast.success(`Now chatting with ${newPref === "female" ? "girls 👧" : "boys 👦"}`);
+  };
+
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "CONFIRM" || !session?.user) return;
+    setDeleting(true);
+    const userId = session.user.id;
+
+    // Delete user data in order
+    await (supabase as any).from("chat_messages").delete().eq("user_id", userId);
+    await (supabase as any).from("wallet_transactions").delete().eq("user_id", userId);
+    await (supabase as any).from("user_streaks").delete().eq("user_id", userId);
+    await (supabase as any).from("referrals").delete().eq("referrer_user_id", userId);
+    await (supabase as any).from("support_messages").delete().eq("user_id", userId);
+    await (supabase as any).from("companion_wishlist").delete().eq("user_id", userId);
+    await (supabase as any).from("user_profiles").delete().eq("user_id", userId);
+
+    await supabase.auth.signOut();
+    toast.success("Account deleted permanently");
+    navigate("/onboarding", { replace: true });
+  };
+
   const handleJoinWishlist = async () => {
     if (!session?.user) return;
     await (supabase as any).from("companion_wishlist").insert({
@@ -152,7 +239,7 @@ const ProfilePage = () => {
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-2 pt-5">
         <h1 className="text-xl font-extrabold tracking-tight">Profile</h1>
-        <button onClick={() => { setEditName(profile?.display_name || ""); setEditGender(profile?.gender || "male"); setEditAge(profile?.age || 22); setEditOpen(true); }} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-muted">
+        <button onClick={openEditDialog} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-muted">
           <Edit3 className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
@@ -165,7 +252,7 @@ const ProfilePage = () => {
             <p className="text-xs font-semibold text-foreground">Complete your profile → get <span className="text-primary">+10 free min</span> 🎁</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">🔒 Your data is 100% safe and secured</p>
           </div>
-          <button onClick={() => { setEditName(profile?.display_name || ""); setEditGender(profile?.gender || "male"); setEditAge(profile?.age || 22); setEditOpen(true); }} className="text-[11px] font-bold text-primary">Complete</button>
+          <button onClick={openEditDialog} className="text-[11px] font-bold text-primary">Complete</button>
         </div>
       )}
 
@@ -194,6 +281,24 @@ const ProfilePage = () => {
           <span className="text-sm font-bold text-primary-foreground">{balance} min</span>
           <span className="ml-1 text-[10px] text-primary-foreground/80">tap to recharge</span>
         </button>
+      </div>
+
+      {/* Preferred Gender Switch */}
+      <div className="mx-4 mb-4 flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-card">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
+            <Users className="h-5 w-5 text-primary" />
+          </div>
+          <div>
+            <p className="text-sm font-bold">Chat with</p>
+            <p className="text-xs text-muted-foreground">{prefersFemale ? "Girls 👧" : "Boys 👦"}</p>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="text-xs text-muted-foreground">👦</span>
+          <Switch checked={prefersFemale} onCheckedChange={handleTogglePreference} />
+          <span className="text-xs text-muted-foreground">👧</span>
+        </div>
       </div>
 
       {/* Stats Grid */}
@@ -284,7 +389,7 @@ const ProfilePage = () => {
 
       {/* Menu */}
       <div className="mx-4 mb-4 space-y-1">
-        <button onClick={() => { setEditName(profile?.display_name || ""); setEditGender(profile?.gender || "male"); setEditAge(profile?.age || 22); setEditOpen(true); }} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
+        <button onClick={openEditDialog} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
           <Edit3 className="h-5 w-5 text-muted-foreground" />
           <span className="flex-1 text-left">Edit Profile</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -313,11 +418,15 @@ const ProfilePage = () => {
           <LogOut className="h-5 w-5" />
           Sign Out
         </button>
+        <button onClick={() => { setDeleteConfirmText(""); setDeleteOpen(true); }} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium text-destructive/70 transition-colors hover:bg-destructive/10">
+          <Trash2 className="h-5 w-5" />
+          Delete Account Permanently
+        </button>
       </div>
 
       {/* Edit Profile Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-sm rounded-3xl">
+        <DialogContent className="max-w-sm rounded-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Edit Profile ✨</DialogTitle>
           </DialogHeader>
@@ -325,9 +434,29 @@ const ProfilePage = () => {
             <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
               🔒 Your data is 100% safe and secured. We never share your info.
             </div>
+
+            {/* Profile Image */}
+            <div className="flex justify-center">
+              <button onClick={() => fileInputRef.current?.click()} className="relative">
+                <img src={editImagePreview || avatarImg} alt="Avatar" className="h-20 w-20 rounded-full object-cover border-2 border-border" />
+                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary border-2 border-background">
+                  <Camera className="h-3.5 w-3.5 text-primary-foreground" />
+                </div>
+              </button>
+              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
+            </div>
+
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Display Name</label>
               <input value={editName} onChange={(e) => setEditName(e.target.value)} className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Email</label>
+              <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-muted-foreground">Contact Number</label>
+              <input value={editContact} onChange={(e) => setEditContact(e.target.value)} type="tel" placeholder="+91 9876543210" className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
             </div>
             <div>
               <label className="text-xs font-semibold text-muted-foreground">Gender</label>
@@ -339,12 +468,48 @@ const ProfilePage = () => {
                 ))}
               </div>
             </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Age</label>
-              <input type="number" min={18} max={60} value={editAge} onChange={(e) => setEditAge(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">Age</label>
+                <input type="number" min={18} max={60} value={editAge} onChange={(e) => setEditAge(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-muted-foreground">City</label>
+                <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="Delhi" className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+              </div>
             </div>
             <button onClick={handleSaveProfile} disabled={editSaving} className="w-full rounded-xl gradient-primary py-3 text-sm font-bold text-primary-foreground transition-transform active:scale-95 disabled:opacity-50">
               {editSaving ? "Saving..." : "Save Profile"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Account Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete Account ⚠️</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              This will <strong>permanently delete</strong> your account, all messages, wallet balance, and streaks. This action <strong>cannot be undone</strong>.
+            </p>
+            <div className="rounded-xl bg-destructive/10 px-3 py-2 text-xs text-destructive font-medium">
+              To confirm, type <strong>CONFIRM</strong> below
+            </div>
+            <input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder='Type "CONFIRM" to delete'
+              className="w-full rounded-xl border border-destructive/30 bg-secondary px-3 py-2.5 text-sm outline-none focus:border-destructive/50"
+            />
+            <button
+              onClick={handleDeleteAccount}
+              disabled={deleteConfirmText !== "CONFIRM" || deleting}
+              className="w-full rounded-xl bg-destructive py-3 text-sm font-bold text-destructive-foreground transition-transform active:scale-95 disabled:opacity-40"
+            >
+              {deleting ? "Deleting..." : "Delete My Account Forever"}
             </button>
           </div>
         </DialogContent>

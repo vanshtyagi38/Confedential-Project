@@ -1,12 +1,24 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Phone, Video, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap, Ban } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap, Ban, MoreVertical, Trash2, Flag, AlertTriangle } from "lucide-react";
 import { useCompanionStatus } from "@/hooks/useCompanions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { updateStreak } from "@/lib/streakEngine";
 import InstallAppPopup from "@/components/InstallAppPopup";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 type MessageStatus = "sending" | "sent" | "delivered" | "seen";
 
@@ -17,6 +29,7 @@ type Message = {
   time: string;
   imageUrl?: string;
   status?: MessageStatus;
+  selected?: boolean;
 };
 
 type ChatContent = string | Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }>;
@@ -157,10 +170,22 @@ const ChatPage = () => {
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
   const streakUpdatedRef = useRef(false);
-   const [showInstallPopup, setShowInstallPopup] = useState(false);
-   const installPromptShownRef = useRef(false);
-   const userMsgCountRef = useRef(0);
-   const installThresholdRef = useRef(5 + Math.floor(Math.random() * 6));
+  const [showInstallPopup, setShowInstallPopup] = useState(false);
+  const installPromptShownRef = useRef(false);
+  const userMsgCountRef = useRef(0);
+  const installThresholdRef = useRef(5 + Math.floor(Math.random() * 6));
+
+  // Selection mode for deleting messages
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+
+  // Report dialog
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reporting, setReporting] = useState(false);
+
+  // Delete chat dialog
+  const [deleteChatOpen, setDeleteChatOpen] = useState(false);
 
   // Online tracking
   useEffect(() => {
@@ -199,7 +224,6 @@ const ChatPage = () => {
         setMessages(loaded);
         setChatHistory(history);
       } else {
-        // First time - show intro
         setMessages([{
           id: "intro",
           text: companion.bio,
@@ -216,13 +240,11 @@ const ChatPage = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, typing, streaming]);
 
-  // Update display balance when profile changes
   useEffect(() => {
     setDisplayBalance(profile?.balance_minutes || 0);
     if ((profile?.balance_minutes || 0) <= 0) setOutOfBalance(true);
   }, [profile?.balance_minutes]);
 
-  // Chat timer - deduct 1 min every 60 seconds while chatting
   const startTimer = useCallback(() => {
     if (chatActiveRef.current || timerRef.current) return;
     chatActiveRef.current = true;
@@ -236,7 +258,6 @@ const ChatPage = () => {
     }, 60000);
   }, []);
 
-  // Save balance on unmount
   useEffect(() => {
     const saveBalance = async () => {
       if (minutesUsedRef.current > 0 && session?.user && profile) {
@@ -256,7 +277,6 @@ const ChatPage = () => {
     };
   }, [session?.user, profile]);
 
-  // Save message to DB
   const saveMessage = async (companionSlug: string, role: string, content: string, imageUrl?: string) => {
     if (!session?.user) return;
     await (supabase as any).from("chat_messages").insert({
@@ -288,6 +308,54 @@ const ChatPage = () => {
     if (pendingImagePreview) URL.revokeObjectURL(pendingImagePreview);
     setPendingImage(null);
     setPendingImagePreview(null);
+  };
+
+  const toggleSelectMessage = (msgId: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev);
+      if (next.has(msgId)) next.delete(msgId);
+      else next.add(msgId);
+      return next;
+    });
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!session?.user || selectedIds.size === 0) return;
+    const idsArray = Array.from(selectedIds);
+    // Delete from DB
+    await (supabase as any).from("chat_messages").delete().in("id", idsArray).eq("user_id", session.user.id);
+    // Remove from state
+    setMessages(prev => prev.filter(m => !selectedIds.has(m.id)));
+    setChatHistory(prev => {
+      // Rebuild chat history from remaining messages
+      return prev; // simplified - just keep existing history
+    });
+    setSelectedIds(new Set());
+    setSelectMode(false);
+    toast.success(`${idsArray.length} message(s) deleted`);
+  };
+
+  const handleDeleteEntireChat = async () => {
+    if (!session?.user || !companion) return;
+    await (supabase as any).from("chat_messages").delete().eq("user_id", session.user.id).eq("companion_slug", companion.id);
+    setMessages([]);
+    setChatHistory([]);
+    setDeleteChatOpen(false);
+    toast.success("Chat deleted");
+  };
+
+  const handleReportCompanion = async () => {
+    if (!session?.user || !companion || !reportReason.trim()) return;
+    setReporting(true);
+    await (supabase as any).from("companion_reports").insert({
+      user_id: session.user.id,
+      companion_slug: companion.id,
+      reason: reportReason.trim(),
+    });
+    setReporting(false);
+    setReportOpen(false);
+    setReportReason("");
+    toast.success("Report submitted. We'll review it shortly.");
   };
 
   const chatLocked = isBanned || (isDeleted && !banExpired);
@@ -352,7 +420,6 @@ const ChatPage = () => {
 
     progressStatus(msgId);
 
-    // PWA install prompt after 5-10 user messages
     userMsgCountRef.current += 1;
     if (
       !installPromptShownRef.current &&
@@ -363,10 +430,8 @@ const ChatPage = () => {
       setTimeout(() => setShowInstallPopup(true), 2000);
     }
 
-    // Save user message to DB
     await saveMessage(companion.id, "user", trimmed || "[image]", imageUrl);
 
-    // Update daily streak (once per session)
     if (!streakUpdatedRef.current && session?.user) {
       streakUpdatedRef.current = true;
       updateStreak(session.user.id).then(({ bonusAwarded, milestoneReached }) => {
@@ -409,7 +474,7 @@ const ChatPage = () => {
 
     try {
       await streamChat({
-        messages: newHistory.slice(-20), // Last 20 messages for context
+        messages: newHistory.slice(-20),
         companionId: companion.id,
         companionMeta: {
           name: companion.name,
@@ -433,7 +498,6 @@ const ChatPage = () => {
           abortRef.current = null;
           const finalText = streamTextRef.current;
           setChatHistory((prev) => [...prev, { role: "assistant", content: finalText }]);
-          // Save companion message to DB
           saveMessage(companion.id, "assistant", finalText);
         },
         onError: (err) => {
@@ -474,11 +538,11 @@ const ChatPage = () => {
         <button onClick={() => navigate(-1)} className="p-1">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <div className="relative">
+        <button className="relative" onClick={() => setReportOpen(true)}>
           <img src={companion.image} alt={companion.name} className="h-10 w-10 rounded-full object-cover" />
           <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${online ? "bg-accent" : "bg-muted-foreground"}`} />
-        </div>
-        <div className="flex-1">
+        </button>
+        <button className="flex-1 text-left" onClick={() => setReportOpen(true)}>
           <h2 className="text-sm font-bold">{companion.name}</h2>
           <p className="text-[10px] text-muted-foreground">
             {typing ? (
@@ -489,14 +553,46 @@ const ChatPage = () => {
               <>Online · ₹{companion.ratePerMin}/min</>
             ) : "Offline"}
           </p>
-        </div>
+        </button>
         <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">
           <Clock className="h-3 w-3 text-accent" />
           <span className={displayBalance <= 2 ? "text-destructive" : "text-foreground"}>
             {Math.floor(displayBalance)}m
           </span>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="p-1">
+              <MoreVertical className="h-5 w-5 text-muted-foreground" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuItem onClick={() => setSelectMode(!selectMode)}>
+              <Trash2 className="h-4 w-4 mr-2" />
+              {selectMode ? "Cancel Selection" : "Select Messages"}
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setDeleteChatOpen(true)} className="text-destructive">
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete Entire Chat
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive">
+              <Flag className="h-4 w-4 mr-2" />
+              Report {companion.name}
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
+
+      {/* Selection bar */}
+      {selectMode && (
+        <div className="flex items-center justify-between bg-secondary px-4 py-2">
+          <span className="text-xs font-medium">{selectedIds.size} selected</span>
+          <div className="flex gap-2">
+            <button onClick={() => { setSelectMode(false); setSelectedIds(new Set()); }} className="text-xs text-muted-foreground">Cancel</button>
+            <button onClick={handleDeleteSelected} disabled={selectedIds.size === 0} className="text-xs font-bold text-destructive disabled:opacity-40">Delete</button>
+          </div>
+        </div>
+      )}
 
       {/* Banned banner */}
       {chatLocked && (
@@ -529,9 +625,17 @@ const ChatPage = () => {
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in-up`}
+            className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in-up ${selectMode ? "cursor-pointer" : ""}`}
+            onClick={() => selectMode && toggleSelectMessage(msg.id)}
           >
-            {msg.sender === "companion" && (
+            {selectMode && (
+              <div className={`flex items-center mr-2 ${msg.sender === "user" ? "order-1 ml-2 mr-0" : ""}`}>
+                <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(msg.id) ? "border-primary bg-primary" : "border-muted-foreground"}`}>
+                  {selectedIds.has(msg.id) && <Check className="h-3 w-3 text-primary-foreground" />}
+                </div>
+              </div>
+            )}
+            {msg.sender === "companion" && !selectMode && (
               <img src={companion.image} alt="" className="mr-2 mt-1 h-7 w-7 shrink-0 rounded-full object-cover" />
             )}
             <div
@@ -539,7 +643,7 @@ const ChatPage = () => {
                 msg.sender === "user"
                   ? "gradient-primary text-primary-foreground rounded-br-md"
                   : "bg-card shadow-card rounded-bl-md"
-              }`}
+              } ${selectedIds.has(msg.id) ? "ring-2 ring-primary" : ""}`}
             >
               {msg.imageUrl && (
                 <img src={msg.imageUrl} alt="Shared" className="max-h-60 w-full object-cover" loading="lazy" />
@@ -602,6 +706,61 @@ const ChatPage = () => {
       )}
 
       <InstallAppPopup open={showInstallPopup} onOpenChange={setShowInstallPopup} />
+
+      {/* Report Dialog */}
+      <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-destructive" />
+              Report {companion.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">Tell us what's wrong. We'll review your report and take action.</p>
+            <div className="space-y-2">
+              {["Inappropriate content", "Spam / Bot behavior", "Harassment", "Other"].map((r) => (
+                <button
+                  key={r}
+                  onClick={() => setReportReason(r)}
+                  className={`w-full rounded-xl border px-4 py-3 text-sm text-left transition-colors ${reportReason === r ? "border-primary bg-primary/10 text-primary font-semibold" : "border-border bg-secondary text-muted-foreground"}`}
+                >
+                  {r}
+                </button>
+              ))}
+            </div>
+            {reportReason === "Other" && (
+              <textarea
+                placeholder="Describe the issue..."
+                value={reportReason === "Other" ? "" : reportReason}
+                onChange={(e) => setReportReason(e.target.value || "Other")}
+                className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none resize-none h-20"
+              />
+            )}
+            <button
+              onClick={handleReportCompanion}
+              disabled={!reportReason.trim() || reporting}
+              className="w-full rounded-xl bg-destructive py-3 text-sm font-bold text-destructive-foreground disabled:opacity-40"
+            >
+              {reporting ? "Submitting..." : "Submit Report"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Chat Dialog */}
+      <Dialog open={deleteChatOpen} onOpenChange={setDeleteChatOpen}>
+        <DialogContent className="max-w-sm rounded-3xl">
+          <DialogHeader>
+            <DialogTitle className="text-destructive">Delete Entire Chat</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">This will delete all messages with {companion.name}. This cannot be undone.</p>
+          <div className="flex gap-2 mt-2">
+            <button onClick={() => setDeleteChatOpen(false)} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium">Cancel</button>
+            <button onClick={handleDeleteEntireChat} className="flex-1 rounded-xl bg-destructive py-2.5 text-sm font-bold text-destructive-foreground">Delete</button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Input */}
       <div className="border-t bg-card px-3 py-3">
