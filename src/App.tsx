@@ -23,6 +23,7 @@ import AdminStats from "./pages/admin/AdminStats";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
+import AdminWishlist from "./pages/admin/AdminWishlist";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
