@@ -351,6 +351,17 @@ const ChatPage = () => {
 
     progressStatus(msgId);
 
+    // PWA install prompt after 5-10 user messages
+    userMsgCountRef.current += 1;
+    if (
+      !installPromptShownRef.current &&
+      userMsgCountRef.current >= 5 + Math.floor(Math.random() * 6) &&
+      !window.matchMedia("(display-mode: standalone)").matches
+    ) {
+      installPromptShownRef.current = true;
+      setTimeout(() => setShowInstallPopup(true), 2000);
+    }
+
     // Save user message to DB
     await saveMessage(companion.id, "user", trimmed || "[image]", imageUrl);
 
