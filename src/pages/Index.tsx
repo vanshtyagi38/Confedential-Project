@@ -121,6 +121,7 @@ const Index = () => {
         </div>
       )}
 
+      <EngagementSections />
       <Footer />
       <CompanionPopup companions={companions} />
       <BottomNav />
