@@ -1,15 +1,14 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
-import { Heart, Sparkles, Users, Circle } from "lucide-react";
+import { useState, useMemo, useEffect } from "react";
+import { Heart, Sparkles, Users, Circle, Loader2 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BalanceCard from "@/components/BalanceCard";
 import CompanionCard from "@/components/CompanionCard";
 import FilterSheet from "@/components/FilterSheet";
 import BottomNav from "@/components/BottomNav";
-import { companions } from "@/data/companions";
 import { useAuth } from "@/contexts/AuthContext";
 import CompanionPopup from "@/components/CompanionPopup";
+import { useCompanions } from "@/hooks/useCompanions";
 
-// Seeded shuffle using Fisher-Yates with a seed
 function shuffleArray<T>(arr: T[], seed: number): T[] {
   const shuffled = [...arr];
   let s = seed;
@@ -23,11 +22,11 @@ function shuffleArray<T>(arr: T[], seed: number): T[] {
 
 const Index = () => {
   const { profile } = useAuth();
+  const { companions, loading } = useCompanions();
   const [filter, setFilter] = useState("All");
   const [activeUsers, setActiveUsers] = useState(28900);
   const [shuffleSeed, setShuffleSeed] = useState(() => Date.now());
 
-  // Active users counter
   useEffect(() => {
     const tick = () => {
       setActiveUsers((prev) => {
@@ -41,11 +40,10 @@ const Index = () => {
     return () => clearTimeout(timeout);
   }, []);
 
-  // Shuffle profiles every 3–10 minutes
   useEffect(() => {
     const tick = () => {
       setShuffleSeed(Date.now());
-      const next = (Math.random() * 420 + 180) * 1000; // 3–10 min
+      const next = (Math.random() * 420 + 180) * 1000;
       timeout = window.setTimeout(tick, next);
     };
     let timeout = window.setTimeout(tick, (Math.random() * 420 + 180) * 1000);
@@ -56,21 +54,25 @@ const Index = () => {
     const base = profile
       ? companions.filter((c) => c.gender === profile.preferred_gender)
       : companions;
-    // Shuffle using seed so it re-shuffles periodically
     return shuffleArray(base, shuffleSeed);
-  }, [profile, shuffleSeed]);
+  }, [profile, companions, shuffleSeed]);
 
   const filtered = filter === "All" ? matchedCompanions : matchedCompanions.filter((c) => c.tag === filter);
-
-  // Best matches (first 4 from shuffled list)
   const bestMatches = matchedCompanions.slice(0, 4);
+
+  if (loading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
       <AppHeader />
       <BalanceCard />
 
-      {/* Active Users Banner */}
       <div className="mx-4 mt-4 flex items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-2.5">
         <Circle className="h-2.5 w-2.5 fill-green-500 text-green-500 animate-pulse-soft" />
         <span className="text-sm font-semibold text-foreground">
@@ -79,15 +81,12 @@ const Index = () => {
         <Users className="h-4 w-4 text-primary/60" />
       </div>
 
-      {/* Best Matches */}
       <div className="mt-5 px-4">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent" />
           <h2 className="text-lg font-bold">Best Matches for You 🔥</h2>
         </div>
-        <p className="mt-1 text-xs text-muted-foreground">
-          Based on your age & preferences
-        </p>
+        <p className="mt-1 text-xs text-muted-foreground">Based on your age & preferences</p>
       </div>
       <div className="mt-3 flex gap-3 overflow-x-auto px-4 pb-2 no-scrollbar">
         {bestMatches.map((companion, i) => (
@@ -97,7 +96,6 @@ const Index = () => {
         ))}
       </div>
 
-      {/* All Companions */}
       <div className="mt-6 px-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -106,9 +104,7 @@ const Index = () => {
           </div>
           <FilterSheet activeFilter={filter} onFilterChange={setFilter} />
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Someone fun is waiting to talk to you 💬
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">Someone fun is waiting to talk to you 💬</p>
       </div>
 
       <div className="mt-4 grid grid-cols-2 gap-3 px-4 sm:grid-cols-3">
@@ -123,7 +119,7 @@ const Index = () => {
         </div>
       )}
 
-      <CompanionPopup />
+      <CompanionPopup companions={companions} />
       <BottomNav />
     </div>
   );

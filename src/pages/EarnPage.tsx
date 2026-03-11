@@ -1,13 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Gift,
-  Share2,
-  Star,
-  Users,
-  Loader2,
-  Copy,
-  ChevronRight,
-  Coins,
+  Gift, Share2, Star, Users, Coins, ChevronRight, UserPlus,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -16,20 +9,15 @@ import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
 import SpinWheel, { SEGMENTS, segAngles } from "@/components/SpinWheel";
 import InvitePopup from "@/components/InvitePopup";
+import CompanionRegistration from "@/components/CompanionRegistration";
 
-/* weighted random pick — skip locked if not eligible */
 function getRandomPrize(hasReferral10: boolean): number {
   const eligible = SEGMENTS.map((s, i) => ({
-    ...s,
-    idx: i,
-    w: s.type === "locked" && !hasReferral10 ? 0 : s.weight,
+    ...s, idx: i, w: s.type === "locked" && !hasReferral10 ? 0 : s.weight,
   }));
   const total = eligible.reduce((sum, s) => sum + s.w, 0);
   let rand = Math.random() * total;
-  for (const s of eligible) {
-    rand -= s.w;
-    if (rand <= 0) return s.idx;
-  }
+  for (const s of eligible) { rand -= s.w; if (rand <= 0) return s.idx; }
   return 0;
 }
 
@@ -40,6 +28,7 @@ const EarnPage = () => {
   const [rotation, setRotation] = useState(0);
   const [winner, setWinner] = useState<number | null>(null);
   const [inviteOpen, setInviteOpen] = useState(false);
+  const [registerOpen, setRegisterOpen] = useState(false);
   const [referralCount, setReferralCount] = useState(0);
 
   const spinCredits = profile?.spin_credits || 0;
@@ -47,82 +36,46 @@ const EarnPage = () => {
   const referralLink = `${window.location.origin}/onboarding?ref=${referralCode}`;
   const hasReferral10 = referralCount >= 10;
 
-  // fetch referral count
   useEffect(() => {
     if (!session?.user) return;
     (supabase as any)
-      .from("referrals")
-      .select("id")
-      .eq("referrer_user_id", session.user.id)
-      .eq("status", "completed")
+      .from("referrals").select("id")
+      .eq("referrer_user_id", session.user.id).eq("status", "completed")
       .then(({ data }: any) => setReferralCount(data?.length || 0));
   }, [session?.user?.id]);
 
   const handleSpinClick = async () => {
     if (spinning) return;
-
-    // No spins → show invite popup
-    if (spinCredits <= 0) {
-      setInviteOpen(true);
-      return;
-    }
+    if (spinCredits <= 0) { setInviteOpen(true); return; }
 
     const winnerIndex = getRandomPrize(hasReferral10);
     const centerAngle = segAngles[winnerIndex].center;
     const targetRotation = rotation + 1800 + (360 - centerAngle);
-
     setRotation(targetRotation);
     setSpinning(true);
     setWinner(null);
 
-    // Deduct spin credit
     if (session?.user) {
-      await (supabase as any)
-        .from("user_profiles")
-        .update({ spin_credits: spinCredits - 1 })
-        .eq("user_id", session.user.id);
+      await (supabase as any).from("user_profiles").update({ spin_credits: spinCredits - 1 }).eq("user_id", session.user.id);
       await refreshProfile();
     }
 
     setTimeout(async () => {
       setSpinning(false);
       setWinner(winnerIndex);
-
       const prize = SEGMENTS[winnerIndex];
-
       if (session?.user && profile) {
         if (prize.type === "free_spin") {
-          // Award a free spin credit back
-          await (supabase as any)
-            .from("user_profiles")
-            .update({ spin_credits: (profile.spin_credits || 0) })
-            .eq("user_id", session.user.id);
+          await (supabase as any).from("user_profiles").update({ spin_credits: (profile.spin_credits || 0) }).eq("user_id", session.user.id);
           await refreshProfile();
-          toast.success("🎡 You won a Free Spin!", {
-            duration: 4000,
-            description: "Spin again for free!",
-          });
+          toast.success("🎡 You won a Free Spin!", { duration: 4000, description: "Spin again for free!" });
         } else {
           await Promise.all([
-            (supabase as any)
-              .from("user_profiles")
-              .update({
-                balance_minutes: profile.balance_minutes + prize.minutes,
-              })
-              .eq("user_id", session.user.id),
-            (supabase as any).from("wallet_transactions").insert({
-              user_id: session.user.id,
-              type: "credit",
-              minutes: prize.minutes,
-              amount: 0,
-              description: `🎡 Spin wheel prize: +${prize.minutes} minutes!`,
-            }),
+            (supabase as any).from("user_profiles").update({ balance_minutes: profile.balance_minutes + prize.minutes }).eq("user_id", session.user.id),
+            (supabase as any).from("wallet_transactions").insert({ user_id: session.user.id, type: "credit", minutes: prize.minutes, amount: 0, description: `🎡 Spin wheel prize: +${prize.minutes} minutes!` }),
           ]);
           await refreshProfile();
-          toast.success(`🎉 You won ${prize.minutes} free minutes!`, {
-            duration: 4000,
-            description: "Minutes added to your balance!",
-          });
+          toast.success(`🎉 You won ${prize.minutes} free minutes!`, { duration: 4000, description: "Minutes added to your balance!" });
         }
       }
     }, 4000);
@@ -130,42 +83,41 @@ const EarnPage = () => {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
-      {/* Header */}
       <div className="px-4 py-4">
         <h1 className="text-lg font-bold">Earn Free Minutes</h1>
         <div className="mt-1 flex items-center gap-2">
           <Coins className="h-4 w-4 text-accent" />
-          <span className="text-sm font-semibold text-accent">
-            {spinCredits} spin{spinCredits !== 1 ? "s" : ""} available
-          </span>
+          <span className="text-sm font-semibold text-accent">{spinCredits} spin{spinCredits !== 1 ? "s" : ""} available</span>
         </div>
+      </div>
+
+      {/* Register as Companion CTA */}
+      <div className="mx-4 mb-4">
+        <button
+          onClick={() => setRegisterOpen(true)}
+          className="flex w-full items-center gap-3 rounded-2xl border-2 border-dashed border-accent/40 bg-accent/5 p-4 transition-colors hover:bg-accent/10 active:scale-[0.98]"
+        >
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-accent/20">
+            <UserPlus className="h-6 w-6 text-accent" />
+          </div>
+          <div className="flex-1 text-left">
+            <h3 className="text-sm font-bold text-foreground">Become a Companion 💫</h3>
+            <p className="text-xs text-muted-foreground">Get listed & earn by chatting. Just ₹199 one-time fee</p>
+          </div>
+          <ChevronRight className="h-5 w-5 text-accent" />
+        </button>
       </div>
 
       {/* Wheel */}
       <div className="flex flex-col items-center px-4 pb-4">
-        <SpinWheel
-          spinning={spinning}
-          rotation={rotation}
-          onSpinClick={handleSpinClick}
-          disabled={spinning}
-          hasReferral10={hasReferral10}
-        />
-
-        {/* Spin label */}
+        <SpinWheel spinning={spinning} rotation={rotation} onSpinClick={handleSpinClick} disabled={spinning} hasReferral10={hasReferral10} />
         <p className="mt-1 text-xs text-muted-foreground">
-          {spinning
-            ? "✨ Spinning..."
-            : spinCredits > 0
-            ? "Tap the wheel to spin!"
-            : "Invite friends to earn spins 🎡"}
+          {spinning ? "✨ Spinning..." : spinCredits > 0 ? "Tap the wheel to spin!" : "Invite friends to earn spins 🎡"}
         </p>
-
         {winner !== null && !spinning && (
           <div className="mt-2 animate-fade-in rounded-xl bg-primary/10 px-4 py-2 text-center">
             <p className="text-sm font-bold text-primary">
-              {SEGMENTS[winner].type === "free_spin"
-                ? "🎡 Free Spin! Go again!"
-                : `🎉 You won ${SEGMENTS[winner].minutes} minutes!`}
+              {SEGMENTS[winner].type === "free_spin" ? "🎡 Free Spin! Go again!" : `🎉 You won ${SEGMENTS[winner].minutes} minutes!`}
             </p>
           </div>
         )}
@@ -191,9 +143,7 @@ const EarnPage = () => {
               <span className="text-base">👑</span>
               <div className="flex-1">
                 <p className="text-sm font-semibold">Invite 10 friends</p>
-                <p className="text-xs text-muted-foreground">
-                  Unlock 20 min prize on wheel ({referralCount}/10)
-                </p>
+                <p className="text-xs text-muted-foreground">Unlock 20 min prize on wheel ({referralCount}/10)</p>
               </div>
               <span className="text-xs font-bold text-primary">🔓</span>
             </div>
@@ -203,10 +153,7 @@ const EarnPage = () => {
 
       {/* Invite button */}
       <div className="mx-4 mb-4">
-        <button
-          onClick={() => setInviteOpen(true)}
-          className="flex w-full items-center justify-center gap-2 rounded-2xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground shadow-elevated transition-transform active:scale-95"
-        >
+        <button onClick={() => setInviteOpen(true)} className="flex w-full items-center justify-center gap-2 rounded-2xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground shadow-elevated transition-transform active:scale-95">
           <Share2 className="h-4 w-4" />
           Invite Friends & Earn Spins
         </button>
@@ -214,31 +161,20 @@ const EarnPage = () => {
 
       {/* Additional options */}
       <div className="mx-4 space-y-2">
-        <button
-          onClick={() => navigate("/profile")}
-          className="flex w-full items-center gap-3 rounded-xl bg-card p-4 shadow-card transition-colors hover:bg-secondary"
-        >
+        <button onClick={() => navigate("/profile")} className="flex w-full items-center gap-3 rounded-xl bg-card p-4 shadow-card transition-colors hover:bg-secondary">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-secondary">
             <Star className="h-5 w-5 text-accent" />
           </div>
           <div className="flex-1 text-left">
             <h3 className="text-sm font-semibold">Daily Streak</h3>
-            <p className="text-xs text-muted-foreground">
-              Chat daily for bonus minutes
-            </p>
+            <p className="text-xs text-muted-foreground">Chat daily for bonus minutes</p>
           </div>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
       </div>
 
-      {/* Invite Popup */}
-      <InvitePopup
-        open={inviteOpen}
-        onClose={() => setInviteOpen(false)}
-        referralCode={referralCode}
-        referralLink={referralLink}
-      />
-
+      <InvitePopup open={inviteOpen} onClose={() => setInviteOpen(false)} referralCode={referralCode} referralLink={referralLink} />
+      <CompanionRegistration open={registerOpen} onClose={() => setRegisterOpen(false)} />
       <BottomNav />
     </div>
   );
