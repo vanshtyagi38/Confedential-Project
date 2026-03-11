@@ -19,11 +19,16 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
         style={{ animationDelay: `${index * 60}ms` }}
       >
         <div className="relative aspect-[3/4] overflow-hidden">
-          <img src={companion.image} alt={companion.name} className="h-full w-full object-cover" loading="lazy" />
+          <img src={companion.image} alt={companion.name} className="h-full w-full object-cover scale-105 hover:scale-110 transition-transform duration-500" loading="lazy" />
           <div className="gradient-card-overlay absolute inset-0" />
+          {/* Online dot */}
+          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-green-500/90 px-1.5 py-0.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-soft" />
+            <span className="text-[8px] font-bold text-white">LIVE</span>
+          </div>
           <div className="absolute bottom-2 left-2">
-            <p className="text-sm font-bold text-primary-foreground">{companion.name}, {companion.age}</p>
-            <p className="text-[10px] text-primary-foreground/80">{companion.city}</p>
+            <p className="text-sm font-bold text-primary-foreground drop-shadow-md">{companion.name}, {companion.age}</p>
+            <p className="text-[10px] text-primary-foreground/80 drop-shadow-md">{companion.city}</p>
           </div>
         </div>
       </div>
@@ -32,19 +37,25 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
 
   return (
     <div
-      className="animate-fade-in-up overflow-hidden rounded-2xl bg-card shadow-card hover:shadow-elevated transition-all"
+      className="animate-fade-in-up cursor-pointer overflow-hidden rounded-2xl bg-card shadow-card hover:shadow-elevated hover:-translate-y-1 transition-all duration-300"
       style={{ animationDelay: `${index * 80}ms` }}
     >
-      <div className="relative aspect-[3/4] overflow-hidden">
-        <img src={companion.image} alt={companion.name} className="h-full w-full object-cover" loading="lazy" />
+      <div className="relative aspect-[3/4] overflow-hidden group">
+        <img src={companion.image} alt={companion.name} className="h-full w-full object-cover scale-105 group-hover:scale-115 transition-transform duration-700" loading="lazy" />
         <div className="gradient-card-overlay absolute inset-0" />
-        <span className="absolute right-2 top-2 rounded-full gradient-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground">
+        {/* Online indicator */}
+        <div className="absolute left-2 top-2 flex items-center gap-1 rounded-full bg-green-500/90 px-2 py-0.5 backdrop-blur-sm">
+          <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-soft" />
+          <span className="text-[9px] font-bold text-white">ONLINE</span>
+        </div>
+        <span className="absolute right-2 top-2 rounded-full gradient-primary px-2.5 py-1 text-[10px] font-semibold text-primary-foreground shadow-md">
           {companion.tag}
         </span>
         <div className="absolute bottom-3 left-3">
-          <h3 className="text-lg font-bold text-primary-foreground">
+          <h3 className="text-lg font-extrabold text-primary-foreground drop-shadow-lg">
             {companion.name}, {companion.age}
           </h3>
+          <p className="text-[11px] text-primary-foreground/80 drop-shadow-md">Tap to chat now 💬</p>
         </div>
       </div>
 
