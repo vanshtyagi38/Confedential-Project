@@ -98,6 +98,7 @@ const Index = () => {
         </div>
       )}
 
+      <CompanionPopup />
       <BottomNav />
     </div>
   );
