@@ -37,7 +37,7 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
 
   return (
     <div
-      className="animate-fade-in-up overflow-hidden rounded-2xl bg-card shadow-card hover:shadow-elevated transition-all"
+      className="animate-fade-in-up cursor-pointer overflow-hidden rounded-2xl bg-card shadow-card hover:shadow-elevated hover:-translate-y-1 transition-all duration-300"
       style={{ animationDelay: `${index * 80}ms` }}
     >
       <div className="relative aspect-[3/4] overflow-hidden group">

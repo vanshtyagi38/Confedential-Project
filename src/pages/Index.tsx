@@ -44,8 +44,17 @@ const Index = () => {
       <AppHeader />
       <BalanceCard />
 
+      {/* Active Users Banner */}
+      <div className="mx-4 mt-4 flex items-center justify-center gap-2 rounded-2xl border border-primary/20 bg-primary/5 px-4 py-2.5">
+        <Circle className="h-2.5 w-2.5 fill-green-500 text-green-500 animate-pulse-soft" />
+        <span className="text-sm font-semibold text-foreground">
+          <span className="text-primary">{activeUsers.toLocaleString()}</span> active users online
+        </span>
+        <Users className="h-4 w-4 text-primary/60" />
+      </div>
+
       {/* Best Matches */}
-      <div className="mt-6 px-4">
+      <div className="mt-5 px-4">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent" />
           <h2 className="text-lg font-bold">Best Matches for You 🔥</h2>
