@@ -307,7 +307,7 @@ const ChatPage = () => {
   }
 
   const sendMessage = async (text: string) => {
-    if (streaming) return;
+    if (streaming || chatLocked) return;
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
     if (outOfBalance) {
