@@ -5,6 +5,12 @@ import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import BottomNav from "@/components/BottomNav";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const plans = [
   {
@@ -52,10 +58,66 @@ const RechargePage = () => {
   const { session, profile, refreshProfile } = useAuth();
   const [selected, setSelected] = useState(2);
   const [loading, setLoading] = useState(false);
+  const [showProfileSetup, setShowProfileSetup] = useState(false);
+  const [setupGender, setSetupGender] = useState("");
+  const [setupPreference, setSetupPreference] = useState("");
+  const [setupAge, setSetupAge] = useState(22);
+  const [accepted18, setAccepted18] = useState(false);
 
   const balance = Math.floor(profile?.balance_minutes || 0);
 
+  const isProfileComplete = () => {
+    return localStorage.getItem(`profile_completed_${session?.user?.id}`) === "true";
+  };
+
   const handlePurchase = async () => {
+    if (!session?.user || !profile) return;
+
+    // First recharge: show profile setup
+    if (!isProfileComplete()) {
+      setShowProfileSetup(true);
+      return;
+    }
+
+    await executePurchase();
+  };
+
+  const handleProfileComplete = async () => {
+    if (!setupGender || !setupPreference || !accepted18) {
+      toast.error("Please complete all fields and accept terms");
+      return;
+    }
+    if (setupAge < 18 || setupAge > 60) {
+      toast.error("Age must be between 18 and 60");
+      return;
+    }
+
+    setLoading(true);
+    // Update profile with real details
+    const { error } = await (supabase as any)
+      .from("user_profiles")
+      .update({
+        gender: setupGender,
+        preferred_gender: setupPreference,
+        age: setupAge,
+      })
+      .eq("user_id", session?.user?.id);
+
+    if (error) {
+      toast.error("Failed to update profile");
+      setLoading(false);
+      return;
+    }
+
+    await refreshProfile();
+    localStorage.setItem(`profile_completed_${session?.user?.id}`, "true");
+    setShowProfileSetup(false);
+
+    // Now execute purchase
+    await executePurchase();
+  };
+
+  const executePurchase = async () => {
     const plan = plans[selected];
     if (!session?.user || !profile) return;
     setLoading(true);
@@ -87,7 +149,7 @@ const RechargePage = () => {
   };
 
   return (
-    <div className="mx-auto min-h-screen w-full max-w-2xlax-w-2xl bg-background pb-32">
+    <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-32">
 
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-3">
@@ -123,7 +185,6 @@ const RechargePage = () => {
 
       {/* Plans */}
       <div className="px-4 space-y-3">
-
         {/* Small plans row */}
         <div className="grid grid-cols-2 gap-3">
           {plans.filter((p) => !p.highlight).map((plan) => (
@@ -147,7 +208,6 @@ const RechargePage = () => {
               <div className="mt-3 flex items-baseline gap-1">
                 <p className="text-lg font-bold">₹{plan.price}</p>
               </div>
-
               {selected === plan.id && (
                 <div className="absolute right-3 top-3">
                   <div className="h-4 w-4 rounded-full bg-primary flex items-center justify-center">
@@ -170,13 +230,11 @@ const RechargePage = () => {
                 : "border-border bg-card"
             }`}
           >
-            {/* Badge */}
             <div className="absolute -top-3 left-5">
               <span className="rounded-full gradient-primary px-3.5 py-1 text-[10px] font-bold text-primary-foreground tracking-wide">
                 BEST VALUE
               </span>
             </div>
-
             <div className="flex items-start justify-between pt-1">
               <div>
                 <p className="text-[11px] font-semibold text-muted-foreground">{plan.label}</p>
@@ -193,11 +251,7 @@ const RechargePage = () => {
                 <p className="text-[11px] font-medium text-accent">{plan.perMin}</p>
               </div>
             </div>
-
-            {/* Divider */}
             <div className="my-4 h-px bg-border" />
-
-            {/* Feature list */}
             <div className="space-y-2">
               {plan.features.map((f) => (
                 <div key={f} className="flex items-center gap-2.5">
@@ -206,7 +260,6 @@ const RechargePage = () => {
                 </div>
               ))}
             </div>
-
             {selected === plan.id && (
               <div className="absolute right-4 top-4">
                 <div className="h-5 w-5 rounded-full bg-primary flex items-center justify-center">
@@ -218,13 +271,12 @@ const RechargePage = () => {
         ))}
       </div>
 
-      {/* Subtle note */}
       <p className="mt-5 px-5 text-center text-[11px] text-muted-foreground leading-relaxed">
         Extra minutes beyond your plan: ₹3–4/min depending on companion
       </p>
 
       {/* Sticky CTA */}
-      <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-ful2xlmax-w-lg px-4 z-20">
+      <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-lg px-4 z-20">
         <div className="rounded-3xl bg-card/80 backdrop-blur-lg border border-border p-3 shadow-elevated">
           <button
             onClick={handlePurchase}
@@ -246,6 +298,99 @@ const RechargePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Profile Setup Dialog (First Recharge) */}
+      <Dialog open={showProfileSetup} onOpenChange={setShowProfileSetup}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Quick Setup 🔥</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <p className="text-sm font-bold mb-2">I am a...</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setSetupGender("male")}
+                  className={`rounded-xl border-2 py-3 text-sm font-bold transition-all ${
+                    setupGender === "male" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"
+                  }`}
+                >
+                  👦 Boy
+                </button>
+                <button
+                  onClick={() => setSetupGender("female")}
+                  className={`rounded-xl border-2 py-3 text-sm font-bold transition-all ${
+                    setupGender === "female" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"
+                  }`}
+                >
+                  👧 Girl
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-bold mb-2">I want to chat with...</p>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  onClick={() => setSetupPreference("male")}
+                  className={`rounded-xl border-2 py-3 text-sm font-bold transition-all ${
+                    setupPreference === "male" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"
+                  }`}
+                >
+                  Boys
+                </button>
+                <button
+                  onClick={() => setSetupPreference("female")}
+                  className={`rounded-xl border-2 py-3 text-sm font-bold transition-all ${
+                    setupPreference === "female" ? "border-primary bg-primary/10 text-primary" : "border-border bg-card"
+                  }`}
+                >
+                  Girls
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <p className="text-sm font-bold mb-2">Your age</p>
+              <div className="flex items-center justify-center gap-4">
+                <button
+                  onClick={() => setSetupAge(a => Math.max(18, a - 1))}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-lg font-bold"
+                >
+                  −
+                </button>
+                <span className="text-3xl font-extrabold text-primary tabular-nums min-w-[50px] text-center">{setupAge}</span>
+                <button
+                  onClick={() => setSetupAge(a => Math.min(60, a + 1))}
+                  className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary text-lg font-bold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+
+            <label className="flex items-start gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={accepted18}
+                onChange={(e) => setAccepted18(e.target.checked)}
+                className="mt-1 h-4 w-4 rounded border-border accent-primary"
+              />
+              <span className="text-xs text-muted-foreground">
+                I confirm I am <span className="font-bold text-foreground">18+ years old</span> and I accept the Terms & Conditions and Privacy Policy.
+              </span>
+            </label>
+
+            <button
+              onClick={handleProfileComplete}
+              disabled={!setupGender || !setupPreference || !accepted18 || loading}
+              className="w-full rounded-xl gradient-primary py-3 text-sm font-bold text-primary-foreground transition-transform active:scale-[0.97] disabled:opacity-50"
+            >
+              {loading ? "Setting up..." : "Continue to Payment 🔥"}
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <BottomNav />
     </div>
