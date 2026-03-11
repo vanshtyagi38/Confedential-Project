@@ -10,6 +10,7 @@ import CompanionPopup from "@/components/CompanionPopup";
 import { useCompanions } from "@/hooks/useCompanions";
 import Footer from "@/components/Footer";
 import EngagementSections from "@/components/EngagementSections";
+import InstallAppBanner from "@/components/InstallAppBanner";
 
 function shuffleArray<T>(arr: T[], seed: number): T[] {
   const shuffled = [...arr];
@@ -122,6 +123,7 @@ const Index = () => {
         </div>
       )}
 
+      <InstallAppBanner />
       <EngagementSections />
       <Footer />
       <CompanionPopup companions={companions} />

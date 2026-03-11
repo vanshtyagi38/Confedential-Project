@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { updateStreak } from "@/lib/streakEngine";
+import InstallAppPopup from "@/components/InstallAppPopup";
 
 type MessageStatus = "sending" | "sent" | "delivered" | "seen";
 
@@ -156,6 +157,9 @@ const ChatPage = () => {
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
   const streakUpdatedRef = useRef(false);
+  const [showInstallPopup, setShowInstallPopup] = useState(false);
+  const installPromptShownRef = useRef(false);
+  const userMsgCountRef = useRef(0);
 
   // Online tracking
   useEffect(() => {
@@ -346,6 +350,17 @@ const ChatPage = () => {
     }
 
     progressStatus(msgId);
+
+    // PWA install prompt after 5-10 user messages
+    userMsgCountRef.current += 1;
+    if (
+      !installPromptShownRef.current &&
+      userMsgCountRef.current >= 5 + Math.floor(Math.random() * 6) &&
+      !window.matchMedia("(display-mode: standalone)").matches
+    ) {
+      installPromptShownRef.current = true;
+      setTimeout(() => setShowInstallPopup(true), 2000);
+    }
 
     // Save user message to DB
     await saveMessage(companion.id, "user", trimmed || "[image]", imageUrl);
@@ -584,6 +599,8 @@ const ChatPage = () => {
           </div>
         </div>
       )}
+
+      <InstallAppPopup open={showInstallPopup} onOpenChange={setShowInstallPopup} />
 
       {/* Input */}
       <div className="border-t bg-card px-3 py-3">
