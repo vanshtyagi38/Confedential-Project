@@ -19,11 +19,16 @@ const CompanionCard = ({ companion, index, compact }: CompanionCardProps) => {
         style={{ animationDelay: `${index * 60}ms` }}
       >
         <div className="relative aspect-[3/4] overflow-hidden">
-          <img src={companion.image} alt={companion.name} className="h-full w-full object-cover" loading="lazy" />
+          <img src={companion.image} alt={companion.name} className="h-full w-full object-cover scale-105 hover:scale-110 transition-transform duration-500" loading="lazy" />
           <div className="gradient-card-overlay absolute inset-0" />
+          {/* Online dot */}
+          <div className="absolute right-2 top-2 flex items-center gap-1 rounded-full bg-green-500/90 px-1.5 py-0.5">
+            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse-soft" />
+            <span className="text-[8px] font-bold text-white">LIVE</span>
+          </div>
           <div className="absolute bottom-2 left-2">
-            <p className="text-sm font-bold text-primary-foreground">{companion.name}, {companion.age}</p>
-            <p className="text-[10px] text-primary-foreground/80">{companion.city}</p>
+            <p className="text-sm font-bold text-primary-foreground drop-shadow-md">{companion.name}, {companion.age}</p>
+            <p className="text-[10px] text-primary-foreground/80 drop-shadow-md">{companion.city}</p>
           </div>
         </div>
       </div>
