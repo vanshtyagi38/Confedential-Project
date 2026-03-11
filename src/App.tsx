@@ -23,6 +23,7 @@ import AdminStats from "./pages/admin/AdminStats";
 import AdminActivity from "./pages/admin/AdminActivity";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
+import AdminWishlist from "./pages/admin/AdminWishlist";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
@@ -74,6 +75,7 @@ const App = () => (
               <Route path="stats" element={<AdminStats />} />
               <Route path="activity" element={<AdminActivity />} />
               <Route path="support" element={<AdminSupport />} />
+              <Route path="wishlist" element={<AdminWishlist />} />
               <Route path="settings" element={<AdminSettings />} />
             </Route>
 

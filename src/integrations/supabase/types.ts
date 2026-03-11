@@ -134,6 +134,42 @@ export type Database = {
         }
         Relationships: []
       }
+      companion_wishlist: {
+        Row: {
+          bio: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          gender: string | null
+          id: string
+          name: string
+          phone: string | null
+          user_id: string
+        }
+        Insert: {
+          bio?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          gender?: string | null
+          id?: string
+          name: string
+          phone?: string | null
+          user_id: string
+        }
+        Update: {
+          bio?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          gender?: string | null
+          id?: string
+          name?: string
+          phone?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       companions: {
         Row: {
           age: number

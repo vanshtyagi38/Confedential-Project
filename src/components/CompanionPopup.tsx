@@ -3,8 +3,9 @@ import { useNavigate } from "react-router-dom";
 import { MessageCircle, Lock, Shield } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Companion } from "@/data/companions";
+import { useAuth } from "@/contexts/AuthContext";
 
-const popupMessages = [
+const popupMessagesFemale = [
   "Hey! 😊 Tumhari profile dekhi... interesting lagte ho. Chat karein?",
   "Hi there! 💕 You seem fun. Wanna talk?",
   "Hey cutie! 😏 I'm bored... let's chat?",
@@ -15,8 +16,20 @@ const popupMessages = [
   "Hey! 🌙 Can't sleep... wanna keep me company?",
 ];
 
+const popupMessagesMale = [
+  "Hey! 😊 Tumhari profile dekhi... interesting lagti ho. Chat karein?",
+  "Hi there! 💕 You seem fun. Wanna talk?",
+  "Hey cutie! 😏 I'm bored... let's chat?",
+  "Hiii! ✨ I just joined. Be my first chat buddy?",
+  "Hey! 🥰 Tumse baat karni hai... reply karo na?",
+  "Hi! 😘 You look interesting. Let's vibe together?",
+  "Heyyy! 💫 Maine tumhe choose kiya. Chat karogi?",
+  "Hey! 🌙 Can't sleep... wanna keep me company?",
+];
+
 const CompanionPopup = ({ companions }: { companions: Companion[] }) => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
   const [open, setOpen] = useState(false);
   const [companion, setCompanion] = useState<Companion | null>(null);
   const [message, setMessage] = useState("");
@@ -25,16 +38,18 @@ const CompanionPopup = ({ companions }: { companions: Companion[] }) => {
     if (!companions.length) return;
     const delay = (Math.random() * 3 + 3) * 1000;
     const timer = setTimeout(() => {
-      const femaleCompanions = companions.filter((c) => c.gender === "female");
-      if (!femaleCompanions.length) return;
-      const randomCompanion = femaleCompanions[Math.floor(Math.random() * femaleCompanions.length)];
-      const randomMessage = popupMessages[Math.floor(Math.random() * popupMessages.length)];
+      const preferredGender = profile?.preferred_gender || "female";
+      const matchedCompanions = companions.filter((c) => c.gender === preferredGender);
+      if (!matchedCompanions.length) return;
+      const randomCompanion = matchedCompanions[Math.floor(Math.random() * matchedCompanions.length)];
+      const msgs = randomCompanion.gender === "female" ? popupMessagesFemale : popupMessagesMale;
+      const randomMessage = msgs[Math.floor(Math.random() * msgs.length)];
       setCompanion(randomCompanion);
       setMessage(randomMessage);
       setOpen(true);
     }, delay);
     return () => clearTimeout(timer);
-  }, [companions]);
+  }, [companions, profile]);
 
   if (!companion) return null;
 
