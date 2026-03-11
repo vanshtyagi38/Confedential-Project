@@ -134,6 +134,30 @@ export type Database = {
         }
         Relationships: []
       }
+      companion_reports: {
+        Row: {
+          companion_slug: string
+          created_at: string
+          id: string
+          reason: string
+          user_id: string
+        }
+        Insert: {
+          companion_slug: string
+          created_at?: string
+          id?: string
+          reason?: string
+          user_id: string
+        }
+        Update: {
+          companion_slug?: string
+          created_at?: string
+          id?: string
+          reason?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       companion_wishlist: {
         Row: {
           bio: string | null
@@ -297,10 +321,14 @@ export type Database = {
         Row: {
           age: number
           balance_minutes: number
+          city: string | null
+          contact: string | null
           created_at: string | null
           display_name: string | null
+          email: string | null
           gender: string
           id: string
+          image_url: string | null
           preferred_gender: string
           referral_code: string | null
           spin_credits: number
@@ -309,10 +337,14 @@ export type Database = {
         Insert: {
           age: number
           balance_minutes?: number
+          city?: string | null
+          contact?: string | null
           created_at?: string | null
           display_name?: string | null
+          email?: string | null
           gender: string
           id?: string
+          image_url?: string | null
           preferred_gender: string
           referral_code?: string | null
           spin_credits?: number
@@ -321,10 +353,14 @@ export type Database = {
         Update: {
           age?: number
           balance_minutes?: number
+          city?: string | null
+          contact?: string | null
           created_at?: string | null
           display_name?: string | null
+          email?: string | null
           gender?: string
           id?: string
+          image_url?: string | null
           preferred_gender?: string
           referral_code?: string | null
           spin_credits?: number
