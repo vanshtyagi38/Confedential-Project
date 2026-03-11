@@ -16,6 +16,7 @@ import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AdminUsers from "./pages/admin/AdminUsers";
+import AdminCompanions from "./pages/admin/AdminCompanions";
 import AdminConversations from "./pages/admin/AdminConversations";
 import AdminPayments from "./pages/admin/AdminPayments";
 import AdminStats from "./pages/admin/AdminStats";
