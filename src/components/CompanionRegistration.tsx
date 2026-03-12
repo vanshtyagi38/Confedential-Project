@@ -111,7 +111,7 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            {step === "form" ? "Register as Companion" : "Application Submitted!"}
+            {step === "form" ? "List Your Profile" : "Application Submitted!"}
           </DialogTitle>
         </DialogHeader>
 
