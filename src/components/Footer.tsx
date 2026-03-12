@@ -503,8 +503,12 @@ const Footer = () => {
         </div>
       )}
 
+
+      {/* Just Joined - above policy */}
+      <JustJoined />
+
       {/* Policy Footer */}
-      <footer className="mx-4 mt-8 mb-28 rounded-2xl border border-border bg-card/50 p-5">
+      <footer className="mx-4 mt-4 mb-28 rounded-2xl border border-border bg-card/50 p-5">
         <div className="flex items-center justify-center gap-2 mb-3">
           <Shield className="h-4 w-4 text-primary" />
           <p className="text-xs font-bold text-foreground">
