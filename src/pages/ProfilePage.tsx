@@ -32,7 +32,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { session, profile, signOut, refreshProfile } = useAuth();
   const stats = useProfileStats();
-  const { requestPermission } = useNotifications();
+  const { notifications, requestPermission } = useNotifications();
   const [copying, setCopying] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [companionRegOpen, setCompanionRegOpen] = useState(false);
