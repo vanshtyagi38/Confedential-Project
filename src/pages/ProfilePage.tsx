@@ -32,7 +32,7 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { session, profile, signOut, refreshProfile } = useAuth();
   const stats = useProfileStats();
-  const { requestPermission } = useNotifications();
+  const { notifications, requestPermission } = useNotifications();
   const [copying, setCopying] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [companionRegOpen, setCompanionRegOpen] = useState(false);
@@ -280,6 +280,42 @@ const ProfilePage = () => {
         </div>
         <Switch checked={notifEnabled} onCheckedChange={handleToggleNotifications} />
       </div>
+
+      {/* Notifications List */}
+      {notifications.length > 0 && (
+        <div className="mx-4 mb-4 rounded-2xl border border-border bg-card p-4 shadow-card">
+          <div className="mb-3 flex items-center gap-2">
+            <Bell className="h-5 w-5 text-primary" />
+            <span className="text-sm font-bold">Notifications</span>
+            <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{notifications.length}</span>
+          </div>
+          <div className="space-y-2 max-h-64 overflow-y-auto">
+            {notifications.map((n: any) => (
+              <div
+                key={n.id}
+                className="rounded-xl border border-border bg-secondary/50 p-3 transition-colors hover:bg-secondary"
+                onClick={() => n.link && window.open(n.link, "_blank")}
+                style={{ cursor: n.link ? "pointer" : "default" }}
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div className="flex-1">
+                    <p className="text-xs font-bold text-foreground">{n.title}</p>
+                    <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{n.message}</p>
+                  </div>
+                  <span className="shrink-0 text-[10px] text-muted-foreground whitespace-nowrap">
+                    {new Date(n.created_at).toLocaleDateString()}
+                  </span>
+                </div>
+                {n.type && (
+                  <span className="mt-1.5 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
+                    {n.type === "announcement" ? "📢" : n.type === "promotion" ? "🎉" : n.type === "reminder" ? "⏰" : "🚨"} {n.type}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Stats Grid */}
       <div className="mx-4 mb-4 grid grid-cols-2 gap-3">
