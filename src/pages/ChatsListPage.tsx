@@ -1,12 +1,21 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Heart, Sparkles, Flame, ArrowRight } from "lucide-react";
+import { MessageCircle, Heart, Sparkles, Flame, ArrowRight, Inbox } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompanions } from "@/hooks/useCompanions";
 
 type ChatPreview = {
+  companion_slug: string;
+  last_message: string;
+  last_time: string;
+  companion_name: string;
+  companion_image: string;
+};
+
+type InboxChat = {
+  user_id: string;
   companion_slug: string;
   last_message: string;
   last_time: string;
@@ -29,8 +38,28 @@ const ChatsListPage = () => {
   const { session } = useAuth();
   const { companions, getCompanionBySlug } = useCompanions();
   const [chats, setChats] = useState<ChatPreview[]>([]);
+  const [inboxChats, setInboxChats] = useState<InboxChat[]>([]);
   const [loading, setLoading] = useState(true);
   const [hookIndex] = useState(() => Math.floor(Math.random() * hookLines.length));
+  const [activeTab, setActiveTab] = useState<"chats" | "inbox">("chats");
+
+  // Check if user owns any real companion
+  const [ownedCompanion, setOwnedCompanion] = useState<any>(null);
+
+  useEffect(() => {
+    if (!session?.user) return;
+    const checkOwned = async () => {
+      const { data } = await (supabase as any)
+        .from("companions")
+        .select("*")
+        .eq("owner_user_id", session.user.id)
+        .eq("is_real_user", true)
+        .eq("status", "active")
+        .maybeSingle();
+      setOwnedCompanion(data || null);
+    };
+    checkOwned();
+  }, [session?.user]);
 
   useEffect(() => {
     if (!session?.user) return;
@@ -68,11 +97,51 @@ const ChatsListPage = () => {
     load();
   }, [session?.user, getCompanionBySlug]);
 
+  // Load inbox: messages TO the user's owned companion from OTHER users
+  useEffect(() => {
+    if (!session?.user || !ownedCompanion) return;
+    const loadInbox = async () => {
+      const { data } = await (supabase as any)
+        .from("chat_messages")
+        .select("*")
+        .eq("companion_slug", ownedCompanion.slug)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (data) {
+        // Group by user_id, only show conversations from OTHER users
+        const inboxMap = new Map<string, any>();
+        data.forEach((msg: any) => {
+          if (msg.user_id === session.user.id) return; // skip own conversations
+          if (!inboxMap.has(msg.user_id)) {
+            inboxMap.set(msg.user_id, msg);
+          }
+        });
+
+        const inbox: InboxChat[] = [];
+        inboxMap.forEach((msg, userId) => {
+          inbox.push({
+            user_id: userId,
+            companion_slug: ownedCompanion.slug,
+            last_message: msg.content,
+            last_time: new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+            companion_name: ownedCompanion.name,
+            companion_image: ownedCompanion.image_url || "",
+          });
+        });
+        setInboxChats(inbox);
+      }
+    };
+    loadInbox();
+  }, [session?.user, ownedCompanion]);
+
   const chattedSlugs = new Set(chats.map((c) => c.companion_slug));
   const suggestions = companions
     .filter((c) => !chattedSlugs.has(c.id))
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
+
+  const hasInbox = !!ownedCompanion;
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
@@ -83,9 +152,40 @@ const ChatsListPage = () => {
             <h1 className="text-lg font-extrabold">Your Chats</h1>
           </div>
           <span className="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-            {chats.length} active
+            {activeTab === "chats" ? chats.length : inboxChats.length} active
           </span>
         </div>
+
+        {/* Tabs for chats vs inbox */}
+        {hasInbox && (
+          <div className="flex mt-2 gap-1 bg-secondary rounded-xl p-1">
+            <button
+              onClick={() => setActiveTab("chats")}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-colors ${
+                activeTab === "chats" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              My Chats
+            </button>
+            <button
+              onClick={() => setActiveTab("inbox")}
+              className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold transition-colors ${
+                activeTab === "inbox" ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+              }`}
+            >
+              <Inbox className="h-3.5 w-3.5" />
+              Inbox
+              {inboxChats.length > 0 && (
+                <span className={`ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold ${
+                  activeTab === "inbox" ? "bg-primary-foreground text-primary" : "bg-accent text-accent-foreground"
+                }`}>
+                  {inboxChats.length}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
       </div>
 
       <div className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 p-3">
@@ -94,84 +194,131 @@ const ChatsListPage = () => {
             <Heart className="h-4 w-4 text-primary" fill="currentColor" />
           </div>
           <p className="text-xs font-semibold text-foreground leading-tight">
-            {hookLines[hookIndex]}
+            {activeTab === "inbox"
+              ? "People are messaging your profile! Reply to connect 💬"
+              : hookLines[hookIndex]}
           </p>
         </div>
       </div>
 
-      {loading ? (
-        <div className="flex justify-center py-20">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-        </div>
-      ) : chats.length === 0 ? (
-        <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
-          <div className="relative mb-4">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-              <Flame className="h-10 w-10 text-primary" />
+      {activeTab === "chats" ? (
+        <>
+          {loading ? (
+            <div className="flex justify-center py-20">
+              <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
             </div>
-            <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-[10px] text-accent-foreground font-bold animate-bounce">!</span>
-          </div>
-          <h3 className="text-base font-extrabold">No chats yet… but why? 🤔</h3>
-          <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed max-w-[260px]">
-            Your perfect match is already online. Start your first conversation — it could be the beginning of something amazing!
-          </p>
-          <button onClick={() => navigate("/")} className="mt-5 flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-lg transition-transform active:scale-95">
-            <Sparkles className="h-4 w-4" />
-            Explore Companions
-          </button>
-        </div>
-      ) : (
-        <div className="px-4 mt-2 space-y-1">
-          {chats.map((chat, i) => (
-            <button
-              key={chat.companion_slug}
-              onClick={() => navigate(`/chat/${chat.companion_slug}`)}
-              className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all hover:bg-card active:scale-[0.98] animate-fade-in-up"
-              style={{ animationDelay: `${i * 50}ms` }}
-            >
-              <div className="relative">
-                <img src={chat.companion_image} alt={chat.companion_name} className="h-13 w-13 rounded-full object-cover ring-2 ring-primary/20" style={{ width: 52, height: 52 }} />
-                <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold">{chat.companion_name}</p>
-                  <p className="text-[10px] text-muted-foreground">{chat.last_time}</p>
+          ) : chats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+              <div className="relative mb-4">
+                <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                  <Flame className="h-10 w-10 text-primary" />
                 </div>
-                <p className="mt-0.5 truncate text-xs text-muted-foreground">{chat.last_message}</p>
+                <span className="absolute -right-1 -top-1 flex h-6 w-6 items-center justify-center rounded-full bg-accent text-[10px] text-accent-foreground font-bold animate-bounce">!</span>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
-            </button>
-          ))}
-        </div>
-      )}
-
-      {!loading && suggestions.length > 0 && (
-        <div className="px-4 mt-4">
-          <div className="rounded-2xl bg-card border border-border p-4">
-            <div className="flex items-center gap-2 mb-3">
-              <Sparkles className="h-4 w-4 text-accent" />
-              <p className="text-xs font-extrabold text-foreground">
-                {chats.length > 0 ? "Chat with someone new today! 💕" : "Trending companions near you 🔥"}
+              <h3 className="text-base font-extrabold">No chats yet… but why? 🤔</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed max-w-[260px]">
+                Your perfect match is already online. Start your first conversation — it could be the beginning of something amazing!
               </p>
+              <button onClick={() => navigate("/")} className="mt-5 flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-bold text-primary-foreground shadow-lg transition-transform active:scale-95">
+                <Sparkles className="h-4 w-4" />
+                Explore Companions
+              </button>
             </div>
-            <div className="flex gap-3">
-              {suggestions.map((c) => (
-                <button key={c.id} onClick={() => navigate(`/chat/${c.id}`)} className="flex-1 flex flex-col items-center gap-1.5 rounded-xl bg-secondary/50 p-2.5 transition-transform active:scale-95">
+          ) : (
+            <div className="px-4 mt-2 space-y-1">
+              {chats.map((chat, i) => (
+                <button
+                  key={chat.companion_slug}
+                  onClick={() => navigate(`/chat/${chat.companion_slug}`)}
+                  className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all hover:bg-card active:scale-[0.98] animate-fade-in-up"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
                   <div className="relative">
-                    <img src={c.image} alt={c.name} className="h-14 w-14 rounded-full object-cover ring-2 ring-accent/30" />
-                    <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-card" />
+                    <img src={chat.companion_image} alt={chat.companion_name} className="h-13 w-13 rounded-full object-cover ring-2 ring-primary/20" style={{ width: 52, height: 52 }} />
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
                   </div>
-                  <p className="text-[11px] font-bold truncate w-full text-center">{c.name}</p>
-                  <span className="text-[9px] text-accent font-semibold">Online now</span>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold">{chat.companion_name}</p>
+                      <p className="text-[10px] text-muted-foreground">{chat.last_time}</p>
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{chat.last_message}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
                 </button>
               ))}
             </div>
-          </div>
-          <p className="text-center text-[11px] text-muted-foreground mt-3 px-4 leading-relaxed">
-            💫 Every conversation is a chance to find someone special. Don't let it slip away!
-          </p>
-        </div>
+          )}
+
+          {!loading && suggestions.length > 0 && (
+            <div className="px-4 mt-4">
+              <div className="rounded-2xl bg-card border border-border p-4">
+                <div className="flex items-center gap-2 mb-3">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                  <p className="text-xs font-extrabold text-foreground">
+                    {chats.length > 0 ? "Chat with someone new today! 💕" : "Trending companions near you 🔥"}
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  {suggestions.map((c) => (
+                    <button key={c.id} onClick={() => navigate(`/chat/${c.id}`)} className="flex-1 flex flex-col items-center gap-1.5 rounded-xl bg-secondary/50 p-2.5 transition-transform active:scale-95">
+                      <div className="relative">
+                        <img src={c.image} alt={c.name} className="h-14 w-14 rounded-full object-cover ring-2 ring-accent/30" />
+                        <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-card" />
+                      </div>
+                      <p className="text-[11px] font-bold truncate w-full text-center">{c.name}</p>
+                      <span className="text-[9px] text-accent font-semibold">Online now</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <p className="text-center text-[11px] text-muted-foreground mt-3 px-4 leading-relaxed">
+                💫 Every conversation is a chance to find someone special. Don't let it slip away!
+              </p>
+            </div>
+          )}
+        </>
+      ) : (
+        /* Inbox tab */
+        <>
+          {inboxChats.length === 0 ? (
+            <div className="flex flex-col items-center justify-center px-6 py-14 text-center">
+              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10 mb-4">
+                <Inbox className="h-10 w-10 text-primary" />
+              </div>
+              <h3 className="text-base font-extrabold">No messages yet 📭</h3>
+              <p className="mt-1.5 text-sm text-muted-foreground leading-relaxed max-w-[260px]">
+                When someone messages your profile, their conversations will appear here. Keep your profile active!
+              </p>
+            </div>
+          ) : (
+            <div className="px-4 mt-2 space-y-1">
+              {inboxChats.map((chat, i) => (
+                <button
+                  key={chat.user_id}
+                  onClick={() => navigate(`/chat/${chat.companion_slug}?user=${chat.user_id}`)}
+                  className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all hover:bg-card active:scale-[0.98] animate-fade-in-up"
+                  style={{ animationDelay: `${i * 50}ms` }}
+                >
+                  <div className="relative">
+                    <div className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-primary/20 ring-2 ring-accent/30">
+                      <MessageCircle className="h-6 w-6 text-primary" />
+                    </div>
+                    <span className="absolute bottom-0 right-0 h-3 w-3 rounded-full bg-green-500 ring-2 ring-background" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold">User Chat</p>
+                      <p className="text-[10px] text-muted-foreground">{chat.last_time}</p>
+                    </div>
+                    <p className="mt-0.5 truncate text-xs text-muted-foreground">{chat.last_message}</p>
+                  </div>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
+                </button>
+              ))}
+            </div>
+          )}
+        </>
       )}
 
       <BottomNav />
