@@ -87,6 +87,7 @@ const App = () => (
                 <Route path="support" element={<AdminSupport />} />
                 <Route path="wishlist" element={<AdminWishlist />} />
                 <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="security" element={<AdminSecurity />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 
