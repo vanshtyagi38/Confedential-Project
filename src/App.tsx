@@ -97,6 +97,7 @@ const App = () => (
           </PresenceTracker>
         </AuthProvider>
       </BrowserRouter>
+      <Analytics />
     </TooltipProvider>
   </QueryClientProvider>
 );
