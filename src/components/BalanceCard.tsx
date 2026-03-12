@@ -112,34 +112,21 @@ const BalanceCard = () => {
           <button
             key={card.id}
             onClick={card.onClick}
-            className="flex min-w-[75%] snap-start items-center justify-between rounded-2xl bg-card p-3.5 shadow-card transition-all active:scale-[0.98] hover:bg-secondary/30 shrink-0"
+            className="flex min-w-[85%] snap-start items-center justify-between rounded-2xl bg-card p-4 shadow-card transition-all active:scale-[0.98] hover:bg-secondary/30 shrink-0"
           >
-            <div className="flex items-center gap-2.5">
-              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.iconBg}`}>
+            <div className="flex items-center gap-3">
+              <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${card.iconBg}`}>
                 {card.icon}
               </div>
               <div className="text-left">
-                <p className="text-[13px] font-semibold leading-tight">{card.title}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">{card.subtitle}</p>
+                <p className="text-sm font-semibold">{card.title}</p>
+                <p className="text-[11px] text-muted-foreground mt-0.5">{card.subtitle}</p>
               </div>
             </div>
-            <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${card.ctaClass} shrink-0`}>
+            <span className={`rounded-xl px-3 py-1.5 text-xs font-bold ${card.ctaClass} shrink-0`}>
               {card.cta}
             </span>
           </button>
-        ))}
-      </div>
-
-      {/* Dots indicator */}
-      <div className="flex justify-center gap-1.5">
-        {cards.map((_, i) => (
-          <button
-            key={i}
-            onClick={() => scrollTo(i)}
-            className={`h-1.5 rounded-full transition-all duration-300 ${
-              i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-border"
-            }`}
-          />
         ))}
       </div>
 
