@@ -386,7 +386,7 @@ const ProfilePage = () => {
         </button>
         <button onClick={() => setCompanionRegOpen(true)} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
           <UserPlus className="h-5 w-5 text-muted-foreground" />
-          <span className="flex-1 text-left">Register as Companion</span>
+          <span className="flex-1 text-left">List Your Profile</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
         <button onClick={() => navigate("/support")} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
