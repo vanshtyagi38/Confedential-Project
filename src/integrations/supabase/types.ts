@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_notifications: {
+        Row: {
+          created_at: string
+          id: string
+          link: string | null
+          message: string
+          sent_by: string
+          target: string
+          target_user_ids: string[] | null
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message: string
+          sent_by: string
+          target?: string
+          target_user_ids?: string[] | null
+          title: string
+          type?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          link?: string | null
+          message?: string
+          sent_by?: string
+          target?: string
+          target_user_ids?: string[] | null
+          title?: string
+          type?: string
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           companion_slug: string
@@ -84,6 +120,7 @@ export type Database = {
           gender: string
           id: string
           image_url: string | null
+          interests: string | null
           languages: string
           name: string
           payment_amount: number
@@ -103,6 +140,7 @@ export type Database = {
           gender?: string
           id?: string
           image_url?: string | null
+          interests?: string | null
           languages?: string
           name: string
           payment_amount?: number
@@ -122,6 +160,7 @@ export type Database = {
           gender?: string
           id?: string
           image_url?: string | null
+          interests?: string | null
           languages?: string
           name?: string
           payment_amount?: number
@@ -205,6 +244,7 @@ export type Database = {
           id: string
           image_key: string | null
           image_url: string | null
+          interests: string | null
           is_real_user: boolean
           languages: string
           name: string
@@ -226,6 +266,7 @@ export type Database = {
           id?: string
           image_key?: string | null
           image_url?: string | null
+          interests?: string | null
           is_real_user?: boolean
           languages?: string
           name: string
@@ -247,6 +288,7 @@ export type Database = {
           id?: string
           image_key?: string | null
           image_url?: string | null
+          interests?: string | null
           is_real_user?: boolean
           languages?: string
           name?: string
@@ -257,6 +299,33 @@ export type Database = {
           tag?: string
           updated_at?: string
           upi_id?: string | null
+        }
+        Relationships: []
+      }
+      push_subscriptions: {
+        Row: {
+          auth_key: string
+          created_at: string
+          endpoint: string
+          id: string
+          p256dh: string
+          user_id: string
+        }
+        Insert: {
+          auth_key: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          p256dh: string
+          user_id: string
+        }
+        Update: {
+          auth_key?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          p256dh?: string
+          user_id?: string
         }
         Relationships: []
       }
@@ -313,6 +382,27 @@ export type Database = {
           image_url?: string | null
           is_read?: boolean
           sender?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_presence: {
+        Row: {
+          is_online: boolean
+          last_seen: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          is_online?: boolean
+          last_seen?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          is_online?: boolean
+          last_seen?: string
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
