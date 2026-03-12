@@ -107,38 +107,38 @@ const InvitePopup = ({ open, onClose, referralCode, referralLink }: Props) => {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="mx-4 max-w-sm rounded-3xl border-primary/20 bg-white p-0 overflow-hidden shadow-2xl">
+      <DialogContent className="mx-auto w-[340px] max-w-[92vw] rounded-2xl border-primary/20 bg-white p-0 overflow-hidden shadow-2xl">
         {/* Gradient Header */}
         <div className="relative overflow-hidden">
           <div className="absolute inset-0 gradient-primary" />
           <div className="absolute inset-0 bg-gradient-to-br from-pink-500/20 via-transparent to-orange-500/20" />
           
-          <div className="relative px-6 py-6 text-center">
-            <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-lg">
-              <Heart className="h-7 w-7 text-white" />
+          <div className="relative px-4 py-3.5 text-center">
+            <div className="mx-auto mb-2 flex h-10 w-10 items-center justify-center rounded-full bg-white/20 backdrop-blur-sm shadow-md">
+              <Heart className="h-5 w-5 text-white" />
             </div>
-            <DialogHeader>
-              <DialogTitle className="text-xl font-bold text-white">
+            <DialogHeader className="space-y-0.5">
+              <DialogTitle className="text-base font-bold text-white leading-tight">
                 {taglines[currentTagline]}
               </DialogTitle>
             </DialogHeader>
-            <p className="mt-2 text-sm text-white/90 font-medium">
-              They'll never know it was you... unless you want them to 😉
+            <p className="text-xs text-white/90">
+              They'll never know it was you 😉
             </p>
           </div>
           
           {/* Decorative bottom curve */}
-          <div className="absolute bottom-0 left-0 right-0 h-4 bg-white rounded-t-3xl" />
+          <div className="absolute bottom-0 left-0 right-0 h-3 bg-white rounded-t-2xl" />
         </div>
 
-        <div className="space-y-5 px-6 pb-6 pt-2">
-          {/* Social share buttons with real logos */}
-          <div className="grid grid-cols-2 gap-3">
+        <div className="space-y-3 px-4 pb-4 pt-1.5">
+          {/* Social share buttons with real logos - Compact 2x2 grid */}
+          <div className="grid grid-cols-2 gap-2">
             <button
               onClick={shareWhatsApp}
-              className="group flex flex-col items-center gap-2 rounded-2xl bg-[#25D366]/10 py-4 text-sm font-semibold transition-all hover:bg-[#25D366]/20 active:scale-95"
+              className="group flex items-center gap-2 rounded-xl bg-[#25D366]/10 py-2.5 px-3 text-xs font-semibold transition-all hover:bg-[#25D366]/20 active:scale-95"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#25D366] text-white shadow-lg shadow-[#25D366]/30 transition-transform group-hover:scale-110">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#25D366] text-white shadow-md shadow-[#25D366]/20 transition-transform group-hover:scale-105">
                 <WhatsAppLogo />
               </div>
               <span className="text-[#128C7E]">WhatsApp</span>
@@ -146,9 +146,9 @@ const InvitePopup = ({ open, onClose, referralCode, referralLink }: Props) => {
             
             <button
               onClick={shareTelegram}
-              className="group flex flex-col items-center gap-2 rounded-2xl bg-[#229ED9]/10 py-4 text-sm font-semibold transition-all hover:bg-[#229ED9]/20 active:scale-95"
+              className="group flex items-center gap-2 rounded-xl bg-[#229ED9]/10 py-2.5 px-3 text-xs font-semibold transition-all hover:bg-[#229ED9]/20 active:scale-95"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-[#229ED9] text-white shadow-lg shadow-[#229ED9]/30 transition-transform group-hover:scale-110">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#229ED9] text-white shadow-md shadow-[#229ED9]/20 transition-transform group-hover:scale-105">
                 <TelegramLogo />
               </div>
               <span className="text-[#229ED9]">Telegram</span>
@@ -156,9 +156,9 @@ const InvitePopup = ({ open, onClose, referralCode, referralLink }: Props) => {
             
             <button
               onClick={shareInstagram}
-              className="group flex flex-col items-center gap-2 rounded-2xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 py-4 text-sm font-semibold transition-all hover:from-purple-500/20 hover:to-pink-500/20 active:scale-95"
+              className="group flex items-center gap-2 rounded-xl bg-gradient-to-br from-purple-500/10 to-pink-500/10 py-2.5 px-3 text-xs font-semibold transition-all hover:from-purple-500/20 hover:to-pink-500/20 active:scale-95"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 text-white shadow-lg shadow-pink-500/30 transition-transform group-hover:scale-110">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400 text-white shadow-md shadow-pink-500/20 transition-transform group-hover:scale-105">
                 <InstagramLogo />
               </div>
               <span className="bg-gradient-to-r from-purple-600 to-pink-500 bg-clip-text text-transparent">Instagram</span>
@@ -166,45 +166,42 @@ const InvitePopup = ({ open, onClose, referralCode, referralLink }: Props) => {
             
             <button
               onClick={shareSms}
-              className="group flex flex-col items-center gap-2 rounded-2xl bg-blue-500/10 py-4 text-sm font-semibold transition-all hover:bg-blue-500/20 active:scale-95"
+              className="group flex items-center gap-2 rounded-xl bg-blue-500/10 py-2.5 px-3 text-xs font-semibold transition-all hover:bg-blue-500/20 active:scale-95"
             >
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-500 text-white shadow-lg shadow-blue-500/30 transition-transform group-hover:scale-110">
+              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-blue-500 text-white shadow-md shadow-blue-500/20 transition-transform group-hover:scale-105">
                 <SmsLogo />
               </div>
-              <span className="text-blue-600">Text Message</span>
+              <span className="text-blue-600">SMS</span>
             </button>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
-            <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide">or</span>
+            <span className="text-[10px] font-medium text-muted-foreground uppercase">or</span>
             <div className="h-px flex-1 bg-gradient-to-r from-transparent via-border to-transparent" />
           </div>
 
-          <div className="flex gap-3">
+          <div className="flex gap-2">
             <button
               onClick={copyLink}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl border-2 border-border bg-secondary/50 py-3.5 text-sm font-semibold transition-all hover:bg-secondary hover:border-primary/30 active:scale-95"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg border border-border bg-secondary/50 py-2.5 text-xs font-semibold transition-all hover:bg-secondary hover:border-primary/30 active:scale-95"
             >
-              <Copy className="h-4 w-4" />
-              {copying ? "Copied! ✨" : "Copy Link"}
+              <Copy className="h-3.5 w-3.5" />
+              {copying ? "Copied! ✨" : "Copy"}
             </button>
             <button
               onClick={shareLink}
-              className="flex flex-1 items-center justify-center gap-2 rounded-xl gradient-primary py-3.5 text-sm font-bold text-white shadow-lg shadow-primary/30 transition-all hover:brightness-110 active:scale-95"
+              className="flex flex-1 items-center justify-center gap-1.5 rounded-lg gradient-primary py-2.5 text-xs font-bold text-white shadow-md shadow-primary/25 transition-all hover:brightness-110 active:scale-95"
             >
-              <Share2 className="h-4 w-4" />
+              <Share2 className="h-3.5 w-3.5" />
               Share
             </button>
           </div>
 
-          {/* Reward info */}
-          <div className="rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 p-3 text-center border border-amber-100">
-            <p className="text-xs font-semibold text-amber-700">
-              🎁 Each signup = 1 free spin for you
-            </p>
-            <p className="text-[10px] text-amber-600/80 mt-0.5">
-              They get 5 free minutes too!
+          {/* Reward info - Compact */}
+          <div className="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 px-3 py-2 text-center border border-amber-100">
+            <p className="text-[10px] font-semibold text-amber-700">
+              🎁 Each signup = 1 free spin
             </p>
           </div>
         </div>
