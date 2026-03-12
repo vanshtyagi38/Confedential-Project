@@ -61,6 +61,7 @@ export type Companion = {
   bannedAt?: string | null;
   ownerUserId?: string | null;
   upiId?: string | null;
+  interests?: string;
 };
 
 // Map image_key from DB → local Vite asset URL
