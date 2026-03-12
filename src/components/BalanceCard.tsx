@@ -1,55 +1,155 @@
-import { Plus, Clock, UserPlus } from "lucide-react";
+import { Plus, Clock, UserPlus, Heart, Gift, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { useState } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import CompanionRegistration from "@/components/CompanionRegistration";
+import InvitePopup from "@/components/InvitePopup";
 
 const BalanceCard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const balance = profile?.balance_minutes || 0;
   const [regOpen, setRegOpen] = useState(false);
+  const [inviteOpen, setInviteOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<number>();
+
+  const cards = [
+    {
+      id: "list",
+      icon: <UserPlus className="h-5 w-5 text-primary" />,
+      iconBg: "bg-primary/10",
+      title: "List Your Profile",
+      subtitle: "Become a companion & earn",
+      cta: "Apply →",
+      ctaClass: "bg-primary/10 text-primary",
+      onClick: () => setRegOpen(true),
+    },
+    {
+      id: "recharge",
+      icon: <Clock className="h-5 w-5 text-accent" />,
+      iconBg: "bg-secondary",
+      title: "Recharge Now",
+      subtitle: `Balance: ${Math.floor(balance)} min`,
+      cta: "Top Up →",
+      ctaClass: "bg-accent/10 text-accent",
+      onClick: () => navigate("/recharge"),
+    },
+    {
+      id: "invite",
+      icon: <Heart className="h-5 w-5 text-destructive" />,
+      iconBg: "bg-destructive/10",
+      title: "Invite Your Crush",
+      subtitle: "Share & earn free minutes",
+      cta: "Invite →",
+      ctaClass: "bg-destructive/10 text-destructive",
+      onClick: () => setInviteOpen(true),
+    },
+    {
+      id: "offer",
+      icon: <Gift className="h-5 w-5 text-accent" />,
+      iconBg: "bg-accent/10",
+      title: "Recharge Offer",
+      subtitle: "Get 50% extra on first recharge",
+      cta: "Grab →",
+      ctaClass: "bg-accent/10 text-accent",
+      onClick: () => navigate("/recharge"),
+    },
+  ];
+
+  const scrollTo = useCallback((index: number) => {
+    const container = scrollRef.current;
+    if (!container) return;
+    const child = container.children[index] as HTMLElement;
+    if (child) {
+      container.scrollTo({ left: child.offsetLeft - 16, behavior: "smooth" });
+    }
+    setActiveIndex(index);
+  }, []);
+
+  // Auto-scroll every 4 seconds
+  useEffect(() => {
+    const start = () => {
+      timerRef.current = window.setInterval(() => {
+        setActiveIndex((prev) => {
+          const next = (prev + 1) % cards.length;
+          scrollTo(next);
+          return next;
+        });
+      }, 4000);
+    };
+    start();
+    return () => clearInterval(timerRef.current);
+  }, [cards.length, scrollTo]);
+
+  // Pause auto-scroll on touch
+  const pauseAutoScroll = () => clearInterval(timerRef.current);
+  const resumeAutoScroll = () => {
+    clearInterval(timerRef.current);
+    timerRef.current = window.setInterval(() => {
+      setActiveIndex((prev) => {
+        const next = (prev + 1) % cards.length;
+        scrollTo(next);
+        return next;
+      });
+    }, 4000);
+  };
+
+  const referralCode = profile?.referral_code || "";
+  const referralLink = `https://singletape.com?ref=${referralCode}`;
 
   return (
-    <div className="mx-4 space-y-2.5">
-      {/* Recharge Card */}
-      <div className="flex items-center justify-between rounded-2xl bg-card p-4 shadow-card">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
-            <Clock className="h-5 w-5 text-accent" />
-          </div>
-          <div>
-            <p className="text-xs text-muted-foreground">Chat Balance</p>
-            <p className="text-xl font-bold">{Math.floor(balance)} min</p>
-          </div>
-        </div>
-        <button
-          onClick={() => navigate("/recharge")}
-          className="gradient-primary flex items-center gap-1.5 rounded-xl px-5 py-2.5 text-sm font-semibold text-primary-foreground transition-all active:scale-95 hover:brightness-110"
-        >
-          <Plus className="h-4 w-4" />
-          Recharge
-        </button>
+    <div className="mx-4 space-y-2">
+      {/* Auto-scrolling cards */}
+      <div
+        ref={scrollRef}
+        className="flex gap-2.5 overflow-x-auto no-scrollbar snap-x snap-mandatory"
+        onTouchStart={pauseAutoScroll}
+        onTouchEnd={resumeAutoScroll}
+      >
+        {cards.map((card) => (
+          <button
+            key={card.id}
+            onClick={card.onClick}
+            className="flex min-w-[75%] snap-start items-center justify-between rounded-2xl bg-card p-3.5 shadow-card transition-all active:scale-[0.98] hover:bg-secondary/30 shrink-0"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${card.iconBg}`}>
+                {card.icon}
+              </div>
+              <div className="text-left">
+                <p className="text-[13px] font-semibold leading-tight">{card.title}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">{card.subtitle}</p>
+              </div>
+            </div>
+            <span className={`rounded-lg px-2.5 py-1 text-[10px] font-bold ${card.ctaClass} shrink-0`}>
+              {card.cta}
+            </span>
+          </button>
+        ))}
       </div>
 
-      {/* List Your Profile Card */}
-      <button
-        onClick={() => setRegOpen(true)}
-        className="flex w-full items-center justify-between rounded-2xl bg-card p-4 shadow-card transition-all active:scale-[0.98] hover:bg-secondary/50"
-      >
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10">
-            <UserPlus className="h-5 w-5 text-primary" />
-          </div>
-          <div className="text-left">
-            <p className="text-sm font-semibold">List Your Profile</p>
-            <p className="text-[11px] text-muted-foreground">Become a companion & earn</p>
-          </div>
-        </div>
-        <span className="rounded-lg bg-accent/10 px-3 py-1.5 text-xs font-bold text-accent">Apply →</span>
-      </button>
+      {/* Dots indicator */}
+      <div className="flex justify-center gap-1.5">
+        {cards.map((_, i) => (
+          <button
+            key={i}
+            onClick={() => scrollTo(i)}
+            className={`h-1.5 rounded-full transition-all duration-300 ${
+              i === activeIndex ? "w-4 bg-primary" : "w-1.5 bg-border"
+            }`}
+          />
+        ))}
+      </div>
 
       <CompanionRegistration open={regOpen} onClose={() => setRegOpen(false)} />
+      <InvitePopup
+        open={inviteOpen}
+        onClose={() => setInviteOpen(false)}
+        referralCode={referralCode}
+        referralLink={referralLink}
+      />
     </div>
   );
 };
