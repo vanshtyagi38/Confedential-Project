@@ -135,5 +135,6 @@ export function dbRowToCompanion(row: any): Companion {
     bannedAt: row.banned_at,
     ownerUserId: row.owner_user_id,
     upiId: row.upi_id,
+    interests: row.interests || "",
   };
 }
