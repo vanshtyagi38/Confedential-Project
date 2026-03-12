@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Send, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap, Ban, MoreVertical, Trash2, Flag, AlertTriangle, Smile } from "lucide-react";
 import { useCompanionStatus } from "@/hooks/useCompanions";
 import { supabase } from "@/integrations/supabase/client";
@@ -145,6 +145,7 @@ const StatusIcon = ({ status }: { status?: MessageStatus }) => {
 
 const ChatPage = () => {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
   const { companion, loading: companionLoading, isBanned, isDeleted, banExpired } = useCompanionStatus(id);
@@ -182,27 +183,40 @@ const ChatPage = () => {
   // Determine if this is a real user companion (no AI)
   const isRealUser = companion?.isRealUser === true;
 
+  // Owner mode: current user IS the companion owner, viewing a chatter's conversation
+  const chatWithUserId = searchParams.get("user");
+  const isOwnerMode = isRealUser && !!chatWithUserId && companion?.ownerUserId === session?.user?.id;
+
+  // The "conversation user" is the user who initiated chat with the companion
+  // In normal mode: it's the current user. In owner mode: it's chatWithUserId.
+  const conversationUserId = isOwnerMode ? chatWithUserId : session?.user?.id;
+
   // Real-time chat for real user companions
   const handleRealtimeMessage = useCallback((msg: any) => {
     if (!isRealUser) return;
+    // In owner mode: messages from the chatter (role=user) are "companion" side for display
+    // In normal mode: messages from the owner (role=assistant) are "companion" side
+    const isFromOtherSide = isOwnerMode ? msg.role === "user" : msg.role === "assistant";
+    if (!isFromOtherSide) return;
+    // Also verify it belongs to this conversation
+    if (msg.user_id !== conversationUserId) return;
+    
     const newMsg: Message = {
       id: msg.id,
       text: msg.content,
-      sender: msg.role === "user" ? "companion" : "companion", // from the other user's perspective
+      sender: "companion",
       time: new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
       imageUrl: msg.image_url || undefined,
       status: "delivered",
     };
     setMessages((prev) => {
-      // Don't add if already exists
       if (prev.some(m => m.id === msg.id)) return prev;
       return [...prev, newMsg];
     });
-    // Mark as seen after a moment
     setTimeout(() => {
       setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: "seen" } : m));
     }, 1500);
-  }, [isRealUser]);
+  }, [isRealUser, isOwnerMode, conversationUserId]);
 
   useRealtimeChat(
     isRealUser ? companion?.id : undefined,
@@ -227,12 +241,12 @@ const ChatPage = () => {
 
   // Load previous messages from DB
   useEffect(() => {
-    if (!companion || !session?.user) return;
+    if (!companion || !session?.user || !conversationUserId) return;
     const load = async () => {
       const { data } = await (supabase as any)
         .from("chat_messages")
         .select("*")
-        .eq("user_id", session.user.id)
+        .eq("user_id", conversationUserId)
         .eq("companion_slug", companion.id)
         .order("created_at", { ascending: true })
         .limit(100);
@@ -241,7 +255,9 @@ const ChatPage = () => {
         const loaded: Message[] = data.map((m: any) => ({
           id: m.id,
           text: m.content,
-          sender: m.role === "user" ? "user" : "companion",
+          sender: isOwnerMode
+            ? (m.role === "assistant" ? "user" : "companion") // owner sees own replies as "user" side
+            : (m.role === "user" ? "user" : "companion"),
           time: new Date(m.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
           imageUrl: m.image_url || undefined,
           status: "seen" as MessageStatus,
@@ -253,28 +269,32 @@ const ChatPage = () => {
         setMessages(loaded);
         setChatHistory(history);
       } else {
-        setMessages([{
-          id: "intro",
-          text: companion.bio,
-          sender: "companion",
-          time: getTimeString(),
-        }]);
-        setChatHistory([{ role: "assistant", content: companion.bio }]);
+        if (!isOwnerMode) {
+          setMessages([{
+            id: "intro",
+            text: companion.bio,
+            sender: "companion",
+            time: getTimeString(),
+          }]);
+          setChatHistory([{ role: "assistant", content: companion.bio }]);
+        }
       }
     };
     load();
-  }, [companion, session?.user]);
+  }, [companion, session?.user, conversationUserId, isOwnerMode]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, typing, streaming, otherTyping]);
 
   useEffect(() => {
+    if (isOwnerMode) return; // Owners don't pay balance
     setDisplayBalance(profile?.balance_minutes || 0);
     if ((profile?.balance_minutes || 0) <= 0) setOutOfBalance(true);
-  }, [profile?.balance_minutes]);
+  }, [profile?.balance_minutes, isOwnerMode]);
 
   const startTimer = useCallback(() => {
+    if (isOwnerMode) return; // Owners don't pay
     if (chatActiveRef.current || timerRef.current) return;
     chatActiveRef.current = true;
     timerRef.current = setInterval(() => {
@@ -285,9 +305,10 @@ const ChatPage = () => {
         return next;
       });
     }, 60000);
-  }, []);
+  }, [isOwnerMode]);
 
   useEffect(() => {
+    if (isOwnerMode) return;
     const saveBalance = async () => {
       if (minutesUsedRef.current > 0 && session?.user && profile) {
         const newBalance = Math.max(0, profile.balance_minutes - minutesUsedRef.current);
@@ -304,12 +325,13 @@ const ChatPage = () => {
       if (timerRef.current) clearInterval(timerRef.current);
       saveBalance().then(() => refreshProfile());
     };
-  }, [session?.user, profile]);
+  }, [session?.user, profile, isOwnerMode]);
 
-  const saveMessage = async (companionSlug: string, role: string, content: string, imageUrl?: string) => {
-    if (!session?.user) return;
+  const saveMessage = async (companionSlug: string, role: string, content: string, userId?: string, imageUrl?: string) => {
+    const uid = userId || session?.user?.id;
+    if (!uid) return;
     await (supabase as any).from("chat_messages").insert({
-      user_id: session.user.id,
+      user_id: uid,
       companion_slug: companionSlug,
       role,
       content,
@@ -406,15 +428,18 @@ const ChatPage = () => {
     if (streaming || chatLocked) return;
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
-    if (outOfBalance) {
+
+    // Only check balance for normal users (not companion owners)
+    if (!isOwnerMode && outOfBalance) {
       toast.error("Out of chat minutes! Recharge to continue.", {
         action: { label: "Recharge", onClick: () => navigate("/recharge") },
       });
       return;
     }
+
     setInput("");
     setShowEmojiPicker(false);
-    startTimer();
+    if (!isOwnerMode) startTimer();
 
     const hasImage = !!pendingImage;
     let imageUrl: string | undefined;
@@ -444,17 +469,28 @@ const ChatPage = () => {
 
     progressStatus(msgId);
 
-    userMsgCountRef.current += 1;
-    if (
-      !installPromptShownRef.current &&
-      userMsgCountRef.current >= installThresholdRef.current &&
-      !window.matchMedia("(display-mode: standalone)").matches
-    ) {
-      installPromptShownRef.current = true;
-      setTimeout(() => setShowInstallPopup(true), 2000);
+    // Install prompt (only for normal users)
+    if (!isOwnerMode) {
+      userMsgCountRef.current += 1;
+      if (
+        !installPromptShownRef.current &&
+        userMsgCountRef.current >= installThresholdRef.current &&
+        !window.matchMedia("(display-mode: standalone)").matches
+      ) {
+        installPromptShownRef.current = true;
+        setTimeout(() => setShowInstallPopup(true), 2000);
+      }
     }
 
-    await saveMessage(companion.id, "user", trimmed || "[image]", imageUrl);
+    if (isOwnerMode) {
+      // Companion owner replying: save as "assistant" under the chatter's user_id
+      await saveMessage(companion.id, "assistant", trimmed || "[image]", conversationUserId!, imageUrl);
+      if (isRealUser) sendTyping();
+      return;
+    }
+
+    // Normal user sending message
+    await saveMessage(companion.id, "user", trimmed || "[image]", undefined, imageUrl);
 
     if (!streakUpdatedRef.current && session?.user) {
       streakUpdatedRef.current = true;
@@ -557,6 +593,9 @@ const ChatPage = () => {
 
   const showTypingIndicator = isRealUser ? otherTyping : typing;
 
+  // Display name: in owner mode, show "User" or we could fetch their name
+  const headerName = isOwnerMode ? "Chat" : companion.name;
+
   return (
     <div className="mx-auto flex h-screen w-full max-w-2xl flex-col bg-background">
       {!online && (
@@ -570,14 +609,15 @@ const ChatPage = () => {
         <button onClick={() => navigate(-1)} className="p-1">
           <ArrowLeft className="h-5 w-5" />
         </button>
-        <button className="relative" onClick={() => setReportOpen(true)}>
+        <button className="relative" onClick={() => !isOwnerMode && setReportOpen(true)}>
           <img src={companion.image} alt={companion.name} className="h-10 w-10 rounded-full object-cover" />
           <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${online ? "bg-accent" : "bg-muted-foreground"}`} />
         </button>
-        <button className="flex-1 text-left" onClick={() => setReportOpen(true)}>
+        <button className="flex-1 text-left" onClick={() => !isOwnerMode && setReportOpen(true)}>
           <h2 className="text-sm font-bold">
             {companion.name}
             {isRealUser && <span className="ml-1 text-[10px] text-accent font-normal">● Real</span>}
+            {isOwnerMode && <span className="ml-1 text-[10px] text-primary font-normal">● Your Profile</span>}
           </h2>
           <p className="text-[10px] text-muted-foreground">
             {showTypingIndicator ? (
@@ -585,16 +625,18 @@ const ChatPage = () => {
             ) : streaming ? (
               <span className="text-accent animate-pulse-soft">replying...</span>
             ) : online ? (
-              <>Online · ₹{companion.ratePerMin}/min</>
+              isOwnerMode ? "Replying as your companion" : <>Online · ₹{companion.ratePerMin}/min</>
             ) : "Offline"}
           </p>
         </button>
-        <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">
-          <Clock className="h-3 w-3 text-accent" />
-          <span className={displayBalance <= 2 ? "text-destructive" : "text-foreground"}>
-            {Math.floor(displayBalance)}m
-          </span>
-        </div>
+        {!isOwnerMode && (
+          <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">
+            <Clock className="h-3 w-3 text-accent" />
+            <span className={displayBalance <= 2 ? "text-destructive" : "text-foreground"}>
+              {Math.floor(displayBalance)}m
+            </span>
+          </div>
+        )}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button className="p-1">
@@ -610,10 +652,12 @@ const ChatPage = () => {
               <Trash2 className="h-4 w-4 mr-2" />
               Delete Entire Chat
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive">
-              <Flag className="h-4 w-4 mr-2" />
-              Report {companion.name}
-            </DropdownMenuItem>
+            {!isOwnerMode && (
+              <DropdownMenuItem onClick={() => setReportOpen(true)} className="text-destructive">
+                <Flag className="h-4 w-4 mr-2" />
+                Report {companion.name}
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
@@ -640,7 +684,7 @@ const ChatPage = () => {
       )}
 
       {/* Out of balance banner */}
-      {outOfBalance && !chatLocked && (
+      {!isOwnerMode && outOfBalance && !chatLocked && (
         <div className="flex items-center justify-between bg-destructive/10 px-4 py-2.5">
           <div className="flex items-center gap-2 text-xs font-medium text-destructive">
             <Zap className="h-4 w-4" />
@@ -711,7 +755,7 @@ const ChatPage = () => {
       </div>
 
       {/* Quick replies */}
-      {messages.length <= 1 && !outOfBalance && (
+      {!isOwnerMode && messages.length <= 1 && !outOfBalance && (
         <div className="flex gap-2 overflow-x-auto px-4 pb-2">
           {quickReplies.map((qr) => (
             <button
@@ -823,14 +867,14 @@ const ChatPage = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={streaming || outOfBalance}
+            disabled={streaming || (!isOwnerMode && outOfBalance)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-all hover:text-foreground active:scale-90 disabled:opacity-40"
           >
             <ImageIcon className="h-5 w-5" />
           </button>
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            disabled={streaming || outOfBalance}
+            disabled={streaming || (!isOwnerMode && outOfBalance)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-all hover:text-foreground active:scale-90 disabled:opacity-40"
           >
             <Smile className="h-5 w-5" />
@@ -843,13 +887,21 @@ const ChatPage = () => {
               if (isRealUser) sendTyping();
             }}
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
-            placeholder={outOfBalance ? "Recharge to continue chatting..." : pendingImage ? "Add a caption..." : "Type a message..."}
-            disabled={streaming || outOfBalance}
+            placeholder={
+              !isOwnerMode && outOfBalance
+                ? "Recharge to continue chatting..."
+                : pendingImage
+                ? "Add a caption..."
+                : isOwnerMode
+                ? "Reply as your companion..."
+                : "Type a message..."
+            }
+            disabled={streaming || (!isOwnerMode && outOfBalance)}
             className="flex-1 rounded-full bg-secondary px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={(!input.trim() && !pendingImage) || streaming || outOfBalance}
+            disabled={(!input.trim() && !pendingImage) || streaming || (!isOwnerMode && outOfBalance)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-primary text-primary-foreground transition-transform active:scale-90 disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
