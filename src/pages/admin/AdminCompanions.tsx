@@ -183,8 +183,20 @@ const AdminCompanions = () => {
     fetchApplications();
   };
 
-  const pendingApps = applications.filter((a: any) => a.admin_status === "pending" && a.payment_status === "paid");
+  const pendingApps = applications.filter((a: any) => a.admin_status === "pending");
   const allApps = applications;
+
+  const handleMarkPaid = async (app: Application) => {
+    const ref = prompt("Payment reference (e.g. UPI ID, transaction ID):");
+    await (supabase as any).from("companion_applications").update({
+      payment_status: "paid",
+      payment_reference: ref || "manual",
+      updated_at: new Date().toISOString(),
+    }).eq("id", app.id);
+    await logAction("mark_application_paid", "companion_application", app.id, { name: app.name });
+    toast.success(`${app.name} marked as paid`);
+    fetchApplications();
+  };
 
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
