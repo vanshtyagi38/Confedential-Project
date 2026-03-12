@@ -5,6 +5,14 @@ import { componentTagger } from "lovable-tagger";
 import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => ({
+  build: {
+    sourcemap: false, // Never expose source maps in production
+    rollupOptions: {
+      output: {
+        manualChunks: undefined, // Prevent chunk analysis
+      },
+    },
+  },
   server: {
     host: "::",
     port: 8080,

@@ -2,3 +2,6 @@ project_id = "fckraevvqfvribyiqkdo"
 
 [functions.companion-chat]
 verify_jwt = false
+
+[functions.rate-limiter]
+verify_jwt = false

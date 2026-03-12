@@ -1,10 +1,12 @@
 import { Outlet, Navigate } from "react-router-dom";
 import { useAdminAuth } from "@/hooks/useAdminAuth";
+import { useAdminSessionTimeout } from "@/hooks/useAdminSessionTimeout";
 import AdminSidebar from "./AdminSidebar";
 import { Loader2 } from "lucide-react";
 
 const AdminLayout = () => {
   const { session, isAdmin, loading, signOut } = useAdminAuth();
+  useAdminSessionTimeout(signOut);
 
   if (loading) {
     return (

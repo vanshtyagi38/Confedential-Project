@@ -1,7 +1,7 @@
 import { NavLink, useLocation } from "react-router-dom";
 import {
   LayoutDashboard, Users, MessageSquare, CreditCard,
-  BarChart3, Settings, Shield, LogOut, Activity, Heart, HelpCircle, UserPlus, Bell
+  BarChart3, Settings, Shield, LogOut, Activity, Heart, HelpCircle, UserPlus, Bell, ShieldCheck
 } from "lucide-react";
 
 const links = [
@@ -15,6 +15,7 @@ const links = [
   { to: "/admin/activity", icon: Activity, label: "Activity Log" },
   { to: "/admin/support", icon: HelpCircle, label: "Help & Support" },
   { to: "/admin/wishlist", icon: UserPlus, label: "Wishlist" },
+  { to: "/admin/security", icon: ShieldCheck, label: "Security" },
   { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
 

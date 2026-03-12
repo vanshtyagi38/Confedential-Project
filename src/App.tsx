@@ -26,6 +26,7 @@ import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminWishlist from "./pages/admin/AdminWishlist";
 import AdminNotifications from "./pages/admin/AdminNotifications";
+import AdminSecurity from "./pages/admin/AdminSecurity";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
@@ -86,6 +87,7 @@ const App = () => (
                 <Route path="support" element={<AdminSupport />} />
                 <Route path="wishlist" element={<AdminWishlist />} />
                 <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="security" element={<AdminSecurity />} />
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 
