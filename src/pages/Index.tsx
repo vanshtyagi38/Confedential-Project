@@ -11,7 +11,7 @@ import { useCompanions } from "@/hooks/useCompanions";
 import Footer from "@/components/Footer";
 import EngagementSections from "@/components/EngagementSections";
 import InstallAppBanner from "@/components/InstallAppBanner";
-import JustJoined from "@/components/JustJoined";
+import ActiveNow from "@/components/ActiveNow";
 import ActiveNow from "@/components/ActiveNow";
 import { supabase } from "@/integrations/supabase/client";
 
