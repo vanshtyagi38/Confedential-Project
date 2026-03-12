@@ -12,33 +12,31 @@ import {
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { UserPlus, Upload, CreditCard, Loader2, CheckCircle, Copy } from "lucide-react";
+import { UserPlus, Upload, Loader2, CheckCircle, Camera } from "lucide-react";
 
-const UPI_ID = "yourcompany@upi"; // Replace with actual UPI ID
-
-const cities = ["Delhi", "Gurugram", "Noida", "Ghaziabad", "Faridabad"];
+const cities = ["Delhi", "Gurugram", "Noida", "Ghaziabad", "Faridabad", "Mumbai", "Bangalore", "Hyderabad", "Pune", "Kolkata", "Chennai", "Jaipur", "Lucknow"];
 
 const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () => void }) => {
-  const { session } = useAuth();
-  const [step, setStep] = useState<"form" | "payment" | "done">("form");
+  const { session, profile } = useAuth();
+  const [step, setStep] = useState<"form" | "done">("form");
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
-    name: "",
-    age: "",
-    gender: "female",
-    city: "Delhi",
+    name: profile?.display_name || "",
+    age: profile?.age?.toString() || "",
+    gender: profile?.gender || "female",
+    city: "",
     languages: "Hindi / English",
     tag: "",
     bio: "",
+    interests: "",
   });
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [paymentRef, setPaymentRef] = useState("");
-  const [applicationId, setApplicationId] = useState<string | null>(null);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
       setImageFile(file);
       setImagePreview(URL.createObjectURL(file));
     }
@@ -54,36 +52,39 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
       toast.error("You must be at least 18 years old");
       return;
     }
+    if (!imageFile) {
+      toast.error("Please upload your photo");
+      return;
+    }
     setSaving(true);
 
     let imageUrl = null;
-    if (imageFile) {
-      const ext = imageFile.name.split(".").pop();
-      const path = `app-${session.user.id}-${Date.now()}.${ext}`;
-      const { error } = await supabase.storage
-        .from("companion-images")
-        .upload(path, imageFile, { contentType: imageFile.type });
-      if (!error) {
-        const { data } = supabase.storage.from("companion-images").getPublicUrl(path);
-        imageUrl = data.publicUrl;
-      }
+    const ext = imageFile.name.split(".").pop();
+    const path = `app-${session.user.id}-${Date.now()}.${ext}`;
+    const { error: uploadErr } = await supabase.storage
+      .from("companion-images")
+      .upload(path, imageFile, { contentType: imageFile.type });
+    if (!uploadErr) {
+      const { data } = supabase.storage.from("companion-images").getPublicUrl(path);
+      imageUrl = data.publicUrl;
     }
 
-    const { data, error } = await (supabase as any)
+    const { error } = await (supabase as any)
       .from("companion_applications")
       .insert({
         user_id: session.user.id,
         name: form.name,
         age: parseInt(form.age),
         gender: form.gender,
-        city: form.city,
+        city: form.city || "Delhi",
         languages: form.languages,
         tag: form.tag || "New Companion",
         bio: form.bio,
+        interests: form.interests,
         image_url: imageUrl,
-      })
-      .select("id")
-      .single();
+        payment_status: "free",
+        admin_status: "pending",
+      });
 
     if (error) {
       toast.error("Failed to submit application");
@@ -91,43 +92,16 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
       return;
     }
 
-    setApplicationId(data.id);
-    setSaving(false);
-    setStep("payment");
-  };
-
-  const handlePaymentSubmit = async () => {
-    if (!paymentRef.trim()) {
-      toast.error("Please enter your UPI transaction reference");
-      return;
-    }
-    setSaving(true);
-
-    await (supabase as any)
-      .from("companion_applications")
-      .update({
-        payment_status: "paid",
-        payment_reference: paymentRef.trim(),
-      })
-      .eq("id", applicationId);
-
     setSaving(false);
     setStep("done");
     toast.success("Application submitted! We'll review it within 24 hours.");
   };
 
-  const copyUpi = () => {
-    navigator.clipboard.writeText(UPI_ID);
-    toast.success("UPI ID copied!");
-  };
-
   const resetAndClose = () => {
     setStep("form");
-    setForm({ name: "", age: "", gender: "female", city: "Delhi", languages: "Hindi / English", tag: "", bio: "" });
+    setForm({ name: profile?.display_name || "", age: profile?.age?.toString() || "", gender: profile?.gender || "female", city: "", languages: "Hindi / English", tag: "", bio: "", interests: "" });
     setImageFile(null);
     setImagePreview(null);
-    setPaymentRef("");
-    setApplicationId(null);
     onClose();
   };
 
@@ -137,30 +111,33 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <UserPlus className="h-5 w-5 text-primary" />
-            {step === "form" ? "Register as Companion" : step === "payment" ? "Complete Payment" : "Application Submitted!"}
+            {step === "form" ? "Register as Companion" : "Application Submitted!"}
           </DialogTitle>
         </DialogHeader>
 
         {step === "form" && (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Pay ₹199 listing fee to get your profile listed. Start receiving chats and earn money!
+              Register as a companion and start chatting with real people! Your profile will be reviewed by admin.
             </p>
 
             {/* Photo */}
-            <div className="flex items-center gap-4">
-              {imagePreview ? (
-                <img src={imagePreview} alt="" className="h-16 w-16 rounded-full object-cover ring-2 ring-primary/30" />
-              ) : (
-                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-muted">
-                  <Upload className="h-6 w-6 text-muted-foreground" />
+            <div className="flex justify-center">
+              <button onClick={() => document.getElementById("companion-photo")?.click()} className="relative">
+                {imagePreview ? (
+                  <img src={imagePreview} alt="" className="h-20 w-20 rounded-full object-cover ring-2 ring-primary/30" />
+                ) : (
+                  <div className="flex h-20 w-20 items-center justify-center rounded-full bg-muted">
+                    <Upload className="h-8 w-8 text-muted-foreground" />
+                  </div>
+                )}
+                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary border-2 border-background">
+                  <Camera className="h-3.5 w-3.5 text-primary-foreground" />
                 </div>
-              )}
-              <div className="flex-1">
-                <Label>Your Photo *</Label>
-                <Input type="file" accept="image/*" onChange={handleImageChange} />
-              </div>
+              </button>
+              <input id="companion-photo" type="file" accept="image/*" className="hidden" onChange={handleImageChange} />
             </div>
+            <p className="text-center text-[10px] text-muted-foreground">Tap to upload your photo *</p>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
@@ -169,7 +146,7 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
               </div>
               <div>
                 <Label>Age *</Label>
-                <Input type="number" min={18} max={30} value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} placeholder="18-30" />
+                <Input type="number" min={18} max={35} value={form.age} onChange={(e) => setForm({ ...form, age: e.target.value })} placeholder="18-35" />
               </div>
             </div>
 
@@ -187,7 +164,7 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
               <div>
                 <Label>City</Label>
                 <Select value={form.city} onValueChange={(v) => setForm({ ...form, city: v })}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
                   <SelectContent>
                     {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
                   </SelectContent>
@@ -196,8 +173,18 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
             </div>
 
             <div>
+              <Label>Languages</Label>
+              <Input value={form.languages} onChange={(e) => setForm({ ...form, languages: e.target.value })} placeholder="Hindi / English" />
+            </div>
+
+            <div>
               <Label>Tagline</Label>
               <Input value={form.tag} onChange={(e) => setForm({ ...form, tag: e.target.value })} placeholder="e.g. College Cutie, Fitness Babe" />
+            </div>
+
+            <div>
+              <Label>Interests</Label>
+              <Input value={form.interests} onChange={(e) => setForm({ ...form, interests: e.target.value })} placeholder="e.g. Music, Movies, Gaming, Travel" />
             </div>
 
             <div>
@@ -210,47 +197,14 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
               />
             </div>
 
+            <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
+              🔒 Your profile will be reviewed by admin before going live. Only approved profiles appear in the grid.
+            </div>
+
             <DialogFooter>
               <Button onClick={handleSubmitForm} disabled={saving} className="w-full">
-                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                Continue to Payment (₹199)
-              </Button>
-            </DialogFooter>
-          </div>
-        )}
-
-        {step === "payment" && (
-          <div className="space-y-4">
-            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center">
-              <p className="text-sm font-semibold mb-2">Pay ₹199 via UPI</p>
-              <div className="flex items-center justify-center gap-2 bg-card rounded-xl px-4 py-2">
-                <span className="text-base font-mono font-bold">{UPI_ID}</span>
-                <button onClick={copyUpi} className="text-primary">
-                  <Copy className="h-4 w-4" />
-                </button>
-              </div>
-              <p className="mt-2 text-xs text-muted-foreground">
-                Pay using any UPI app (PhonePe, Google Pay, Paytm, etc.)
-              </p>
-            </div>
-
-            <div>
-              <Label>UPI Transaction Reference / UTR Number *</Label>
-              <Input
-                value={paymentRef}
-                onChange={(e) => setPaymentRef(e.target.value)}
-                placeholder="Enter transaction reference number"
-              />
-              <p className="mt-1 text-xs text-muted-foreground">
-                Enter the transaction reference from your UPI app after payment
-              </p>
-            </div>
-
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setStep("form")}>Back</Button>
-              <Button onClick={handlePaymentSubmit} disabled={saving}>
-                {saving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Submit Payment Proof
+                {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
+                Submit Application
               </Button>
             </DialogFooter>
           </div>
@@ -261,8 +215,8 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
             <CheckCircle className="mx-auto h-12 w-12 text-green-500" />
             <h3 className="text-lg font-bold">Application Received!</h3>
             <p className="text-sm text-muted-foreground">
-              Our team will verify your payment and review your profile within 24 hours.
-              You'll be notified once your profile is live!
+              Our team will review your profile within 24 hours.
+              You'll appear in the companion grid once approved!
             </p>
             <Button onClick={resetAndClose} className="w-full">Done</Button>
           </div>
