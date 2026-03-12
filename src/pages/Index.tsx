@@ -11,7 +11,6 @@ import { useCompanions } from "@/hooks/useCompanions";
 import Footer from "@/components/Footer";
 import EngagementSections from "@/components/EngagementSections";
 import InstallAppBanner from "@/components/InstallAppBanner";
-import JustJoined from "@/components/JustJoined";
 import ActiveNow from "@/components/ActiveNow";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -131,7 +130,7 @@ const Index = () => {
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
       <AppHeader />
       <BalanceCard />
-      <JustJoined />
+      
 
       <div className="mx-4 mt-3 flex items-center justify-center gap-2 rounded-[16px] border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/8 to-primary/5 px-4 py-2.5 shadow-[0_1px_8px_-2px_hsl(var(--primary)/0.08)]">
         <Circle className="h-2.5 w-2.5 fill-green-500 text-green-500 animate-pulse-soft" />
