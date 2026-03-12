@@ -183,8 +183,20 @@ const AdminCompanions = () => {
     fetchApplications();
   };
 
-  const pendingApps = applications.filter((a: any) => a.admin_status === "pending" && a.payment_status === "paid");
+  const pendingApps = applications.filter((a: any) => a.admin_status === "pending");
   const allApps = applications;
+
+  const handleMarkPaid = async (app: Application) => {
+    const ref = prompt("Payment reference (e.g. UPI ID, transaction ID):");
+    await (supabase as any).from("companion_applications").update({
+      payment_status: "paid",
+      payment_reference: ref || "manual",
+      updated_at: new Date().toISOString(),
+    }).eq("id", app.id);
+    await logAction("mark_application_paid", "companion_application", app.id, { name: app.name });
+    toast.success(`${app.name} marked as paid`);
+    fetchApplications();
+  };
 
   const statusBadge = (status: string) => {
     const colors: Record<string, string> = {
@@ -329,8 +341,13 @@ const AdminCompanions = () => {
                       {new Date(app.created_at).toLocaleDateString()}
                     </TableCell>
                     <TableCell>
-                      {app.admin_status === "pending" && app.payment_status === "paid" && (
+                      {app.admin_status === "pending" && (
                         <div className="flex gap-1">
+                          {app.payment_status !== "paid" && (
+                            <Button size="sm" variant="outline" onClick={() => handleMarkPaid(app)} title="Mark as Paid" className="text-xs">
+                              💰 Paid
+                            </Button>
+                          )}
                           <Button size="icon" variant="ghost" onClick={() => handleApproveApp(app)} className="text-green-500" title="Approve">
                             <CheckCircle className="h-4 w-4" />
                           </Button>
