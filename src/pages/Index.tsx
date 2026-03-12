@@ -140,6 +140,8 @@ const Index = () => {
         <Users className="h-4 w-4 text-primary/60" />
       </div>
 
+      <ActiveNow companions={matchedCompanions} presenceMap={presenceMap} />
+
       <div className="mt-5 px-4">
         <div className="flex items-center gap-2">
           <Sparkles className="h-5 w-5 text-accent" />
