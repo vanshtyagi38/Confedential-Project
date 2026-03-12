@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import JustJoined from "@/components/JustJoined";
 import { Shield, Share2, Copy, Zap, Clock, ChevronRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
