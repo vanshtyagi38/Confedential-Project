@@ -38,13 +38,17 @@ const getTimeString = () =>
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/companion-chat`;
 
+// Human-like typing delay: ~40-60 WPM = ~1-1.5 sec per word
+// Average response ~6-7 words → ~6-10 seconds total thinking + typing
 function getHumanDelay(isImage: boolean): number {
-  if (isImage) return 1800 + Math.random() * 2200;
-  return 800 + Math.random() * 1200;
+  if (isImage) return 3000 + Math.random() * 3000; // 3-6s for image processing
+  // Simulate "reading" the message + thinking
+  return 2000 + Math.random() * 3000; // 2-5s reading/thinking delay
 }
 
 function getStreamStartDelay(): number {
-  return 400 + Math.random() * 600;
+  // Additional delay before starting to "type" — simulates typing start
+  return 1500 + Math.random() * 2000; // 1.5-3.5s
 }
 
 async function streamChat({
