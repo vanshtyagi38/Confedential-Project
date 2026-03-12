@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { usePresence } from "@/hooks/usePresence";
 import Index from "./pages/Index";
 import ChatPage from "./pages/ChatPage";
 import RechargePage from "./pages/RechargePage";
@@ -24,6 +25,7 @@ import AdminActivity from "./pages/admin/AdminActivity";
 import AdminSettings from "./pages/admin/AdminSettings";
 import AdminSupport from "./pages/admin/AdminSupport";
 import AdminWishlist from "./pages/admin/AdminWishlist";
+import AdminNotifications from "./pages/admin/AdminNotifications";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
@@ -47,6 +49,12 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+// Component that initializes presence tracking
+const PresenceTracker = ({ children }: { children: React.ReactNode }) => {
+  usePresence();
+  return <>{children}</>;
+};
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
@@ -54,33 +62,36 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <AuthProvider>
-          <Routes>
-            <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-            <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
-            <Route path="/recharge" element={<ProtectedRoute><RechargePage /></ProtectedRoute>} />
-            <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
-            <Route path="/earn" element={<ProtectedRoute><EarnPage /></ProtectedRoute>} />
-            <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
-            <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
+          <PresenceTracker>
+            <Routes>
+              <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+              <Route path="/recharge" element={<ProtectedRoute><RechargePage /></ProtectedRoute>} />
+              <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
+              <Route path="/earn" element={<ProtectedRoute><EarnPage /></ProtectedRoute>} />
+              <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
+              <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
 
-            {/* Admin routes */}
-            <Route path="/admin/login" element={<AdminLogin />} />
-            <Route path="/admin" element={<AdminLayout />}>
-              <Route index element={<AdminDashboard />} />
-              <Route path="companions" element={<AdminCompanions />} />
-              <Route path="users" element={<AdminUsers />} />
-              <Route path="conversations" element={<AdminConversations />} />
-              <Route path="payments" element={<AdminPayments />} />
-              <Route path="stats" element={<AdminStats />} />
-              <Route path="activity" element={<AdminActivity />} />
-              <Route path="support" element={<AdminSupport />} />
-              <Route path="wishlist" element={<AdminWishlist />} />
-              <Route path="settings" element={<AdminSettings />} />
-            </Route>
+              {/* Admin routes */}
+              <Route path="/admin/login" element={<AdminLogin />} />
+              <Route path="/admin" element={<AdminLayout />}>
+                <Route index element={<AdminDashboard />} />
+                <Route path="companions" element={<AdminCompanions />} />
+                <Route path="users" element={<AdminUsers />} />
+                <Route path="conversations" element={<AdminConversations />} />
+                <Route path="payments" element={<AdminPayments />} />
+                <Route path="stats" element={<AdminStats />} />
+                <Route path="activity" element={<AdminActivity />} />
+                <Route path="support" element={<AdminSupport />} />
+                <Route path="wishlist" element={<AdminWishlist />} />
+                <Route path="notifications" element={<AdminNotifications />} />
+                <Route path="settings" element={<AdminSettings />} />
+              </Route>
 
-            <Route path="*" element={<NotFound />} />
-          </Routes>
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </PresenceTracker>
         </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>

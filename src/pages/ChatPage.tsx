@@ -1,23 +1,18 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Send, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap, Ban, MoreVertical, Trash2, Flag, AlertTriangle } from "lucide-react";
+import { ArrowLeft, Send, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap, Ban, MoreVertical, Trash2, Flag, AlertTriangle, Smile } from "lucide-react";
 import { useCompanionStatus } from "@/hooks/useCompanions";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { updateStreak } from "@/lib/streakEngine";
 import InstallAppPopup from "@/components/InstallAppPopup";
+import { useRealtimeChat, useTypingIndicator } from "@/hooks/useRealtimeChat";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
+  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
 type MessageStatus = "sending" | "sent" | "delivered" | "seen";
@@ -35,6 +30,7 @@ type Message = {
 type ChatContent = string | Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }>;
 type ChatMsg = { role: "user" | "assistant"; content: ChatContent };
 
+const EMOJI_LIST = ["😊", "😂", "❤️", "🥰", "😍", "🔥", "💕", "😘", "👋", "🙈", "😏", "💫", "✨", "😎", "🥺", "💜"];
 const quickReplies = ["Hey! 👋", "How are you?", "Tell me about yourself", "I'm bored 😴", "Make me laugh 😂"];
 
 const getTimeString = () =>
@@ -162,6 +158,7 @@ const ChatPage = () => {
   const [online, setOnline] = useState(true);
   const [outOfBalance, setOutOfBalance] = useState(false);
   const [displayBalance, setDisplayBalance] = useState(profile?.balance_minutes || 0);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const streamTextRef = useRef("");
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -175,17 +172,49 @@ const ChatPage = () => {
   const userMsgCountRef = useRef(0);
   const installThresholdRef = useRef(5 + Math.floor(Math.random() * 6));
 
-  // Selection mode for deleting messages
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
-
-  // Report dialog
   const [reportOpen, setReportOpen] = useState(false);
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
-
-  // Delete chat dialog
   const [deleteChatOpen, setDeleteChatOpen] = useState(false);
+
+  // Determine if this is a real user companion (no AI)
+  const isRealUser = companion?.isRealUser === true;
+
+  // Real-time chat for real user companions
+  const handleRealtimeMessage = useCallback((msg: any) => {
+    if (!isRealUser) return;
+    const newMsg: Message = {
+      id: msg.id,
+      text: msg.content,
+      sender: msg.role === "user" ? "companion" : "companion", // from the other user's perspective
+      time: new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
+      imageUrl: msg.image_url || undefined,
+      status: "delivered",
+    };
+    setMessages((prev) => {
+      // Don't add if already exists
+      if (prev.some(m => m.id === msg.id)) return prev;
+      return [...prev, newMsg];
+    });
+    // Mark as seen after a moment
+    setTimeout(() => {
+      setMessages(prev => prev.map(m => m.id === msg.id ? { ...m, status: "seen" } : m));
+    }, 1500);
+  }, [isRealUser]);
+
+  useRealtimeChat(
+    isRealUser ? companion?.id : undefined,
+    session?.user?.id,
+    companion?.ownerUserId,
+    handleRealtimeMessage
+  );
+
+  const { otherTyping, sendTyping } = useTypingIndicator(
+    isRealUser ? companion?.id : undefined,
+    session?.user?.id
+  );
 
   // Online tracking
   useEffect(() => {
@@ -238,7 +267,7 @@ const ChatPage = () => {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, typing, streaming]);
+  }, [messages, typing, streaming, otherTyping]);
 
   useEffect(() => {
     setDisplayBalance(profile?.balance_minutes || 0);
@@ -322,14 +351,8 @@ const ChatPage = () => {
   const handleDeleteSelected = async () => {
     if (!session?.user || selectedIds.size === 0) return;
     const idsArray = Array.from(selectedIds);
-    // Delete from DB
     await (supabase as any).from("chat_messages").delete().in("id", idsArray).eq("user_id", session.user.id);
-    // Remove from state
     setMessages(prev => prev.filter(m => !selectedIds.has(m.id)));
-    setChatHistory(prev => {
-      // Rebuild chat history from remaining messages
-      return prev; // simplified - just keep existing history
-    });
     setSelectedIds(new Set());
     setSelectMode(false);
     toast.success(`${idsArray.length} message(s) deleted`);
@@ -390,6 +413,7 @@ const ChatPage = () => {
       return;
     }
     setInput("");
+    setShowEmojiPicker(false);
     startTimer();
 
     const hasImage = !!pendingImage;
@@ -442,6 +466,12 @@ const ChatPage = () => {
       });
     }
 
+    // For real user companions, just save the message — no AI response
+    if (isRealUser) {
+      return;
+    }
+
+    // AI companion flow
     let userContent: ChatContent;
     if (imageUrl) {
       const parts: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> = [];
@@ -525,6 +555,8 @@ const ChatPage = () => {
     }
   };
 
+  const showTypingIndicator = isRealUser ? otherTyping : typing;
+
   return (
     <div className="mx-auto flex h-screen w-full max-w-2xl flex-col bg-background">
       {!online && (
@@ -543,9 +575,12 @@ const ChatPage = () => {
           <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${online ? "bg-accent" : "bg-muted-foreground"}`} />
         </button>
         <button className="flex-1 text-left" onClick={() => setReportOpen(true)}>
-          <h2 className="text-sm font-bold">{companion.name}</h2>
+          <h2 className="text-sm font-bold">
+            {companion.name}
+            {isRealUser && <span className="ml-1 text-[10px] text-accent font-normal">● Real</span>}
+          </h2>
           <p className="text-[10px] text-muted-foreground">
-            {typing ? (
+            {showTypingIndicator ? (
               <span className="text-primary animate-pulse-soft">typing...</span>
             ) : streaming ? (
               <span className="text-accent animate-pulse-soft">replying...</span>
@@ -663,7 +698,7 @@ const ChatPage = () => {
           </div>
         ))}
 
-        {typing && (
+        {showTypingIndicator && (
           <div className="flex justify-start animate-fade-in-up">
             <img src={companion.image} alt="" className="mr-2 mt-1 h-7 w-7 shrink-0 rounded-full object-cover" />
             <div className="flex gap-1.5 rounded-2xl bg-card px-4 py-3 shadow-card rounded-bl-md">
@@ -685,6 +720,21 @@ const ChatPage = () => {
               className="shrink-0 rounded-full border bg-card px-4 py-2 text-xs font-medium text-foreground transition-all hover:bg-secondary active:scale-95"
             >
               {qr}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {/* Emoji picker */}
+      {showEmojiPicker && (
+        <div className="flex flex-wrap gap-2 px-4 pb-2 animate-fade-in-up">
+          {EMOJI_LIST.map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => setInput((prev) => prev + emoji)}
+              className="text-xl hover:scale-125 transition-transform active:scale-90"
+            >
+              {emoji}
             </button>
           ))}
         </div>
@@ -732,7 +782,6 @@ const ChatPage = () => {
             {reportReason === "Other" && (
               <textarea
                 placeholder="Describe the issue..."
-                value={reportReason === "Other" ? "" : reportReason}
                 onChange={(e) => setReportReason(e.target.value || "Other")}
                 className="w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none resize-none h-20"
               />
@@ -779,10 +828,20 @@ const ChatPage = () => {
           >
             <ImageIcon className="h-5 w-5" />
           </button>
+          <button
+            onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+            disabled={streaming || outOfBalance}
+            className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-all hover:text-foreground active:scale-90 disabled:opacity-40"
+          >
+            <Smile className="h-5 w-5" />
+          </button>
           <input
             type="text"
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              if (isRealUser) sendTyping();
+            }}
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
             placeholder={outOfBalance ? "Recharge to continue chatting..." : pendingImage ? "Add a caption..." : "Type a message..."}
             disabled={streaming || outOfBalance}
