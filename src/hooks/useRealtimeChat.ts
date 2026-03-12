@@ -35,10 +35,8 @@ export function useRealtimeChat(
         },
         (payload: any) => {
           const msg = payload.new as RealtimeMessage;
-          // Only handle messages from the OTHER user
-          if (msg.user_id !== userId) {
-            onNewMessage(msg);
-          }
+          // Pass all messages to the callback - it handles role-based filtering
+          onNewMessage(msg);
         }
       )
       .subscribe();
