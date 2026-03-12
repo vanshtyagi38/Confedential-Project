@@ -1,34 +1,19 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
-  HelpCircle,
-  LogOut,
-  Clock,
-  Copy,
-  Share2,
-  Flame,
-  MessageSquare,
-  Users,
-  TrendingUp,
-  ChevronRight,
-  Zap,
-  Star,
-  UserPlus,
-  Edit3,
-  CheckCircle,
-  Trash2,
-  Camera,
+  HelpCircle, LogOut, Clock, Copy, Share2, Flame, MessageSquare,
+  Users, TrendingUp, ChevronRight, Zap, Star, UserPlus, Edit3,
+  CheckCircle, Trash2, Camera, Bell,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useProfileStats } from "@/hooks/useProfileStats";
+import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
+import CompanionRegistration from "@/components/CompanionRegistration";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import onboardBoy from "@/assets/onboard-boy.png";
@@ -47,13 +32,14 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { session, profile, signOut, refreshProfile } = useAuth();
   const stats = useProfileStats();
+  const { requestPermission } = useNotifications();
   const [copying, setCopying] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [wishlistOpen, setWishlistOpen] = useState(false);
-  const [wishlistJoined, setWishlistJoined] = useState(false);
+  const [companionRegOpen, setCompanionRegOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [notifEnabled, setNotifEnabled] = useState(false);
 
   // Edit profile state
   const [editName, setEditName] = useState(profile?.display_name || "");
@@ -67,12 +53,15 @@ const ProfilePage = () => {
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Preferred gender switch
   const prefersFemale = profile?.preferred_gender === "female";
-
-  // Profile completion check
   const isProfileComplete = !!(profile?.display_name && profile?.gender && profile?.age);
   const profileCompletionRewardClaimed = localStorage.getItem(`profile_complete_${session?.user?.id}`);
+
+  useEffect(() => {
+    if ("Notification" in window) {
+      setNotifEnabled(Notification.permission === "granted");
+    }
+  }, []);
 
   const handleSignOut = async () => {
     await signOut();
@@ -106,11 +95,7 @@ const ProfilePage = () => {
   const shareReferralLink = async () => {
     if (navigator.share) {
       try {
-        await navigator.share({
-          title: "Join SingleTape",
-          text: "Hey! I found this amazing app. Join with my link and get 5 free minutes! 🎉",
-          url: referralLink,
-        });
+        await navigator.share({ title: "Join SingleTape", text: "Hey! I found this amazing app. Join with my link and get 5 free minutes! 🎉", url: referralLink });
       } catch {}
     } else {
       copyReferralLink();
@@ -123,7 +108,6 @@ const ProfilePage = () => {
     setEditAge(profile?.age || 22);
     setEditImageFile(null);
     setEditImagePreview(null);
-    // Load extra fields from DB
     if (session?.user) {
       const { data } = await (supabase as any).from("user_profiles").select("contact, city, email, image_url").eq("user_id", session.user.id).maybeSingle();
       if (data) {
@@ -161,29 +145,16 @@ const ProfilePage = () => {
     }
 
     const updateData: any = {
-      display_name: editName,
-      gender: editGender,
-      age: editAge,
-      contact: editContact,
-      city: editCity,
-      email: editEmail,
+      display_name: editName, gender: editGender, age: editAge,
+      contact: editContact, city: editCity, email: editEmail,
     };
     if (imageUrl) updateData.image_url = imageUrl;
 
     await (supabase as any).from("user_profiles").update(updateData).eq("user_id", session.user.id);
 
-    // Award 10 min if profile newly completed
     if (!profileCompletionRewardClaimed && editName && editGender && editAge) {
-      await (supabase as any).from("user_profiles").update({
-        balance_minutes: (profile?.balance_minutes || 0) + 10,
-      }).eq("user_id", session.user.id);
-      await (supabase as any).from("wallet_transactions").insert({
-        user_id: session.user.id,
-        type: "credit",
-        minutes: 10,
-        amount: 0,
-        description: "🎁 Profile completion reward: +10 minutes!",
-      });
+      await (supabase as any).from("user_profiles").update({ balance_minutes: (profile?.balance_minutes || 0) + 10 }).eq("user_id", session.user.id);
+      await (supabase as any).from("wallet_transactions").insert({ user_id: session.user.id, type: "credit", minutes: 10, amount: 0, description: "🎁 Profile completion reward: +10 minutes!" });
       localStorage.setItem(`profile_complete_${session.user.id}`, "true");
       toast.success("🎉 Profile completed! +10 free minutes added!");
     } else {
@@ -203,12 +174,20 @@ const ProfilePage = () => {
     toast.success(`Now chatting with ${newPref === "female" ? "girls 👧" : "boys 👦"}`);
   };
 
+  const handleToggleNotifications = async () => {
+    if (!notifEnabled) {
+      const granted = await requestPermission();
+      setNotifEnabled(granted);
+      if (granted) toast.success("Notifications enabled! 🔔");
+      else toast.error("Notifications blocked. Enable from browser settings.");
+    }
+  };
+
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "CONFIRM" || !session?.user) return;
     setDeleting(true);
     const userId = session.user.id;
 
-    // Delete user data in order
     await (supabase as any).from("chat_messages").delete().eq("user_id", userId);
     await (supabase as any).from("wallet_transactions").delete().eq("user_id", userId);
     await (supabase as any).from("user_streaks").delete().eq("user_id", userId);
@@ -220,18 +199,6 @@ const ProfilePage = () => {
     await supabase.auth.signOut();
     toast.success("Account deleted permanently");
     navigate("/onboarding", { replace: true });
-  };
-
-  const handleJoinWishlist = async () => {
-    if (!session?.user) return;
-    await (supabase as any).from("companion_wishlist").insert({
-      user_id: session.user.id,
-      name: profile?.display_name || "User",
-      email: session.user.email || "",
-      gender: profile?.gender || "male",
-    });
-    setWishlistJoined(true);
-    toast.success("You're on the wishlist! We'll notify you when it's live 🎉");
   };
 
   return (
@@ -256,7 +223,6 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* Low balance warning */}
       {isLowBalance && (
         <div className="mx-4 mb-3 flex items-center gap-2 rounded-2xl border border-destructive/20 bg-destructive/10 px-4 py-3">
           <Zap className="h-4 w-4 shrink-0 text-destructive" />
@@ -299,6 +265,20 @@ const ProfilePage = () => {
           <Switch checked={prefersFemale} onCheckedChange={handleTogglePreference} />
           <span className="text-xs text-muted-foreground">👧</span>
         </div>
+      </div>
+
+      {/* Notifications Toggle */}
+      <div className="mx-4 mb-4 flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-card">
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
+            <Bell className="h-5 w-5 text-accent" />
+          </div>
+          <div>
+            <p className="text-sm font-bold">Push Notifications</p>
+            <p className="text-xs text-muted-foreground">{notifEnabled ? "Enabled 🔔" : "Disabled"}</p>
+          </div>
+        </div>
+        <Switch checked={notifEnabled} onCheckedChange={handleToggleNotifications} />
       </div>
 
       {/* Stats Grid */}
@@ -404,9 +384,9 @@ const ProfilePage = () => {
           <span className="flex-1 text-left">Earn Free Minutes</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
-        <button onClick={() => setWishlistOpen(true)} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
+        <button onClick={() => setCompanionRegOpen(true)} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
           <UserPlus className="h-5 w-5 text-muted-foreground" />
-          <span className="flex-1 text-left">List Your Profile to Chat</span>
+          <span className="flex-1 text-left">Register as Companion</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
         <button onClick={() => navigate("/support")} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
@@ -435,7 +415,6 @@ const ProfilePage = () => {
               🔒 Your data is 100% safe and secured. We never share your info.
             </div>
 
-            {/* Profile Image */}
             <div className="flex justify-center">
               <button onClick={() => fileInputRef.current?.click()} className="relative">
                 <img src={editImagePreview || avatarImg} alt="Avatar" className="h-20 w-20 rounded-full object-cover border-2 border-border" />
@@ -515,31 +494,8 @@ const ProfilePage = () => {
         </DialogContent>
       </Dialog>
 
-      {/* Wishlist Dialog */}
-      <Dialog open={wishlistOpen} onOpenChange={setWishlistOpen}>
-        <DialogContent className="max-w-sm rounded-3xl text-center">
-          <DialogHeader>
-            <DialogTitle>Become a Chat Partner 💬</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 py-2">
-            <p className="text-sm text-muted-foreground">List your profile so others can chat with you! Join the wishlist and we'll notify you when this feature goes live.</p>
-            <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
-              🔒 Your identity stays private until you choose to go live.
-            </div>
-            {wishlistJoined ? (
-              <div className="rounded-xl bg-green-500/10 px-4 py-3">
-                <p className="text-sm font-bold text-green-600">✅ You're on the wishlist!</p>
-                <p className="text-xs text-muted-foreground mt-1">We'll notify you when it's ready.</p>
-              </div>
-            ) : (
-              <button onClick={handleJoinWishlist} className="w-full rounded-xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground transition-transform active:scale-95">
-                <UserPlus className="inline h-4 w-4 mr-1" />
-                Join the Wishlist
-              </button>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* Companion Registration */}
+      <CompanionRegistration open={companionRegOpen} onClose={() => setCompanionRegOpen(false)} />
 
       <BottomNav />
     </div>

@@ -61,6 +61,7 @@ export type Companion = {
   bannedAt?: string | null;
   ownerUserId?: string | null;
   upiId?: string | null;
+  interests?: string;
 };
 
 // Map image_key from DB → local Vite asset URL
@@ -134,5 +135,6 @@ export function dbRowToCompanion(row: any): Companion {
     bannedAt: row.banned_at,
     ownerUserId: row.owner_user_id,
     upiId: row.upi_id,
+    interests: row.interests || "",
   };
 }

@@ -154,6 +154,7 @@ const AdminCompanions = () => {
       rate_per_min: 3,
       image_url: app.image_url,
       bio: app.bio,
+      interests: app.interests || "",
       is_real_user: true,
       owner_user_id: app.user_id,
       status: "active",
