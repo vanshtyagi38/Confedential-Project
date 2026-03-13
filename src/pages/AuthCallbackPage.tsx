@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
-  const { session, profile, loading, createProfile } = useAuth();
+  const { session, profile, loading, createProfile, refreshProfile } = useAuth();
   const hasHandledCallback = useRef(false);
 
   useEffect(() => {
@@ -24,13 +24,15 @@ const AuthCallbackPage = () => {
         return;
       }
 
+      const email = activeSession.user.email ?? "";
+      const fallbackDisplayName = email.split("@")[0] || "User";
+
       if (!profile) {
-        const email = activeSession.user.email ?? "";
         const { error } = await createProfile({
           gender: "male",
           preferred_gender: "female",
           age: 22,
-          display_name: email.split("@")[0] || "User",
+          display_name: fallbackDisplayName,
         });
 
         const errorMessage = String((error as { message?: string })?.message ?? error ?? "").toLowerCase();
@@ -39,8 +41,20 @@ const AuthCallbackPage = () => {
           navigate("/onboarding", { replace: true });
           return;
         }
+      } else if (!profile.display_name) {
+        const { error: updateError } = await (supabase as any)
+          .from("user_profiles")
+          .update({ display_name: fallbackDisplayName })
+          .eq("user_id", activeSession.user.id);
+
+        if (updateError) {
+          toast.error("Couldn't complete sign-in. Please try again.");
+          navigate("/onboarding", { replace: true });
+          return;
+        }
       }
 
+      await refreshProfile();
       navigate("/dashboard", { replace: true });
     };
 

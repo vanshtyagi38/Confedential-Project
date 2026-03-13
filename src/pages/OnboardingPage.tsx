@@ -17,6 +17,7 @@ const OnboardingPage = () => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
+  const OAUTH_REDIRECT_URI = "https://www.singletape.in/auth/callback";
 
   // Redirect if already logged in with profile
   useEffect(() => {
@@ -270,7 +271,7 @@ const OnboardingPage = () => {
               <button
                 onClick={async () => {
                   const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: `${window.location.origin}/auth/callback`,
+                    redirect_uri: OAUTH_REDIRECT_URI,
                   });
                   if (error) toast.error("Google sign-in failed. Try again.");
                 }}
@@ -288,7 +289,7 @@ const OnboardingPage = () => {
               <button
                 onClick={async () => {
                   const { error } = await lovable.auth.signInWithOAuth("apple", {
-                    redirect_uri: `${window.location.origin}/auth/callback`,
+                    redirect_uri: OAUTH_REDIRECT_URI,
                   });
                   if (error) toast.error("Apple sign-in failed. Try again.");
                 }}
