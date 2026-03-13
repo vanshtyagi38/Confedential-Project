@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   HelpCircle, LogOut, Clock, Copy, Share2, Flame, MessageSquare,
   Users, TrendingUp, ChevronRight, Zap, Star, UserPlus, Edit3,
-  CheckCircle, Trash2, Camera, Bell,
+  CheckCircle, Trash2, Camera, Bell, Radio,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
