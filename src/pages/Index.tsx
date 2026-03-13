@@ -142,6 +142,7 @@ const Index = () => {
       </div>
 
       <ActiveNow companions={matchedCompanions} presenceMap={presenceMap} />
+      <ActiveUsers />
 
       <div className="mt-5 px-4">
         <div className="flex items-center gap-2">

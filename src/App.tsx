@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { usePresence } from "@/hooks/usePresence";
 import Index from "./pages/Index";
 import ChatPage from "./pages/ChatPage";
+import UserChatPage from "./pages/UserChatPage";
 import RechargePage from "./pages/RechargePage";
 import ChatsListPage from "./pages/ChatsListPage";
 import EarnPage from "./pages/EarnPage";
@@ -68,6 +69,7 @@ const App = () => (
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+              <Route path="/user-chat/:roomId" element={<ProtectedRoute><UserChatPage /></ProtectedRoute>} />
               <Route path="/recharge" element={<ProtectedRoute><RechargePage /></ProtectedRoute>} />
               <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
               <Route path="/earn" element={<ProtectedRoute><EarnPage /></ProtectedRoute>} />
