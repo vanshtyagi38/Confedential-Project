@@ -586,7 +586,7 @@ const OnboardingPage = () => {
           </div>
           <h2 className="text-2xl font-extrabold text-foreground">Check Your Email! 💌</h2>
           <p className="text-sm text-muted-foreground">
-            We sent a code to
+            We sent a 6-digit code to
           </p>
           <p className="text-sm font-semibold text-primary">{email}</p>
         </div>
