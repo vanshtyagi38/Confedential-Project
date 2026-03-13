@@ -221,12 +221,31 @@ async function handleWebhook(req: Request): Promise<Response> {
   const fullToken = typeof payload.data.token === 'string' ? payload.data.token : ''
   const displayToken = fullToken ? fullToken.slice(0, 6) : undefined
 
-  let tokenHash: string | null = null
-  try {
-    tokenHash = payload.data.url ? new URL(payload.data.url).searchParams.get('token_hash') : null
-  } catch {
-    tokenHash = null
+  // Extract token_hash: try payload.data.token_hash first, then URL params (token or token_hash)
+  let tokenHash: string | null = payload.data.token_hash || null
+  if (!tokenHash && payload.data.url) {
+    try {
+      const urlObj = new URL(payload.data.url)
+      tokenHash = urlObj.searchParams.get('token_hash') || urlObj.searchParams.get('token') || null
+      // Also check URL hash fragment for token
+      if (!tokenHash && urlObj.hash) {
+        const hashParams = new URLSearchParams(urlObj.hash.slice(1))
+        tokenHash = hashParams.get('token_hash') || hashParams.get('token') || null
+      }
+    } catch {
+      tokenHash = null
+    }
   }
+
+  console.log('OTP metadata debug', {
+    hasToken: !!fullToken,
+    tokenLength: fullToken?.length,
+    displayToken,
+    hasTokenHash: !!tokenHash,
+    tokenHashPreview: tokenHash ? tokenHash.slice(0, 10) + '...' : null,
+    url: payload.data.url ? payload.data.url.slice(0, 80) + '...' : null,
+    payloadDataKeys: Object.keys(payload.data || {}),
+  })
 
   const templateProps = {
     siteName: SITE_NAME,
