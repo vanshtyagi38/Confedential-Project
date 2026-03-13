@@ -63,7 +63,6 @@ const RechargePage = () => {
 
   const handlePurchase = async () => {
     if (!session?.user || !profile) return;
-    if (!isProfileComplete()) { setShowProfileSetup(true); return; }
     await executePurchase();
   };
 
