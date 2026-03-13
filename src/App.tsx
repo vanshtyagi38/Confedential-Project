@@ -14,6 +14,7 @@ import EarnPage from "./pages/EarnPage";
 import ProfilePage from "./pages/ProfilePage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
+import AuthCallbackPage from "./pages/AuthCallbackPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./components/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
@@ -67,7 +68,9 @@ const App = () => (
           <PresenceTracker>
             <Routes>
               <Route path="/onboarding" element={<OnboardingPage />} />
+              <Route path="/auth/callback" element={<AuthCallbackPage />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
               <Route path="/user-chat/:roomId" element={<ProtectedRoute><UserChatPage /></ProtectedRoute>} />
               <Route path="/recharge" element={<ProtectedRoute><RechargePage /></ProtectedRoute>} />
