@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,27 +10,42 @@ const OnboardingPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const refCode = searchParams.get("ref");
-  const { session, profile, signUpWithEmail, sendOtp, verifyOtp, createProfile } = useAuth();
+  const { session, profile, loading: authLoading, signUpWithEmail, sendOtp, verifyOtp, createProfile } = useAuth();
   const [step, setStep] = useState<"email" | "otp">("email");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
 
-  if (session && profile) {
-    navigate("/", { replace: true });
-    return null;
+  // Redirect if already logged in with profile
+  useEffect(() => {
+    if (!authLoading && session && profile) {
+      navigate("/", { replace: true });
+    }
+  }, [authLoading, session, profile, navigate]);
+
+  // Show loading if auth is still loading
+  if (authLoading) {
+    return (
+      <div className="flex min-h-[100dvh] items-center justify-center bg-background">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
+  // Already authenticated, waiting for redirect
+  if (session && profile) return null;
+
   const handleEmailSubmit = async () => {
-    if (!email.trim() || !email.includes("@")) {
-      toast.error("Enter a valid email");
+    const trimmed = email.trim().toLowerCase();
+    if (!trimmed || !trimmed.includes("@") || !trimmed.includes(".")) {
+      toast.error("Enter a valid email address");
       return;
     }
     setLoading(true);
 
     if (isReturning) {
-      const { error } = await sendOtp(email.trim());
+      const { error } = await sendOtp(trimmed);
       setLoading(false);
       if (error) {
         toast.error(error.message || "Failed to send code");
@@ -39,10 +54,10 @@ const OnboardingPage = () => {
       toast.success("Check your email for the code! 💌");
       setStep("otp");
     } else {
-      const { error, session: newSession } = await signUpWithEmail(email.trim());
+      const { error, session: newSession } = await signUpWithEmail(trimmed);
       if (error) {
         if (error.message?.includes("already registered")) {
-          const { error: otpError } = await sendOtp(email.trim());
+          const { error: otpError } = await sendOtp(trimmed);
           setLoading(false);
           if (otpError) {
             toast.error(otpError.message || "Failed to send code");
@@ -63,7 +78,7 @@ const OnboardingPage = () => {
         gender: "male",
         preferred_gender: "female",
         age: 22,
-        display_name: email.split("@")[0],
+        display_name: trimmed.split("@")[0],
       });
       if (profileError) {
         setLoading(false);
@@ -208,25 +223,35 @@ const OnboardingPage = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              onKeyDown={(e) => e.key === "Enter" && handleEmailSubmit()}
+              onKeyDown={(e) => e.key === "Enter" && !loading && handleEmailSubmit()}
               placeholder="Enter your email to start..."
               className="mt-8 w-full rounded-xl bg-card px-4 py-3.5 text-center text-base outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
               autoFocus
+              disabled={loading}
             />
             <button
               onClick={handleEmailSubmit}
               disabled={loading || !email.trim()}
               className="mt-4 w-full rounded-xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97] disabled:opacity-50"
             >
-              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : "Start Chatting 🔥"}
+              {loading ? <Loader2 className="mx-auto h-5 w-5 animate-spin" /> : isReturning ? "Send Login Code 💌" : "Start Chatting 🔥"}
             </button>
 
-            <button
-              onClick={() => { setIsReturning(true); }}
-              className="mt-4 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
-            >
-              Already have an account? Sign in →
-            </button>
+            {!isReturning ? (
+              <button
+                onClick={() => setIsReturning(true)}
+                className="mt-4 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
+              >
+                Already have an account? Sign in →
+              </button>
+            ) : (
+              <button
+                onClick={() => setIsReturning(false)}
+                className="mt-4 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
+              >
+                New here? Create account →
+              </button>
+            )}
 
             <div className="mt-6 flex items-center justify-center gap-2 text-[11px] text-muted-foreground">
               <Lock className="h-3 w-3" />
@@ -250,10 +275,11 @@ const OnboardingPage = () => {
               maxLength={6}
               value={otp}
               onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              onKeyDown={(e) => e.key === "Enter" && handleVerifyOtp()}
+              onKeyDown={(e) => e.key === "Enter" && !loading && handleVerifyOtp()}
               placeholder="000000"
               className="mt-6 w-full rounded-xl bg-card px-4 py-4 text-center text-3xl font-bold tracking-[0.5em] outline-none ring-2 ring-transparent shadow-card transition-all focus:ring-primary"
               autoFocus
+              disabled={loading}
             />
             <button
               onClick={handleVerifyOtp}
@@ -265,7 +291,8 @@ const OnboardingPage = () => {
             <div className="mt-3 flex items-center justify-center gap-3">
               <button
                 onClick={() => { setOtp(""); handleEmailSubmit(); }}
-                className="text-sm font-semibold text-primary transition-opacity hover:opacity-80"
+                disabled={loading}
+                className="text-sm font-semibold text-primary transition-opacity hover:opacity-80 disabled:opacity-50"
               >
                 Resend code
               </button>

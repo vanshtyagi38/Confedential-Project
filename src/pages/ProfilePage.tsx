@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import {
-  HelpCircle, LogOut, Clock, Copy, Share2, Flame, MessageSquare,
+  HelpCircle, LogOut, Clock, Copy, Share2, Flame, Gift,
   Users, TrendingUp, ChevronRight, Zap, Star, UserPlus, Edit3,
-  CheckCircle, Trash2, Camera, Bell, Radio,
+  CheckCircle, Trash2, Camera, Bell, Radio, ChevronDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -11,15 +11,22 @@ import { useNotifications } from "@/hooks/useNotifications";
 import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
-import CompanionRegistration from "@/components/CompanionRegistration";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
 } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import onboardBoy from "@/assets/onboard-boy.png";
 import onboardGirl from "@/assets/onboard-girl.png";
 
 const STREAK_MILESTONES = [3, 7, 14, 30];
+const cities = ["Delhi", "Gurugram", "Noida", "Ghaziabad", "Faridabad", "Mumbai", "Bangalore", "Hyderabad", "Pune", "Kolkata", "Chennai", "Jaipur", "Lucknow"];
 
 function getNextMilestone(current: number): { next: number; bonus: number } {
   const found = STREAK_MILESTONES.find((m) => m > current);
@@ -32,38 +39,53 @@ const ProfilePage = () => {
   const navigate = useNavigate();
   const { session, profile, signOut, refreshProfile } = useAuth();
   const stats = useProfileStats();
-  const { notifications, requestPermission } = useNotifications();
+  const { notifications } = useNotifications();
   const [copying, setCopying] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
-  const [companionRegOpen, setCompanionRegOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
-  const [notifEnabled, setNotifEnabled] = useState(false);
   const [userStatus, setUserStatus] = useState<"online" | "offline">("offline");
   const [statusLoading, setStatusLoading] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
 
-  // Edit profile state
+  // Unified edit profile + listing state
   const [editName, setEditName] = useState(profile?.display_name || "");
   const [editGender, setEditGender] = useState(profile?.gender || "male");
   const [editAge, setEditAge] = useState(profile?.age || 22);
   const [editContact, setEditContact] = useState("");
   const [editCity, setEditCity] = useState("");
   const [editEmail, setEditEmail] = useState("");
+  const [editBio, setEditBio] = useState("");
+  const [editTag, setEditTag] = useState("");
+  const [editInterests, setEditInterests] = useState("");
+  const [editLanguages, setEditLanguages] = useState("Hindi / English");
   const [editSaving, setEditSaving] = useState(false);
   const [editImageFile, setEditImageFile] = useState<File | null>(null);
   const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
+  const [submitAsListing, setSubmitAsListing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Check if user has a verified companion listing
+  const [hasVerifiedListing, setHasVerifiedListing] = useState(false);
+  const [hasPendingApp, setHasPendingApp] = useState(false);
 
   const prefersFemale = profile?.preferred_gender === "female";
   const isProfileComplete = !!(profile?.display_name && profile?.gender && profile?.age);
   const profileCompletionRewardClaimed = localStorage.getItem(`profile_complete_${session?.user?.id}`);
 
   useEffect(() => {
-    if ("Notification" in window) {
-      setNotifEnabled(Notification.permission === "granted");
-    }
-  }, []);
+    if (!session?.user) return;
+    const check = async () => {
+      const [{ data: comp }, { data: app }] = await Promise.all([
+        (supabase as any).from("companions").select("id").eq("owner_user_id", session.user.id).eq("is_real_user", true).eq("status", "active").maybeSingle(),
+        (supabase as any).from("companion_applications").select("id, admin_status").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(1).maybeSingle(),
+      ]);
+      setHasVerifiedListing(!!comp);
+      setHasPendingApp(app?.admin_status === "pending");
+    };
+    check();
+  }, [session?.user]);
 
   // Load user status
   useEffect(() => {
@@ -80,6 +102,18 @@ const ProfilePage = () => {
 
   const handleToggleStatus = async () => {
     if (!session?.user || statusLoading) return;
+    
+    // If turning online and profile is not verified, redirect to submit profile
+    if (userStatus === "offline" && !hasVerifiedListing) {
+      if (hasPendingApp) {
+        toast.info("Your profile is under review. You'll be able to go online once approved! ⏳");
+        return;
+      }
+      toast.info("Submit your profile first to go online! 📝");
+      openEditDialog(true);
+      return;
+    }
+
     setStatusLoading(true);
     const newStatus = userStatus === "online" ? "offline" : "online";
     await (supabase as any).from("user_profiles")
@@ -129,12 +163,13 @@ const ProfilePage = () => {
     }
   };
 
-  const openEditDialog = async () => {
+  const openEditDialog = async (forListing = false) => {
     setEditName(profile?.display_name || "");
     setEditGender(profile?.gender || "male");
     setEditAge(profile?.age || 22);
     setEditImageFile(null);
     setEditImagePreview(null);
+    setSubmitAsListing(forListing);
     if (session?.user) {
       const { data } = await (supabase as any).from("user_profiles").select("contact, city, email, image_url").eq("user_id", session.user.id).maybeSingle();
       if (data) {
@@ -145,6 +180,19 @@ const ProfilePage = () => {
         setEditContact("");
         setEditCity("");
         setEditEmail(session.user.email || "");
+      }
+      // Load existing application data if any
+      const { data: appData } = await (supabase as any).from("companion_applications").select("bio, tag, interests, languages").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
+      if (appData) {
+        setEditBio(appData.bio || "");
+        setEditTag(appData.tag || "");
+        setEditInterests(appData.interests || "");
+        setEditLanguages(appData.languages || "Hindi / English");
+      } else {
+        setEditBio("");
+        setEditTag("");
+        setEditInterests("");
+        setEditLanguages("Hindi / English");
       }
     }
     setEditOpen(true);
@@ -184,6 +232,57 @@ const ProfilePage = () => {
       await (supabase as any).from("wallet_transactions").insert({ user_id: session.user.id, type: "credit", minutes: 10, amount: 0, description: "🎁 Profile completion reward: +10 minutes!" });
       localStorage.setItem(`profile_complete_${session.user.id}`, "true");
       toast.success("🎉 Profile completed! +10 free minutes added!");
+    }
+
+    // Submit as listing if toggled
+    if (submitAsListing) {
+      if (!editBio) {
+        toast.error("Bio is required to list your profile");
+        setEditSaving(false);
+        return;
+      }
+      if (!editImageFile && !imageUrl) {
+        toast.error("Photo is required to list your profile");
+        setEditSaving(false);
+        return;
+      }
+      if (editAge < 18) {
+        toast.error("You must be at least 18 years old");
+        setEditSaving(false);
+        return;
+      }
+
+      // Upload to companion-images bucket too
+      let listingImageUrl = imageUrl;
+      if (editImageFile && !listingImageUrl) {
+        const ext = editImageFile.name.split(".").pop() || "jpg";
+        const path = `app-${session.user.id}-${Date.now()}.${ext}`;
+        const { error: uploadErr } = await supabase.storage.from("companion-images").upload(path, editImageFile, { contentType: editImageFile.type });
+        if (!uploadErr) {
+          const { data } = supabase.storage.from("companion-images").getPublicUrl(path);
+          listingImageUrl = data.publicUrl;
+        }
+      }
+
+      await (supabase as any).from("companion_applications").insert({
+        user_id: session.user.id,
+        name: editName,
+        age: editAge,
+        gender: editGender,
+        city: editCity || "Delhi",
+        languages: editLanguages,
+        tag: editTag || "New Companion",
+        bio: editBio,
+        interests: editInterests,
+        image_url: listingImageUrl || imageUrl,
+        payment_status: "free",
+        admin_status: "pending",
+      });
+
+      toast.success("Profile submitted for review! We'll approve within 24 hours 🎉");
+      setHasPendingApp(true);
+    } else if (!profileCompletionRewardClaimed) {
+      // already handled above
     } else {
       toast.success("Profile updated! ✅");
     }
@@ -199,15 +298,6 @@ const ProfilePage = () => {
     await (supabase as any).from("user_profiles").update({ preferred_gender: newPref }).eq("user_id", session.user.id);
     await refreshProfile();
     toast.success(`Now chatting with ${newPref === "female" ? "girls 👧" : "boys 👦"}`);
-  };
-
-  const handleToggleNotifications = async () => {
-    if (!notifEnabled) {
-      const granted = await requestPermission();
-      setNotifEnabled(granted);
-      if (granted) toast.success("Notifications enabled! 🔔");
-      else toast.error("Notifications blocked. Enable from browser settings.");
-    }
   };
 
   const handleDeleteAccount = async () => {
@@ -228,14 +318,78 @@ const ProfilePage = () => {
     navigate("/onboarding", { replace: true });
   };
 
+  // Calculate total free minutes received from wallet transactions
+  const [totalFreeMinutes, setTotalFreeMinutes] = useState(0);
+  useEffect(() => {
+    if (!session?.user) return;
+    const load = async () => {
+      const { data } = await (supabase as any)
+        .from("wallet_transactions")
+        .select("minutes")
+        .eq("user_id", session.user.id)
+        .eq("type", "credit")
+        .eq("amount", 0);
+      if (data) {
+        setTotalFreeMinutes(data.reduce((sum: number, t: any) => sum + (t.minutes || 0), 0));
+      }
+    };
+    load();
+  }, [session?.user]);
+
   return (
     <div className="mx-auto min-h-[100dvh] w-full max-w-2xl bg-background pb-24">
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-2 pt-5">
         <h1 className="text-xl font-extrabold tracking-tight">Profile</h1>
-        <button onClick={openEditDialog} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-muted">
-          <Edit3 className="h-4 w-4 text-muted-foreground" />
-        </button>
+        <div className="flex items-center gap-2">
+          {/* Notification dropdown */}
+          <div className="relative">
+            <button
+              onClick={() => setNotifDropdownOpen(!notifDropdownOpen)}
+              className="relative flex h-8 w-8 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-muted"
+            >
+              <Bell className="h-4 w-4 text-muted-foreground" />
+              {notifications.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[8px] font-bold text-primary-foreground">
+                  {notifications.length}
+                </span>
+              )}
+            </button>
+            {notifDropdownOpen && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setNotifDropdownOpen(false)} />
+                <div className="absolute right-0 top-10 z-50 w-72 rounded-2xl border border-border bg-card shadow-lg max-h-80 overflow-y-auto">
+                  <div className="px-3 py-2 border-b border-border flex items-center justify-between">
+                    <span className="text-xs font-bold">Notifications</span>
+                    <span className="text-[10px] text-muted-foreground">{notifications.length}</span>
+                  </div>
+                  {notifications.length === 0 ? (
+                    <div className="p-4 text-center text-xs text-muted-foreground">No notifications</div>
+                  ) : (
+                    <div className="p-2 space-y-1">
+                      {notifications.map((n: any) => (
+                        <div
+                          key={n.id}
+                          className="rounded-xl bg-secondary/50 p-2.5 transition-colors hover:bg-secondary cursor-pointer"
+                          onClick={() => { if (n.link) window.open(n.link, "_blank"); setNotifDropdownOpen(false); }}
+                        >
+                          <p className="text-[11px] font-bold text-foreground">{n.title}</p>
+                          <p className="text-[10px] text-muted-foreground leading-relaxed mt-0.5">{n.message}</p>
+                          <span className="text-[9px] text-muted-foreground/60">
+                            {new Date(n.created_at).toLocaleString("en-IN", { hour: "2-digit", minute: "2-digit", day: "numeric", month: "short" })}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          <button onClick={() => openEditDialog(false)} className="flex h-8 w-8 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-muted">
+            <Edit3 className="h-4 w-4 text-muted-foreground" />
+          </button>
+        </div>
       </div>
 
       {/* Profile completion goal */}
@@ -246,7 +400,7 @@ const ProfilePage = () => {
             <p className="text-xs font-semibold text-foreground">Complete your profile → get <span className="text-primary">+10 free min</span> 🎁</p>
             <p className="text-[10px] text-muted-foreground mt-0.5">🔒 Your data is 100% safe and secured</p>
           </div>
-          <button onClick={openEditDialog} className="text-[11px] font-bold text-primary">Complete</button>
+          <button onClick={() => openEditDialog(false)} className="text-[11px] font-bold text-primary">Complete</button>
         </div>
       )}
 
@@ -302,69 +456,18 @@ const ProfilePage = () => {
           </div>
           <div>
             <p className="text-sm font-bold">{userStatus === "online" ? "You're Online" : "You're Offline"}</p>
-            <p className="text-xs text-muted-foreground">{userStatus === "online" ? "Visible in Active Users 🟢" : "Not visible to others"}</p>
+            <p className="text-xs text-muted-foreground">{userStatus === "online" ? "Visible in Finding Someone 🟢" : "Not visible to others"}</p>
           </div>
         </div>
         <Switch checked={userStatus === "online"} onCheckedChange={handleToggleStatus} disabled={statusLoading} />
       </div>
 
-      {/* Notifications Toggle */}
-      <div className="mx-4 mb-4 flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-card">
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
-            <Bell className="h-5 w-5 text-accent" />
-          </div>
-          <div>
-            <p className="text-sm font-bold">Push Notifications</p>
-            <p className="text-xs text-muted-foreground">{notifEnabled ? "Enabled 🔔" : "Disabled"}</p>
-          </div>
-        </div>
-        <Switch checked={notifEnabled} onCheckedChange={handleToggleNotifications} />
-      </div>
-
-      {/* Notifications List */}
-      {notifications.length > 0 && (
-        <div className="mx-4 mb-4 rounded-2xl border border-border bg-card p-4 shadow-card">
-          <div className="mb-3 flex items-center gap-2">
-            <Bell className="h-5 w-5 text-primary" />
-            <span className="text-sm font-bold">Notifications</span>
-            <span className="ml-auto rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold text-primary">{notifications.length}</span>
-          </div>
-          <div className="space-y-2 max-h-64 overflow-y-auto">
-            {notifications.map((n: any) => (
-              <div
-                key={n.id}
-                className="rounded-xl border border-border bg-secondary/50 p-3 transition-colors hover:bg-secondary"
-                onClick={() => n.link && window.open(n.link, "_blank")}
-                style={{ cursor: n.link ? "pointer" : "default" }}
-              >
-                <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1">
-                    <p className="text-xs font-bold text-foreground">{n.title}</p>
-                    <p className="mt-0.5 text-[11px] text-muted-foreground leading-relaxed">{n.message}</p>
-                  </div>
-                  <span className="shrink-0 text-[10px] text-muted-foreground whitespace-nowrap">
-                    {new Date(n.created_at).toLocaleDateString()}
-                  </span>
-                </div>
-                {n.type && (
-                  <span className="mt-1.5 inline-block rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary">
-                    {n.type === "announcement" ? "📢" : n.type === "promotion" ? "🎉" : n.type === "reminder" ? "⏰" : "🚨"} {n.type}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
       {/* Stats Grid */}
       <div className="mx-4 mb-4 grid grid-cols-2 gap-3">
         {[
-          { icon: MessageSquare, label: "Messages", value: stats.totalMessages, color: "text-primary" },
-          { icon: Users, label: "Companions", value: stats.uniqueCompanions, color: "text-accent" },
-          { icon: Flame, label: "Day Streak", value: stats.currentStreak, color: "text-orange-500" },
-          { icon: TrendingUp, label: "Best Streak", value: stats.longestStreak, color: "text-primary" },
+          { icon: Users, label: "Friends", value: stats.uniqueCompanions, color: "text-accent" },
+          { icon: Gift, label: "Free Min Received", value: totalFreeMinutes, color: "text-orange-500" },
+          { icon: UserPlus, label: "Total Invites", value: stats.referralCount, color: "text-primary" },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-card">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">
@@ -404,7 +507,7 @@ const ProfilePage = () => {
         </div>
       )}
 
-      {/* Favorite Companions */}
+      {/* Favorite Friends */}
       {stats.favoriteCompanions.length > 0 && (
         <div className="mx-4 mb-4">
           <h3 className="mb-2 px-1 text-sm font-bold">💬 Your Favs</h3>
@@ -446,7 +549,7 @@ const ProfilePage = () => {
 
       {/* Menu */}
       <div className="mx-4 mb-4 space-y-1">
-        <button onClick={openEditDialog} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
+        <button onClick={() => openEditDialog(false)} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
           <Edit3 className="h-5 w-5 text-muted-foreground" />
           <span className="flex-1 text-left">Edit Profile</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -461,7 +564,7 @@ const ProfilePage = () => {
           <span className="flex-1 text-left">Earn Free Minutes</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
         </button>
-        <button onClick={() => setCompanionRegOpen(true)} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
+        <button onClick={() => openEditDialog(true)} className="flex w-full items-center gap-3 rounded-xl p-4 text-sm font-medium transition-colors hover:bg-secondary">
           <UserPlus className="h-5 w-5 text-muted-foreground" />
           <span className="flex-1 text-left">List Your Profile</span>
           <ChevronRight className="h-4 w-4 text-muted-foreground" />
@@ -481,13 +584,13 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Edit Profile Dialog */}
+      {/* Unified Edit Profile + List Profile Dialog */}
       <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-sm rounded-3xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-md rounded-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Edit Profile ✨</DialogTitle>
+            <DialogTitle>{submitAsListing ? "Submit Your Profile 📝" : "Edit Profile ✨"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
               🔒 Your data is 100% safe and secured. We never share your info.
             </div>
@@ -501,21 +604,31 @@ const ProfilePage = () => {
               </button>
               <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
             </div>
+            {submitAsListing && <p className="text-center text-[10px] text-muted-foreground">Photo is required for listing *</p>}
+
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Name *</Label>
+                <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Display name" />
+              </div>
+              <div>
+                <Label className="text-xs">Age *</Label>
+                <Input type="number" min={18} max={60} value={editAge} onChange={(e) => setEditAge(Number(e.target.value))} />
+              </div>
+            </div>
 
             <div>
-              <label className="text-xs font-semibold text-muted-foreground">Display Name</label>
-              <input value={editName} onChange={(e) => setEditName(e.target.value)} className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+              <Label className="text-xs">Email</Label>
+              <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" />
             </div>
+
             <div>
-              <label className="text-xs font-semibold text-muted-foreground">Email</label>
-              <input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+              <Label className="text-xs">Contact Number</Label>
+              <Input value={editContact} onChange={(e) => setEditContact(e.target.value)} type="tel" placeholder="+91 9876543210" />
             </div>
+
             <div>
-              <label className="text-xs font-semibold text-muted-foreground">Contact Number</label>
-              <input value={editContact} onChange={(e) => setEditContact(e.target.value)} type="tel" placeholder="+91 9876543210" className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
-            </div>
-            <div>
-              <label className="text-xs font-semibold text-muted-foreground">Gender</label>
+              <Label className="text-xs">Gender</Label>
               <div className="mt-1 flex gap-2">
                 {["male", "female"].map((g) => (
                   <button key={g} onClick={() => setEditGender(g)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-colors ${editGender === g ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary text-muted-foreground"}`}>
@@ -524,19 +637,56 @@ const ProfilePage = () => {
                 ))}
               </div>
             </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground">Age</label>
-                <input type="number" min={18} max={60} value={editAge} onChange={(e) => setEditAge(Number(e.target.value))} className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+
+            <div>
+              <Label className="text-xs">City</Label>
+              <Select value={editCity} onValueChange={setEditCity}>
+                <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
+                <SelectContent>
+                  {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Listing-specific fields - always shown */}
+            <div className="border-t border-border pt-3 mt-2">
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-xs font-bold text-foreground">Listing Details</p>
+                <div className="flex items-center gap-2">
+                  <span className="text-[10px] text-muted-foreground">Submit as listing</span>
+                  <Switch checked={submitAsListing} onCheckedChange={setSubmitAsListing} />
+                </div>
               </div>
-              <div>
-                <label className="text-xs font-semibold text-muted-foreground">City</label>
-                <input value={editCity} onChange={(e) => setEditCity(e.target.value)} placeholder="Delhi" className="mt-1 w-full rounded-xl border border-border bg-secondary px-3 py-2.5 text-sm outline-none focus:border-primary/50" />
+
+              <div className="space-y-3">
+                <div>
+                  <Label className="text-xs">Languages</Label>
+                  <Input value={editLanguages} onChange={(e) => setEditLanguages(e.target.value)} placeholder="Hindi / English" />
+                </div>
+                <div>
+                  <Label className="text-xs">Tagline</Label>
+                  <Input value={editTag} onChange={(e) => setEditTag(e.target.value)} placeholder="e.g. College Cutie, Fitness Babe" />
+                </div>
+                <div>
+                  <Label className="text-xs">Interests</Label>
+                  <Input value={editInterests} onChange={(e) => setEditInterests(e.target.value)} placeholder="Music, Movies, Gaming, Travel" />
+                </div>
+                <div>
+                  <Label className="text-xs">Bio {submitAsListing && "*"}</Label>
+                  <Textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Tell something fun about yourself..." rows={3} />
+                </div>
               </div>
             </div>
-            <button onClick={handleSaveProfile} disabled={editSaving} className="w-full rounded-xl gradient-primary py-3 text-sm font-bold text-primary-foreground transition-transform active:scale-95 disabled:opacity-50">
-              {editSaving ? "Saving..." : "Save Profile"}
-            </button>
+
+            {submitAsListing && (
+              <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
+                🔒 Your profile will be reviewed by admin before going live. Only approved profiles appear in the grid.
+              </div>
+            )}
+
+            <Button onClick={handleSaveProfile} disabled={editSaving} className="w-full">
+              {editSaving ? "Saving..." : submitAsListing ? "Save & Submit for Review" : "Save Profile"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
@@ -570,9 +720,6 @@ const ProfilePage = () => {
           </div>
         </DialogContent>
       </Dialog>
-
-      {/* Companion Registration */}
-      <CompanionRegistration open={companionRegOpen} onClose={() => setCompanionRegOpen(false)} />
 
       <BottomNav />
     </div>

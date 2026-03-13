@@ -10,16 +10,18 @@ export function useNotifications() {
     if (!session?.user) return;
 
     const load = async () => {
+      // Only fetch notifications from the last 24 hours
+      const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { data } = await (supabase as any)
         .from("admin_notifications")
         .select("*")
+        .gte("created_at", twentyFourHoursAgo)
         .order("created_at", { ascending: false })
         .limit(20);
       if (data) setNotifications(data);
     };
     load();
 
-    // Subscribe to new notifications
     const channel = supabase
       .channel("notifications")
       .on(
@@ -29,7 +31,6 @@ export function useNotifications() {
           const notif = payload.new;
           if (notif.target === "all" || (notif.target_user_ids && notif.target_user_ids.includes(session.user.id))) {
             setNotifications((prev) => [notif, ...prev]);
-            // Show browser notification if permitted
             if (Notification.permission === "granted") {
               new Notification(notif.title, {
                 body: notif.message,
