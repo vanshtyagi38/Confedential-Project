@@ -114,4 +114,28 @@
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
   }
+
+  /* Onboarding floating animations */
+  .onboard-float-1 {
+    animation: onboard-bob-1 3s ease-in-out infinite;
+  }
+  .onboard-float-2 {
+    animation: onboard-bob-2 3.5s ease-in-out infinite;
+  }
+  .onboard-float-3 {
+    animation: onboard-bob-3 2.5s ease-in-out infinite;
+  }
+}
+
+@keyframes onboard-bob-1 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-10px) rotate(3deg); }
+}
+@keyframes onboard-bob-2 {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-14px) rotate(-4deg); }
+}
+@keyframes onboard-bob-3 {
+  0%, 100% { transform: translateY(0) scale(1); }
+  50% { transform: translateY(-8px) scale(1.15); }
 }

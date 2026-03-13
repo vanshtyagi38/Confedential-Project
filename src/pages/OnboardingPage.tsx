@@ -2,16 +2,34 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Loader2, ArrowLeft, Mail, Heart, Shield, MessageCircle } from "lucide-react";
+import { Loader2, ArrowLeft, Mail, Heart, Shield, MessageCircle, Sparkles, Flame } from "lucide-react";
 import { toast } from "sonner";
-import logoIcon from "@/assets/logo-icon.png";
 import GoogleOneTap from "@/components/GoogleOneTap";
-import companion1 from "@/assets/companion-01.jpg";
-import companion2 from "@/assets/companion-05.jpg";
-import companion3 from "@/assets/companion-09.jpg";
+import hero1 from "@/assets/onboard-hero-1.png";
+import hero2 from "@/assets/onboard-hero-2.png";
+import hero3 from "@/assets/onboard-hero-3.png";
 
-/* ── helpers ───────────────────────────────────────── */
+/* ── rotating content ─────────────────────────────── */
+const HERO_IMAGES = [hero1, hero2, hero3];
 
+const BADGE_TEXTS = [
+  "Chat now? 💬",
+  "Waiting for your msg… 💕",
+  "Hey there! 👋",
+  "Soye kya? 😏",
+  "Miss you! 🥺",
+  "Reply karo na… 💌",
+];
+
+const TAGLINES = [
+  "Chat, Mingle & Fun Daily",
+  "Find Your Late Night Companion",
+  "Real Girls, Real Conversations",
+  "Your Secret Chat Space 🔥",
+  "She's Online, Are You?",
+];
+
+const ONLINE_COUNT_BASE = 847;
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
@@ -25,7 +43,48 @@ const OnboardingPage = () => {
   const [isReturning, setIsReturning] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+  // Rotating state
+  const [currentImage, setCurrentImage] = useState(0);
+  const [currentBadge, setCurrentBadge] = useState(0);
+  const [currentTagline, setCurrentTagline] = useState(0);
+  const [onlineCount, setOnlineCount] = useState(ONLINE_COUNT_BASE);
+  const [fadeClass, setFadeClass] = useState("opacity-100 scale-100");
+  const [taglineFade, setTaglineFade] = useState("opacity-100");
+
   const otp = otpDigits.join("");
+
+  // Image & badge rotation every 2.5s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setFadeClass("opacity-0 scale-95");
+      setTimeout(() => {
+        setCurrentImage((p) => (p + 1) % HERO_IMAGES.length);
+        setCurrentBadge((p) => (p + 1) % BADGE_TEXTS.length);
+        setFadeClass("opacity-100 scale-100");
+      }, 300);
+    }, 2500);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Tagline rotation every 2s
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setTaglineFade("opacity-0 translate-y-2");
+      setTimeout(() => {
+        setCurrentTagline((p) => (p + 1) % TAGLINES.length);
+        setTaglineFade("opacity-100 translate-y-0");
+      }, 250);
+    }, 2000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Fluctuating online count
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setOnlineCount(ONLINE_COUNT_BASE + Math.floor(Math.random() * 120) - 30);
+    }, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Redirect if already logged in with profile
   useEffect(() => {
@@ -262,85 +321,128 @@ const OnboardingPage = () => {
     navigate("/", { replace: true });
   };
 
+  /* ── Google sign-in trigger ─────────────────────── */
+  const triggerGoogle = () => {
+    if (window.google?.accounts?.id) {
+      window.google.accounts.id.prompt((notification: any) => {
+        if (notification.isNotDisplayed()) {
+          toast.error("Google sign-in popup blocked. Please allow popups.");
+        }
+      });
+    } else {
+      toast.error("Google sign-in is loading. Please try again.");
+    }
+  };
+
   /* ── WELCOME SCREEN ─────────────────────────────── */
   if (step === "welcome") {
     return (
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
         <GoogleOneTap />
-        
+
+        {/* Ambient glow effects */}
+        <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 h-[300px] w-[300px] rounded-full bg-primary/15 blur-[100px]" />
+        <div className="pointer-events-none absolute bottom-40 -right-20 h-[200px] w-[200px] rounded-full bg-accent/10 blur-[80px]" />
+
         {/* Hero image area */}
-        <div className="relative flex-1 overflow-hidden bg-gradient-to-b from-primary/10 to-primary/5 px-6 pt-10">
-          {/* Floating companion images */}
-          <div className="relative mx-auto h-full max-h-[420px] w-full">
-            {/* Main center image */}
-            <div className="absolute left-1/2 top-4 -translate-x-1/2 w-[220px] h-[280px] rounded-3xl overflow-hidden shadow-elevated border-4 border-background rotate-1">
-              <img src={companion1} alt="" className="h-full w-full object-cover" />
+        <div className="relative flex-1 flex items-center justify-center px-6 pt-8 pb-2">
+          <div className="relative w-full max-w-[320px] aspect-[3/4]">
+            {/* Main hero image with crossfade */}
+            <div
+              className={`absolute inset-0 rounded-[2rem] overflow-hidden shadow-elevated border-4 border-card transition-all duration-500 ease-out ${fadeClass}`}
+              style={{ transform: `rotate(${currentImage === 0 ? -2 : currentImage === 1 ? 1 : -1}deg)` }}
+            >
+              <img
+                src={HERO_IMAGES[currentImage]}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+              {/* Gradient overlay at bottom */}
+              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
             </div>
-            {/* Left floating avatar */}
-            <div className="absolute left-2 top-8 h-14 w-14 rounded-full overflow-hidden border-3 border-background shadow-card">
-              <img src={companion2} alt="" className="h-full w-full object-cover" />
+
+            {/* Floating badge - rotating text */}
+            <div className={`absolute -left-2 bottom-20 z-10 rounded-full gradient-primary px-4 py-2 shadow-elevated transition-all duration-500 ${fadeClass}`}>
+              <span className="text-sm font-bold text-primary-foreground whitespace-nowrap">
+                {BADGE_TEXTS[currentBadge]}
+              </span>
             </div>
-            {/* Right floating avatar */}
-            <div className="absolute right-2 top-16 h-16 w-16 rounded-full overflow-hidden border-3 border-background shadow-card">
-              <img src={companion3} alt="" className="h-full w-full object-cover" />
+
+            {/* Online indicator */}
+            <div className="absolute -right-1 top-6 z-10 flex items-center gap-1.5 rounded-full bg-card/90 backdrop-blur-sm px-3 py-1.5 shadow-elevated border border-border/50">
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+              </span>
+              <span className="text-xs font-bold text-foreground">{onlineCount}+ online</span>
             </div>
-            {/* Decorative badge */}
-            <div className="absolute left-4 top-[200px] rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-elevated">
-              Chat Now? 💬
+
+            {/* Floating small avatars */}
+            <div className="absolute -left-3 top-12 z-10 onboard-float-1">
+              <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-card shadow-elevated">
+                <img src={HERO_IMAGES[(currentImage + 1) % HERO_IMAGES.length]} alt="" className="h-full w-full object-cover" />
+              </div>
+            </div>
+            <div className="absolute -right-3 bottom-40 z-10 onboard-float-2">
+              <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-card shadow-elevated">
+                <img src={HERO_IMAGES[(currentImage + 2) % HERO_IMAGES.length]} alt="" className="h-full w-full object-cover" />
+              </div>
+            </div>
+
+            {/* Sparkle decorations */}
+            <div className="absolute top-2 right-8 z-10 onboard-float-3">
+              <Sparkles className="h-5 w-5 text-accent" />
+            </div>
+            <div className="absolute bottom-16 right-4 z-10 onboard-float-1">
+              <Heart className="h-4 w-4 text-primary fill-primary" />
             </div>
           </div>
         </div>
 
         {/* Bottom content */}
-        <div className="px-6 pb-8 pt-6 space-y-5">
-          <div className="text-center space-y-2">
-            <h1 className="text-2xl font-extrabold tracking-tight text-foreground">
-              Start Your Chat Journey<br />with SingleTape!
+        <div className="relative z-10 px-6 pb-6 pt-3 space-y-4">
+          {/* Rotating tagline */}
+          <div className="text-center space-y-1.5">
+            <h1 className="text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[68px] flex items-center justify-center">
+              <span className={`transition-all duration-300 ease-out ${taglineFade}`}>
+                {TAGLINES[currentTagline]} ✨
+              </span>
             </h1>
-            
-            {/* Feature pills */}
-            <div className="flex items-center justify-center gap-5 pt-2">
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                  <Heart className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight">Real<br/>Vibes</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                  <MessageCircle className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight">Private<br/>Chats</span>
-              </div>
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10">
-                  <Shield className="h-4 w-4 text-primary" />
-                </div>
-                <span className="text-[10px] font-medium text-muted-foreground text-center leading-tight">Safe &<br/>Secure</span>
-              </div>
+            <p className="text-sm text-muted-foreground">
+              Join <span className="font-bold text-primary">{onlineCount}+</span> people chatting right now
+            </p>
+          </div>
+
+          {/* Feature pills */}
+          <div className="flex items-center justify-center gap-4">
+            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
+              <Heart className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] font-semibold text-foreground">Real Vibes</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
+              <MessageCircle className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] font-semibold text-foreground">Private Chats</span>
+            </div>
+            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
+              <Shield className="h-3.5 w-3.5 text-primary" />
+              <span className="text-[11px] font-semibold text-foreground">100% Safe</span>
             </div>
           </div>
 
           {/* CTA Buttons */}
           <button
             onClick={() => setStep("email")}
-            className="w-full rounded-2xl gradient-primary py-4 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97]"
+            className="group relative w-full overflow-hidden rounded-2xl gradient-primary py-4 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97]"
           >
-            Log in
+            <span className="relative z-10 flex items-center justify-center gap-2">
+              <Flame className="h-5 w-5" />
+              Start Chatting Now
+            </span>
+            <div className="absolute inset-0 bg-white/10 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700" />
           </button>
 
           <button
-            onClick={() => {
-              if (window.google?.accounts?.id) {
-                window.google.accounts.id.prompt((notification: any) => {
-                  if (notification.isNotDisplayed()) {
-                    toast.error("Google sign-in popup blocked. Please allow popups.");
-                  }
-                });
-              } else {
-                toast.error("Google sign-in is loading. Please try again.");
-              }
-            }}
+            onClick={triggerGoogle}
             className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-border bg-card py-3.5 text-sm font-semibold text-foreground shadow-card transition-all hover:bg-secondary active:scale-[0.97]"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -365,7 +467,7 @@ const OnboardingPage = () => {
     return (
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
         <GoogleOneTap />
-        
+
         {/* Header */}
         <div className="flex items-center px-4 pt-4">
           <button
@@ -377,17 +479,16 @@ const OnboardingPage = () => {
         </div>
 
         <div className="flex flex-1 flex-col justify-center px-6 pb-10">
-          <div className="animate-fade-in-up text-center space-y-2">
-            {/* Icon */}
+          <div className="animate-fade-in text-center space-y-2">
             <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
               <Mail className="h-7 w-7 text-primary" />
             </div>
             <h2 className="text-2xl font-extrabold text-foreground">
-              {isReturning ? "Welcome Back!" : "Enter Your Email"}
+              {isReturning ? "Welcome Back! 💕" : "Enter Your Email"}
             </h2>
             <p className="text-sm text-muted-foreground">
-              {isReturning 
-                ? "Sign in to continue your chats" 
+              {isReturning
+                ? "Sign in to continue your chats"
                 : "We'll send you a magic code to get started"}
             </p>
           </div>
@@ -419,17 +520,7 @@ const OnboardingPage = () => {
             </div>
 
             <button
-              onClick={() => {
-                if (window.google?.accounts?.id) {
-                  window.google.accounts.id.prompt((notification: any) => {
-                    if (notification.isNotDisplayed()) {
-                      toast.error("Google sign-in popup blocked. Please allow popups.");
-                    }
-                  });
-                } else {
-                  toast.error("Google sign-in is loading. Please try again.");
-                }
-              }}
+              onClick={triggerGoogle}
               className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-border bg-card py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.97]"
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24">
@@ -440,22 +531,6 @@ const OnboardingPage = () => {
               </svg>
               Continue with Google
             </button>
-
-            {!isReturning ? (
-              <button
-                onClick={() => setIsReturning(true)}
-                className="w-full text-sm font-semibold text-primary transition-opacity hover:opacity-80"
-              >
-                Already have an account? Sign in →
-              </button>
-            ) : (
-              <button
-                onClick={() => setIsReturning(false)}
-                className="w-full text-sm font-semibold text-primary transition-opacity hover:opacity-80"
-              >
-                New here? Create account →
-              </button>
-            )}
           </div>
         </div>
       </div>
@@ -466,8 +541,7 @@ const OnboardingPage = () => {
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
       <GoogleOneTap />
-      
-      {/* Header */}
+
       <div className="flex items-center px-4 pt-4">
         <button
           onClick={() => { setStep("email"); setOtpDigits(["", "", "", "", "", ""]); }}
@@ -478,19 +552,17 @@ const OnboardingPage = () => {
       </div>
 
       <div className="flex flex-1 flex-col justify-center px-6 pb-10">
-        <div className="animate-fade-in-up text-center space-y-2">
-          {/* Icon */}
+        <div className="animate-fade-in text-center space-y-2">
           <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
             <Mail className="h-7 w-7 text-primary" />
           </div>
-          <h2 className="text-2xl font-extrabold text-foreground">Email Sent!</h2>
+          <h2 className="text-2xl font-extrabold text-foreground">Check Your Email! 💌</h2>
           <p className="text-sm text-muted-foreground">
-            A magic code to sign in was sent to
+            We sent a 6-digit code to
           </p>
           <p className="text-sm font-semibold text-primary">{email}</p>
         </div>
 
-        {/* OTP digit boxes */}
         <div className="mt-8 flex items-center justify-center gap-2">
           {otpDigits.map((digit, i) => (
             <div key={i} className="flex items-center gap-2">
@@ -513,7 +585,6 @@ const OnboardingPage = () => {
           ))}
         </div>
 
-        {/* Confirm button */}
         <div className="mt-8 space-y-3">
           <button
             onClick={handleVerifyOtp}
