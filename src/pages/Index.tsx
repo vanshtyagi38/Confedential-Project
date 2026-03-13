@@ -12,6 +12,7 @@ import Footer from "@/components/Footer";
 import EngagementSections from "@/components/EngagementSections";
 import InstallAppBanner from "@/components/InstallAppBanner";
 import ActiveNow from "@/components/ActiveNow";
+import ActiveUsers from "@/components/ActiveUsers";
 import { supabase } from "@/integrations/supabase/client";
 
 function shuffleArray<T>(arr: T[], seed: number): T[] {
