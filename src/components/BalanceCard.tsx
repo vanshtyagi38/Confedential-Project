@@ -8,7 +8,6 @@ const BalanceCard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const balance = profile?.balance_minutes || 0;
-  const [regOpen, setRegOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
