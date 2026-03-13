@@ -6,6 +6,7 @@ import { Loader2, Lock, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import logoIcon from "@/assets/logo-icon.png";
 import { lovable } from "@/integrations/lovable/index";
+import GoogleOneTap from "@/components/GoogleOneTap";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
