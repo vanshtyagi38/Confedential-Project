@@ -18,7 +18,7 @@ const OnboardingPage = () => {
   const [otp, setOtp] = useState("");
   const [loading, setLoading] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
-  const OAUTH_REDIRECT_URI = "https://www.singletape.in/auth/callback";
+  const OAUTH_REDIRECT_URI = window.location.origin + "/auth/callback";
 
   // Redirect if already logged in with profile
   useEffect(() => {
