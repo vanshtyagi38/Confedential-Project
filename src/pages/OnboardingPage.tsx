@@ -148,13 +148,13 @@ const OnboardingPage = () => {
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8);
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     const newDigits = [...otpDigits];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       newDigits[i] = pasted[i] || "";
     }
     setOtpDigits(newDigits);
-    const focusIndex = Math.min(pasted.length, 7);
+    const focusIndex = Math.min(pasted.length, 5);
     otpRefs.current[focusIndex]?.focus();
   };
 
