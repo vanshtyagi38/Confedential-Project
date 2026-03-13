@@ -270,7 +270,7 @@ const OnboardingPage = () => {
             <button
               onClick={async () => {
                 const { error } = await lovable.auth.signInWithOAuth("google", {
-                  redirect_uri: window.location.origin,
+                  redirect_uri: "https://singletape.in",
                 });
                 if (error) toast.error("Google sign-in failed. Try again.");
               }}
@@ -288,7 +288,7 @@ const OnboardingPage = () => {
             <button
               onClick={async () => {
                 const { error } = await lovable.auth.signInWithOAuth("apple", {
-                  redirect_uri: window.location.origin,
+                  redirect_uri: "https://singletape.in",
                 });
                 if (error) toast.error("Apple sign-in failed. Try again.");
               }}
