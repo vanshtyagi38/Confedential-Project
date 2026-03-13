@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import {
   HelpCircle, LogOut, Clock, Copy, Share2, Flame, MessageSquare,
   Users, TrendingUp, ChevronRight, Zap, Star, UserPlus, Edit3,
-  CheckCircle, Trash2, Camera, Bell,
+  CheckCircle, Trash2, Camera, Bell, Radio,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -40,6 +40,8 @@ const ProfilePage = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(false);
+  const [userStatus, setUserStatus] = useState<"online" | "offline">("offline");
+  const [statusLoading, setStatusLoading] = useState(false);
 
   // Edit profile state
   const [editName, setEditName] = useState(profile?.display_name || "");
@@ -62,6 +64,31 @@ const ProfilePage = () => {
       setNotifEnabled(Notification.permission === "granted");
     }
   }, []);
+
+  // Load user status
+  useEffect(() => {
+    if (!session?.user) return;
+    const loadStatus = async () => {
+      const { data } = await (supabase as any).from("user_profiles")
+        .select("user_status")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (data?.user_status) setUserStatus(data.user_status);
+    };
+    loadStatus();
+  }, [session?.user]);
+
+  const handleToggleStatus = async () => {
+    if (!session?.user || statusLoading) return;
+    setStatusLoading(true);
+    const newStatus = userStatus === "online" ? "offline" : "online";
+    await (supabase as any).from("user_profiles")
+      .update({ user_status: newStatus })
+      .eq("user_id", session.user.id);
+    setUserStatus(newStatus);
+    setStatusLoading(false);
+    toast.success(newStatus === "online" ? "You're now visible to others! 🟢" : "You're now offline 🔴");
+  };
 
   const handleSignOut = async () => {
     await signOut();
@@ -265,6 +292,20 @@ const ProfilePage = () => {
           <Switch checked={prefersFemale} onCheckedChange={handleTogglePreference} />
           <span className="text-xs text-muted-foreground">👧</span>
         </div>
+      </div>
+
+      {/* Online Status Toggle */}
+      <div className="mx-4 mb-4 flex items-center justify-between rounded-2xl border border-border bg-card p-4 shadow-card">
+        <div className="flex items-center gap-3">
+          <div className={`flex h-10 w-10 items-center justify-center rounded-xl ${userStatus === "online" ? "bg-green-500/10" : "bg-secondary"}`}>
+            <Radio className={`h-5 w-5 ${userStatus === "online" ? "text-green-500" : "text-muted-foreground"}`} />
+          </div>
+          <div>
+            <p className="text-sm font-bold">{userStatus === "online" ? "You're Online" : "You're Offline"}</p>
+            <p className="text-xs text-muted-foreground">{userStatus === "online" ? "Visible in Active Users 🟢" : "Not visible to others"}</p>
+          </div>
+        </div>
+        <Switch checked={userStatus === "online"} onCheckedChange={handleToggleStatus} disabled={statusLoading} />
       </div>
 
       {/* Notifications Toggle */}
