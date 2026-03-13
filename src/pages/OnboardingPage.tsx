@@ -285,10 +285,36 @@ const OnboardingPage = () => {
       }
     }
 
-    const { error } = await verifyOtp(email.trim(), otp);
-    if (error) {
+    const normalizedEmail = email.trim().toLowerCase();
+    let verificationError: { message?: string } | null = null;
+
+    try {
+      const lookupResp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-email-otp`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: normalizedEmail, otp }),
+        }
+      );
+
+      const lookupData = await lookupResp.json();
+      if (!lookupResp.ok || !lookupData.token_hash) {
+        verificationError = { message: lookupData.error || "Invalid code. Try again." };
+      } else {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: lookupData.token_hash,
+          type: "magiclink",
+        });
+        verificationError = error;
+      }
+    } catch {
+      verificationError = { message: "Verification failed. Try again." };
+    }
+
+    if (verificationError) {
       setLoading(false);
-      toast.error(error.message || "Invalid code. Try again.");
+      toast.error(verificationError.message || "Invalid code. Try again.");
       return;
     }
 
