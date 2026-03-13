@@ -2,7 +2,6 @@ import { Clock, UserPlus, Heart, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect, useRef, useCallback } from "react";
-import CompanionRegistration from "@/components/CompanionRegistration";
 import InvitePopup from "@/components/InvitePopup";
 
 const BalanceCard = () => {
