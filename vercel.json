@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/~oauth/:path*", "destination": "/~oauth/:path*" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [
