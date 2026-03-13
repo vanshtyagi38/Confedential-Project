@@ -132,7 +132,7 @@ const OnboardingPage = () => {
     const newDigits = [...otpDigits];
     newDigits[index] = value.slice(-1);
     setOtpDigits(newDigits);
-    if (value && index < 5) {
+    if (value && index < 7) {
       otpRefs.current[index + 1]?.focus();
     }
   };
