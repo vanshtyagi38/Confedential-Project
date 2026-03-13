@@ -55,7 +55,7 @@ const OnboardingPage = () => {
 
   const otp = otpDigits.join("");
 
-  // Image & badge rotation every 2.5s
+  // Image & badge rotation every 3.5s
   useEffect(() => {
     const interval = setInterval(() => {
       setFadeClass("opacity-0 scale-95");
@@ -64,11 +64,11 @@ const OnboardingPage = () => {
         setCurrentBadge((p) => (p + 1) % BADGE_TEXTS.length);
         setFadeClass("opacity-100 scale-100");
       }, 300);
-    }, 2500);
+    }, 3500);
     return () => clearInterval(interval);
   }, []);
 
-  // Tagline rotation every 2s
+  // Tagline rotation every 3s
   useEffect(() => {
     const interval = setInterval(() => {
       setTaglineFade("opacity-0 translate-y-2");
@@ -76,15 +76,15 @@ const OnboardingPage = () => {
         setCurrentTagline((p) => (p + 1) % TAGLINES.length);
         setTaglineFade("opacity-100 translate-y-0");
       }, 250);
-    }, 2000);
+    }, 3000);
     return () => clearInterval(interval);
   }, []);
 
-  // Fluctuating online count
+  // Fluctuating online count - changes vigorously
   useEffect(() => {
     const interval = setInterval(() => {
-      setOnlineCount(ONLINE_COUNT_BASE + Math.floor(Math.random() * 120) - 30);
-    }, 3000);
+      setOnlineCount(ONLINE_COUNT_BASE + Math.floor(Math.random() * 500) - 100);
+    }, 800);
     return () => clearInterval(interval);
   }, []);
 
