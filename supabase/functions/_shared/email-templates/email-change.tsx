@@ -9,7 +9,6 @@ import {
   Head,
   Heading,
   Html,
-  Img,
   Link,
   Preview,
   Text,
@@ -22,30 +21,21 @@ interface EmailChangeEmailProps {
   confirmationUrl: string
 }
 
-export const EmailChangeEmail = ({
-  siteName,
-  email,
-  newEmail,
-  confirmationUrl,
-}: EmailChangeEmailProps) => (
+export const EmailChangeEmail = ({ siteName, email, newEmail, confirmationUrl }: EmailChangeEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Confirm your email change for SingleTape</Preview>
+    <Preview>Confirm your email change for {siteName}</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src="https://fckraevvqfvribyiqkdo.supabase.co/storage/v1/object/public/email-assets/logo-icon.png" width="48" height="48" alt="SingleTape" style={logo} />
-        <Heading style={h1}>Confirm email change</Heading>
+        <Heading style={h1}>Confirm your email change</Heading>
         <Text style={text}>
-          You requested to change your email from{' '}
-          <Link href={`mailto:${email}`} style={link}>{email}</Link> to{' '}
+          You requested to change your email for {siteName} from{' '}
+          <Link href={`mailto:${email}`} style={link}>{email}</Link>{' '}to{' '}
           <Link href={`mailto:${newEmail}`} style={link}>{newEmail}</Link>.
         </Text>
-        <Button style={button} href={confirmationUrl}>
-          Confirm Email Change
-        </Button>
-        <Text style={footer}>
-          If you didn't request this, please secure your account immediately.
-        </Text>
+        <Text style={text}>Tap below to confirm this change:</Text>
+        <Button style={button} href={confirmationUrl}>Confirm Email Change</Button>
+        <Text style={footer}>If you didn't request this change, please secure your account immediately.</Text>
       </Container>
     </Body>
   </Html>
@@ -53,11 +43,10 @@ export const EmailChangeEmail = ({
 
 export default EmailChangeEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '32px 28px' }
-const logo = { borderRadius: '12px', marginBottom: '20px' }
-const h1 = { fontSize: '24px', fontWeight: 'bold' as const, color: 'hsl(220, 20%, 14%)', margin: '0 0 20px' }
-const text = { fontSize: '15px', color: 'hsl(220, 10%, 46%)', lineHeight: '1.6', margin: '0 0 24px' }
-const link = { color: 'inherit', textDecoration: 'underline' }
-const button = { backgroundColor: 'hsl(348, 75%, 55%)', color: '#ffffff', fontSize: '15px', fontWeight: 'bold' as const, borderRadius: '12px', padding: '14px 24px', textDecoration: 'none' }
-const footer = { fontSize: '12px', color: '#999999', margin: '32px 0 0' }
+const main = { backgroundColor: '#faf8f6', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
+const container = { padding: '40px 25px', maxWidth: '480px', margin: '0 auto' }
+const h1 = { fontSize: '24px', fontWeight: 'bold' as const, color: '#1c2230', margin: '0 0 20px' }
+const text = { fontSize: '15px', color: '#6a7085', lineHeight: '1.6', margin: '0 0 25px' }
+const link = { color: '#d94072', textDecoration: 'underline' }
+const button = { backgroundColor: '#d94072', color: '#ffffff', fontSize: '15px', fontWeight: '600' as const, borderRadius: '16px', padding: '14px 28px', textDecoration: 'none' }
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }

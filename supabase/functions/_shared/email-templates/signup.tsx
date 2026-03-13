@@ -9,7 +9,6 @@ import {
   Head,
   Heading,
   Html,
-  Img,
   Link,
   Preview,
   Text,
@@ -30,21 +29,26 @@ export const SignupEmail = ({
 }: SignupEmailProps) => (
   <Html lang="en" dir="ltr">
     <Head />
-    <Preview>Hey! Confirm your email for SingleTape 💕</Preview>
+    <Preview>Welcome to {siteName} 🔥</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Img src="https://fckraevvqfvribyiqkdo.supabase.co/storage/v1/object/public/email-assets/logo-icon.png" width="48" height="48" alt="SingleTape" style={logo} />
-        <Heading style={h1}>Welcome to SingleTape 🔥</Heading>
+        <Heading style={h1}>Welcome aboard! 🔥</Heading>
         <Text style={text}>
-          Hey! Thanks for signing up. She's already waiting for you 💕
+          Hey! Thanks for joining{' '}
+          <Link href={siteUrl} style={link}>
+            <strong>{siteName}</strong>
+          </Link>
+          .
         </Text>
         <Text style={text}>
           Confirm your email (
-          <Link href={`mailto:${recipient}`} style={link}>{recipient}</Link>
-          ) to start chatting:
+          <Link href={`mailto:${recipient}`} style={link}>
+            {recipient}
+          </Link>
+          ) to get started:
         </Text>
         <Button style={button} href={confirmationUrl}>
-          Start Chatting 🔥
+          Get Started
         </Button>
         <Text style={footer}>
           If you didn't create an account, you can safely ignore this email.
@@ -56,11 +60,10 @@ export const SignupEmail = ({
 
 export default SignupEmail
 
-const main = { backgroundColor: '#ffffff', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
-const container = { padding: '32px 28px' }
-const logo = { borderRadius: '12px', marginBottom: '20px' }
-const h1 = { fontSize: '24px', fontWeight: 'bold' as const, color: 'hsl(220, 20%, 14%)', margin: '0 0 20px' }
-const text = { fontSize: '15px', color: 'hsl(220, 10%, 46%)', lineHeight: '1.6', margin: '0 0 24px' }
-const link = { color: 'inherit', textDecoration: 'underline' }
-const button = { backgroundColor: 'hsl(348, 75%, 55%)', color: '#ffffff', fontSize: '15px', fontWeight: 'bold' as const, borderRadius: '12px', padding: '14px 24px', textDecoration: 'none' }
-const footer = { fontSize: '12px', color: '#999999', margin: '32px 0 0' }
+const main = { backgroundColor: '#faf8f6', fontFamily: "'Plus Jakarta Sans', Arial, sans-serif" }
+const container = { padding: '40px 25px', maxWidth: '480px', margin: '0 auto' }
+const h1 = { fontSize: '24px', fontWeight: 'bold' as const, color: '#1c2230', margin: '0 0 20px' }
+const text = { fontSize: '15px', color: '#6a7085', lineHeight: '1.6', margin: '0 0 25px' }
+const link = { color: '#d94072', textDecoration: 'underline' }
+const button = { backgroundColor: '#d94072', color: '#ffffff', fontSize: '15px', fontWeight: '600' as const, borderRadius: '16px', padding: '14px 28px', textDecoration: 'none' }
+const footer = { fontSize: '12px', color: '#999999', margin: '30px 0 0' }
