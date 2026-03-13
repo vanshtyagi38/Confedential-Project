@@ -7,7 +7,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 const AuthCallbackPage = () => {
   const navigate = useNavigate();
-  const { session, profile, loading, createProfile } = useAuth();
+  const { session, profile, loading, createProfile, refreshProfile } = useAuth();
   const hasHandledCallback = useRef(false);
 
   useEffect(() => {
