@@ -23,7 +23,7 @@ const BalanceCard = () => {
       cta: "Apply →",
       ctaClass: "bg-primary text-primary-foreground shadow-sm",
       gradientBg: "from-primary/8 via-card to-card",
-      onClick: () => setRegOpen(true),
+      onClick: () => navigate("/profile"),
     },
     {
       id: "recharge",
