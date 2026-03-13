@@ -606,7 +606,7 @@ const OnboardingPage = () => {
                 className="h-12 w-10 rounded-xl border-2 border-border bg-card text-center text-lg font-bold text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                 disabled={loading}
               />
-              {i === 3 && (
+              {i === 2 && (
                 <div className="mx-0.5 h-0.5 w-3 rounded-full bg-border" />
               )}
             </div>
