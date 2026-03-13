@@ -527,6 +527,83 @@ export type Database = {
         }
         Relationships: []
       }
+      user_blocks: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+          id: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+          id?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      user_chat_messages: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          image_url: string | null
+          room_id: string
+          sender_id: string
+        }
+        Insert: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          room_id: string
+          sender_id: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          room_id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_chat_messages_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "user_chat_rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_chat_rooms: {
+        Row: {
+          created_at: string
+          id: string
+          user_a_id: string
+          user_b_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_a_id: string
+          user_b_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_a_id?: string
+          user_b_id?: string
+        }
+        Relationships: []
+      }
       user_presence: {
         Row: {
           is_online: boolean
@@ -564,6 +641,7 @@ export type Database = {
           referral_code: string | null
           spin_credits: number
           user_id: string
+          user_status: string
         }
         Insert: {
           age: number
@@ -580,6 +658,7 @@ export type Database = {
           referral_code?: string | null
           spin_credits?: number
           user_id: string
+          user_status?: string
         }
         Update: {
           age?: number
@@ -596,6 +675,7 @@ export type Database = {
           referral_code?: string | null
           spin_credits?: number
           user_id?: string
+          user_status?: string
         }
         Relationships: []
       }
