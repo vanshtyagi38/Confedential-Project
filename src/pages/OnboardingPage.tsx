@@ -407,11 +407,11 @@ const OnboardingPage = () => {
           <div className="text-center space-y-1.5">
             <h1 className="text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[68px] flex items-center justify-center">
               <span className={`transition-all duration-300 ease-out ${taglineFade}`}>
-                {TAGLINES[currentTagline]} ✨
+                {TAGLINES[currentTagline]}
               </span>
             </h1>
             <p className="text-sm text-muted-foreground">
-              Join <span className="font-bold text-primary">{onlineCount}+</span> people chatting right now
+              Join <span className="font-bold text-primary">{onlineCount.toLocaleString()}+</span> people chatting right now
             </p>
           </div>
 
