@@ -12,7 +12,18 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const { credential } = await req.json();
+    const body = await req.json();
+    const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
+
+    // Return client ID for frontend initialization
+    if (body.action === "get_client_id") {
+      return new Response(
+        JSON.stringify({ client_id: GOOGLE_CLIENT_ID || null }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const { credential } = body;
     if (!credential) {
       return new Response(
         JSON.stringify({ error: "Missing credential" }),
@@ -20,7 +31,6 @@ Deno.serve(async (req) => {
       );
     }
 
-    const GOOGLE_CLIENT_ID = Deno.env.get("GOOGLE_CLIENT_ID");
     if (!GOOGLE_CLIENT_ID) {
       return new Response(
         JSON.stringify({ error: "Server misconfiguration" }),
@@ -28,7 +38,7 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Verify Google ID token via Google's tokeninfo endpoint
+    // Verify Google ID token
     const verifyResp = await fetch(
       `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
     );
@@ -41,19 +51,21 @@ Deno.serve(async (req) => {
 
     const payload = await verifyResp.json();
 
-    // Security checks
+    // Security: verify audience
     if (payload.aud !== GOOGLE_CLIENT_ID) {
       return new Response(
         JSON.stringify({ error: "Token audience mismatch" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    // Security: verify issuer
     if (!["accounts.google.com", "https://accounts.google.com"].includes(payload.iss)) {
       return new Response(
         JSON.stringify({ error: "Invalid token issuer" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    // Security: verify email
     if (payload.email_verified !== "true" && payload.email_verified !== true) {
       return new Response(
         JSON.stringify({ error: "Email not verified" }),
@@ -66,15 +78,14 @@ Deno.serve(async (req) => {
     const picture = payload.picture || null;
     const googleId = payload.sub;
 
-    // Use service role to manage users
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Check if user exists by email
-    const { data: existingUsers } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = existingUsers?.users?.find(
+    // Find existing user by email
+    const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
+    const existingUser = userList?.users?.find(
       (u) => u.email?.toLowerCase() === email.toLowerCase()
     );
 
@@ -103,7 +114,7 @@ Deno.serve(async (req) => {
       }
       userId = newUser.user.id;
 
-      // Create profile
+      // Create profile for new user
       await supabaseAdmin.from("user_profiles").insert({
         user_id: userId,
         display_name: name,
@@ -115,7 +126,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    // Generate session token for the user
+    // Generate magic link token for session creation
     const { data: sessionData, error: sessionError } =
       await supabaseAdmin.auth.admin.generateLink({
         type: "magiclink",
@@ -129,9 +140,20 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Extract the token_hash from the generated link
-    const linkUrl = new URL(sessionData.properties?.action_link || "");
-    const tokenHash = linkUrl.searchParams.get("token_hash") || linkUrl.hash?.split("token_hash=")[1]?.split("&")[0];
+    const actionLink = sessionData.properties?.action_link || "";
+    let tokenHash = "";
+    try {
+      const linkUrl = new URL(actionLink);
+      tokenHash = linkUrl.searchParams.get("token_hash") || "";
+      if (!tokenHash) {
+        const hashParams = new URLSearchParams(linkUrl.hash.replace("#", ""));
+        tokenHash = hashParams.get("token_hash") || "";
+      }
+    } catch {
+      // Try to extract from raw string
+      const match = actionLink.match(/token_hash=([^&]+)/);
+      tokenHash = match?.[1] || "";
+    }
 
     return new Response(
       JSON.stringify({
