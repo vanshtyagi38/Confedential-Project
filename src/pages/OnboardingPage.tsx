@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Loader2, Lock, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import logoIcon from "@/assets/logo-icon.png";
+import { lovable } from "@/integrations/lovable/index";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
