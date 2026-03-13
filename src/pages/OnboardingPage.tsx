@@ -40,7 +40,7 @@ const OnboardingPage = () => {
   const { session, profile, loading: authLoading, signUpWithEmail, sendOtp, createProfile } = useAuth();
   const [step, setStep] = useState<"welcome" | "email" | "otp">("welcome");
   const [email, setEmail] = useState("");
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", "", "", ""]);
+  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
