@@ -277,6 +277,7 @@ const OnboardingPage = () => {
               Continue with Apple
             </button>
 
+            {!isReturning ? (
               <button
                 onClick={() => setIsReturning(true)}
                 className="mt-4 text-sm font-semibold text-primary transition-opacity hover:opacity-80"
