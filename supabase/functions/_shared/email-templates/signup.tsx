@@ -74,8 +74,8 @@ export const SignupEmail = ({
           </Section>
 
           <Text style={linkFallback}>
-            If the button doesn't work, copy and paste this link into your browser:{' '}
-            <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
+            If the button doesn't work,{' '}
+            <Link href={confirmationUrl} style={link}>click here to verify</Link>.
           </Text>
         </Section>
 

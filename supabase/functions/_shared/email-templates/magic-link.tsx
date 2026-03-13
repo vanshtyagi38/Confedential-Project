@@ -66,8 +66,8 @@ export const MagicLinkEmail = ({ siteName, confirmationUrl, token }: MagicLinkEm
           </Section>
 
           <Text style={linkFallback}>
-            If the button doesn't work, copy and paste this link:{' '}
-            <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
+            If the button doesn't work,{' '}
+            <Link href={confirmationUrl} style={link}>click here to sign in</Link>.
           </Text>
         </Section>
 
