@@ -6,6 +6,7 @@ import { Loader2, Lock, Sparkles, Heart, MessageCircle } from "lucide-react";
 import { toast } from "sonner";
 import logoIcon from "@/assets/logo-icon.png";
 import { lovable } from "@/integrations/lovable/index";
+import GoogleOneTap from "@/components/GoogleOneTap";
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
@@ -227,6 +228,7 @@ const OnboardingPage = () => {
 
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col bg-background">
+      <GoogleOneTap />
       <div className="flex flex-1 flex-col justify-center px-5 sm:px-8">
         {step === "email" && (
           <div className="animate-fade-in-up text-center">

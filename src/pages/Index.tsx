@@ -14,6 +14,7 @@ import InstallAppBanner from "@/components/InstallAppBanner";
 import ActiveNow from "@/components/ActiveNow";
 import ActiveUsers from "@/components/ActiveUsers";
 import { supabase } from "@/integrations/supabase/client";
+import GoogleOneTap from "@/components/GoogleOneTap";
 
 function shuffleArray<T>(arr: T[], seed: number): T[] {
   const shuffled = [...arr];
@@ -192,6 +193,7 @@ const Index = () => {
       <EngagementSections />
       <Footer />
       <CompanionPopup companions={companions} />
+      <GoogleOneTap />
       <BottomNav />
     </div>
   );
