@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+
 import { useNavigate } from "react-router-dom";
 import { Flame, MapPin, MessageCircle, Circle } from "lucide-react";
 import { Companion } from "@/data/companions";

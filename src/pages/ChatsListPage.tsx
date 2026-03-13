@@ -121,25 +121,38 @@ const ChatsListPage = () => {
 
       if (!rooms || rooms.length === 0) return;
 
-      const previews: UserChatPreview[] = [];
-      for (const room of rooms) {
+      // Batch fetch all other user IDs
+      const otherUserIds = rooms.map((room: any) => 
+        room.user_a_id === userId ? room.user_b_id : room.user_a_id
+      );
+
+      // Fetch all profiles at once
+      const { data: profiles } = await (supabase as any)
+        .from("user_profiles")
+        .select("user_id, display_name, image_url, gender")
+        .in("user_id", otherUserIds);
+
+      const profileMap = new Map<string, any>();
+      (profiles || []).forEach((p: any) => profileMap.set(p.user_id, p));
+
+      // Fetch last messages for all rooms at once
+      const roomIds = rooms.map((r: any) => r.id);
+      const { data: allMessages } = await (supabase as any)
+        .from("user_chat_messages")
+        .select("room_id, content, created_at")
+        .in("room_id", roomIds)
+        .order("created_at", { ascending: false });
+
+      const lastMsgMap = new Map<string, any>();
+      (allMessages || []).forEach((m: any) => {
+        if (!lastMsgMap.has(m.room_id)) lastMsgMap.set(m.room_id, m);
+      });
+
+      const previews: UserChatPreview[] = rooms.map((room: any) => {
         const otherUserId = room.user_a_id === userId ? room.user_b_id : room.user_a_id;
-        
-        const { data: profile } = await (supabase as any)
-          .from("user_profiles")
-          .select("display_name, image_url, gender")
-          .eq("user_id", otherUserId)
-          .maybeSingle();
-
-        const { data: lastMsg } = await (supabase as any)
-          .from("user_chat_messages")
-          .select("content, created_at")
-          .eq("room_id", room.id)
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle();
-
-        previews.push({
+        const profile = profileMap.get(otherUserId);
+        const lastMsg = lastMsgMap.get(room.id);
+        return {
           room_id: room.id,
           other_user_id: otherUserId,
           other_name: profile?.display_name || "User",
@@ -149,8 +162,8 @@ const ChatsListPage = () => {
           last_time: lastMsg?.created_at
             ? new Date(lastMsg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" })
             : "",
-        });
-      }
+        };
+      });
       setUserChats(previews);
     };
     loadUserChats();

@@ -97,7 +97,7 @@ const BalanceCard = () => {
   };
 
   const referralCode = profile?.referral_code || "";
-  const referralLink = `https://singletape.com?ref=${referralCode}`;
+  const referralLink = `${window.location.origin}/onboarding?ref=${referralCode}`;
 
   return (
     <div className="mx-4 mt-2">
