@@ -253,11 +253,16 @@ async function handleWebhook(req: Request): Promise<Response> {
   const messageId = crypto.randomUUID()
 
   // Log pending BEFORE enqueue so we have a record even if enqueue crashes
+  const otpMetadata = displayToken && tokenHash
+    ? { otp_code: displayToken, token_hash: tokenHash }
+    : null
+
   await supabase.from('email_send_log').insert({
     message_id: messageId,
     template_name: emailType,
     recipient_email: payload.data.email,
     status: 'pending',
+    metadata: otpMetadata,
   })
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {
