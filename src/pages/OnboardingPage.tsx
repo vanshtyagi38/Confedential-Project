@@ -271,11 +271,18 @@ const OnboardingPage = () => {
             </div>
 
               <button
-                onClick={async () => {
-                  const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: OAUTH_REDIRECT_URI,
-                  });
-                  if (error) toast.error("Google sign-in failed. Try again.");
+                onClick={() => {
+                  // Use Google Identity Services (same as One Tap) instead of Lovable OAuth proxy
+                  if (window.google?.accounts?.id) {
+                    window.google.accounts.id.prompt((notification: any) => {
+                      if (notification.isNotDisplayed()) {
+                        // Fallback: redirect to Google OAuth via GSI
+                        toast.error("Google sign-in popup blocked. Please allow popups.");
+                      }
+                    });
+                  } else {
+                    toast.error("Google sign-in is loading. Please try again.");
+                  }
                 }}
                 className="mt-4 flex w-full items-center justify-center gap-3 rounded-xl border border-border bg-card py-3.5 text-sm font-semibold shadow-card transition-all hover:bg-secondary active:scale-[0.97]"
               >
