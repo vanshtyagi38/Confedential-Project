@@ -171,33 +171,41 @@ Deno.serve(async (req) => {
     }
 
     const actionLink = sessionData.properties?.action_link || "";
+    let token = "";
     let tokenHash = "";
     try {
       const linkUrl = new URL(actionLink);
+      // Try token_hash first, then fall back to token
       tokenHash = linkUrl.searchParams.get("token_hash") || "";
-      if (!tokenHash) {
+      token = linkUrl.searchParams.get("token") || "";
+      if (!tokenHash && !token) {
         const hashParams = new URLSearchParams(linkUrl.hash.replace("#", ""));
         tokenHash = hashParams.get("token_hash") || "";
+        token = hashParams.get("token") || "";
       }
     } catch {
-      // Try to extract from raw string
-      const match = actionLink.match(/token_hash=([^&]+)/);
-      tokenHash = match?.[1] || "";
+      const hashMatch = actionLink.match(/token_hash=([^&]+)/);
+      tokenHash = hashMatch?.[1] || "";
+      const tokenMatch = actionLink.match(/token=([^&]+)/);
+      token = tokenMatch?.[1] || "";
     }
 
-    if (!tokenHash) {
-      console.error("Failed to extract token_hash from action_link:", actionLink);
+    const finalToken = tokenHash || token;
+    if (!finalToken) {
+      console.error("Failed to extract token from action_link:", actionLink);
       return new Response(
         JSON.stringify({ error: "Failed to create session token" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    console.log("Successfully generated token_hash for user:", userId, "isNew:", isNew);
+    const hasTokenHash = !!tokenHash;
+    console.log("Token extracted for user:", userId, "isNew:", isNew, "hasTokenHash:", hasTokenHash);
 
     return new Response(
       JSON.stringify({
-        token_hash: tokenHash,
+        token: finalToken,
+        has_token_hash: hasTokenHash,
         email,
         name,
         picture,
