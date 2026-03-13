@@ -241,7 +241,9 @@ const ProfilePage = () => {
         setEditSaving(false);
         return;
       }
-      if (!editImageFile && !imageUrl) {
+      // Check if user has an existing profile image or uploaded a new one
+      const { data: existingProfile } = await (supabase as any).from("user_profiles").select("image_url").eq("user_id", session.user.id).maybeSingle();
+      if (!editImageFile && !imageUrl && !existingProfile?.image_url) {
         toast.error("Photo is required to list your profile");
         setEditSaving(false);
         return;
