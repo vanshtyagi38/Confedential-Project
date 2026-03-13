@@ -37,7 +37,7 @@ const OnboardingPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const refCode = searchParams.get("ref");
-  const { session, profile, loading: authLoading, signUpWithEmail, sendOtp, verifyOtp, createProfile } = useAuth();
+  const { session, profile, loading: authLoading, signUpWithEmail, sendOtp, createProfile } = useAuth();
   const [step, setStep] = useState<"welcome" | "email" | "otp">("welcome");
   const [email, setEmail] = useState("");
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", "", "", ""]);
