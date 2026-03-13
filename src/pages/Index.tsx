@@ -193,6 +193,7 @@ const Index = () => {
       <EngagementSections />
       <Footer />
       <CompanionPopup companions={companions} />
+      <GoogleOneTap />
       <BottomNav />
     </div>
   );
