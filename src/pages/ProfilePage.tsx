@@ -40,6 +40,8 @@ const ProfilePage = () => {
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [notifEnabled, setNotifEnabled] = useState(false);
+  const [userStatus, setUserStatus] = useState<"online" | "offline">("offline");
+  const [statusLoading, setStatusLoading] = useState(false);
 
   // Edit profile state
   const [editName, setEditName] = useState(profile?.display_name || "");
