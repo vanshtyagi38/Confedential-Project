@@ -129,7 +129,7 @@ const BalanceCard = () => {
         ))}
       </div>
 
-      <CompanionRegistration open={regOpen} onClose={() => setRegOpen(false)} />
+      
       <InvitePopup
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
