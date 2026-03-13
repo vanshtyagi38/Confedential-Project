@@ -11,7 +11,7 @@ import companion2 from "@/assets/companion-05.jpg";
 import companion3 from "@/assets/companion-09.jpg";
 
 /* ── helpers ───────────────────────────────────────── */
-import { useOnboardingAuth } from "@/hooks/useOnboardingAuth";
+
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
