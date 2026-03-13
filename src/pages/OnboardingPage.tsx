@@ -13,23 +13,25 @@ import hero3 from "@/assets/onboard-hero-3.png";
 const HERO_IMAGES = [hero1, hero2, hero3];
 
 const BADGE_TEXTS = [
-  "Chat now? 💬",
-  "Waiting for your msg… 💕",
-  "Hey there! 👋",
-  "Soye kya? 😏",
-  "Miss you! 🥺",
-  "Reply karo na… 💌",
+  "Chat now?",
+  "Waiting for your msg...",
+  "Hey there!",
+  "Soye kya?",
+  "Miss you!",
+  "Reply karo na...",
 ];
 
 const TAGLINES = [
   "Chat, Mingle & Fun Daily",
+  "Find your true love",
+  "Chat your college crush",
   "Find Your Late Night Companion",
   "Real Girls, Real Conversations",
-  "Your Secret Chat Space 🔥",
+  "Your Secret Chat Space",
   "She's Online, Are You?",
 ];
 
-const ONLINE_COUNT_BASE = 847;
+const ONLINE_COUNT_BASE = 28000;
 
 const OnboardingPage = () => {
   const navigate = useNavigate();
