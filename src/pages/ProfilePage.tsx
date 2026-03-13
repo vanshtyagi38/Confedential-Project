@@ -276,7 +276,7 @@ const ProfilePage = () => {
         tag: editTag || "New Companion",
         bio: editBio,
         interests: editInterests,
-        image_url: listingImageUrl || imageUrl,
+        image_url: listingImageUrl || imageUrl || existingProfile?.image_url || null,
         payment_status: "free",
         admin_status: "pending",
       });
