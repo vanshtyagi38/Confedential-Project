@@ -23,6 +23,29 @@ const OnboardingPage = () => {
     if (!authLoading && session && profile) {
       navigate("/", { replace: true });
     }
+    // Handle OAuth redirect — create profile if needed
+    if (!authLoading && session && !profile) {
+      const createProfileForOAuth = async () => {
+        const email = session.user.email || "";
+        const { error } = await createProfile({
+          gender: "male",
+          preferred_gender: "female",
+          age: 22,
+          display_name: email.split("@")[0] || "User",
+        });
+        if (!error) {
+          // Process referral if any
+          if (refCode) {
+            await (supabase as any).rpc("process_referral", {
+              p_referral_code: refCode,
+              p_referred_user_id: session.user.id,
+            });
+          }
+          navigate("/", { replace: true });
+        }
+      };
+      createProfileForOAuth();
+    }
   }, [authLoading, session, profile, navigate]);
 
   // Show loading if auth is still loading

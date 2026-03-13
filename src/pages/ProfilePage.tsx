@@ -241,7 +241,9 @@ const ProfilePage = () => {
         setEditSaving(false);
         return;
       }
-      if (!editImageFile && !imageUrl) {
+      // Check if user has an existing profile image or uploaded a new one
+      const { data: existingProfile } = await (supabase as any).from("user_profiles").select("image_url").eq("user_id", session.user.id).maybeSingle();
+      if (!editImageFile && !imageUrl && !existingProfile?.image_url) {
         toast.error("Photo is required to list your profile");
         setEditSaving(false);
         return;
@@ -274,7 +276,7 @@ const ProfilePage = () => {
         tag: editTag || "New Companion",
         bio: editBio,
         interests: editInterests,
-        image_url: listingImageUrl || imageUrl,
+        image_url: listingImageUrl || imageUrl || existingProfile?.image_url || null,
         payment_status: "free",
         admin_status: "pending",
       });
@@ -463,11 +465,11 @@ const ProfilePage = () => {
       </div>
 
       {/* Stats Grid */}
-      <div className="mx-4 mb-4 grid grid-cols-2 gap-3">
+      <div className="mx-4 mb-4 grid grid-cols-3 gap-3">
         {[
           { icon: Users, label: "Friends", value: stats.uniqueCompanions, color: "text-accent" },
-          { icon: Gift, label: "Free Min Received", value: totalFreeMinutes, color: "text-orange-500" },
-          { icon: UserPlus, label: "Total Invites", value: stats.referralCount, color: "text-primary" },
+          { icon: Gift, label: "Free Min", value: totalFreeMinutes, color: "text-orange-500" },
+          { icon: UserPlus, label: "Invites", value: stats.referralCount, color: "text-primary" },
         ].map(({ icon: Icon, label, value, color }) => (
           <div key={label} className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-card">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-secondary">

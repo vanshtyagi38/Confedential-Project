@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+
 import { useNavigate } from "react-router-dom";
 import { Flame, MapPin, MessageCircle, Circle } from "lucide-react";
 import { Companion } from "@/data/companions";
@@ -19,21 +20,31 @@ const ActiveNow = ({ companions, presenceMap }: ActiveNowProps) => {
   const navigate = useNavigate();
   const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null);
 
+  // Stable seed to avoid re-randomization on every render
+  const [shuffleSeed] = useState(() => Date.now());
+
   const activeCompanions = useMemo(() => {
     const now = Date.now();
     const tenMinutes = 10 * 60 * 1000;
 
-    return companions
-      .filter((c) => {
-        if (!c.isRealUser || !c.ownerUserId) return true; // AI companions always "active"
-        const p = presenceMap[c.ownerUserId];
-        if (!p) return false;
-        if (p.is_online) return true;
-        return now - new Date(p.last_seen).getTime() < tenMinutes;
-      })
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 15);
-  }, [companions, presenceMap]);
+    const filtered = companions.filter((c) => {
+      if (!c.isRealUser || !c.ownerUserId) return true;
+      const p = presenceMap[c.ownerUserId];
+      if (!p) return false;
+      if (p.is_online) return true;
+      return now - new Date(p.last_seen).getTime() < tenMinutes;
+    });
+
+    // Deterministic shuffle using seed
+    const shuffled = [...filtered];
+    let s = shuffleSeed;
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      s = (s * 9301 + 49297) % 233280;
+      const j = Math.floor((s / 233280) * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled.slice(0, 15);
+  }, [companions, presenceMap, shuffleSeed]);
 
   if (activeCompanions.length === 0) return null;
 
