@@ -217,23 +217,15 @@ async function handleWebhook(req: Request): Promise<Response> {
     )
   }
 
-  // Build template props from payload.data (HookData structure)
-  const fullToken = typeof payload.data.token === 'string' ? payload.data.token : ''
-  const displayToken = fullToken ? fullToken.slice(0, 6) : undefined
-
-  let tokenHash: string | null = null
-  try {
-    tokenHash = payload.data.url ? new URL(payload.data.url).searchParams.get('token_hash') : null
-  } catch {
-    tokenHash = null
-  }
+  // Generate our own 6-digit OTP code for display and verification
+  const generatedOtp = String(Math.floor(100000 + Math.random() * 900000))
 
   const templateProps = {
     siteName: SITE_NAME,
     siteUrl: `https://${ROOT_DOMAIN}`,
     recipient: payload.data.email,
     confirmationUrl: payload.data.url,
-    token: displayToken,
+    token: generatedOtp,
     email: payload.data.email,
     newEmail: payload.data.new_email,
   }
@@ -252,17 +244,13 @@ async function handleWebhook(req: Request): Promise<Response> {
 
   const messageId = crypto.randomUUID()
 
-  // Log pending BEFORE enqueue so we have a record even if enqueue crashes
-  const otpMetadata = displayToken && tokenHash
-    ? { otp_code: displayToken, token_hash: tokenHash }
-    : null
-
+  // Store our generated OTP code with the email for later verification
   await supabase.from('email_send_log').insert({
     message_id: messageId,
     template_name: emailType,
     recipient_email: payload.data.email,
     status: 'pending',
-    metadata: otpMetadata,
+    metadata: { otp_code: generatedOtp },
   })
 
   const { error: enqueueError } = await supabase.rpc('enqueue_email', {
