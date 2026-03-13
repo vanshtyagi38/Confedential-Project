@@ -141,7 +141,7 @@ const OnboardingPage = () => {
     if (e.key === "Backspace" && !otpDigits[index] && index > 0) {
       otpRefs.current[index - 1]?.focus();
     }
-    if (e.key === "Enter" && otp.length === 6 && !loading) {
+    if (e.key === "Enter" && otp.length >= 6 && !loading) {
       handleVerifyOtp();
     }
   };
