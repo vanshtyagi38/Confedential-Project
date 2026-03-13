@@ -69,28 +69,15 @@ const GoogleOneTap = () => {
         );
 
         const data = await resp.json();
-        if (!resp.ok || !data.token) {
+        if (!resp.ok || !data.token_hash) {
           toast.error(data.error || "Sign-in failed", { id: "onetap" });
           return;
         }
 
-        let verifyErr;
-        if (data.has_token_hash) {
-          // Use token_hash format
-          const result = await supabase.auth.verifyOtp({
-            token_hash: data.token,
-            type: "magiclink",
-          });
-          verifyErr = result.error;
-        } else {
-          // Use email + token format
-          const result = await supabase.auth.verifyOtp({
-            email: data.email,
-            token: data.token,
-            type: "magiclink",
-          });
-          verifyErr = result.error;
-        }
+        const { error: verifyErr } = await supabase.auth.verifyOtp({
+          token_hash: data.token_hash,
+          type: "magiclink",
+        });
 
         if (verifyErr) {
           console.error("verifyOtp error:", verifyErr);

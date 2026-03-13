@@ -170,42 +170,24 @@ Deno.serve(async (req) => {
       );
     }
 
-    const actionLink = sessionData.properties?.action_link || "";
-    let token = "";
-    let tokenHash = "";
-    try {
-      const linkUrl = new URL(actionLink);
-      // Try token_hash first, then fall back to token
-      tokenHash = linkUrl.searchParams.get("token_hash") || "";
-      token = linkUrl.searchParams.get("token") || "";
-      if (!tokenHash && !token) {
-        const hashParams = new URLSearchParams(linkUrl.hash.replace("#", ""));
-        tokenHash = hashParams.get("token_hash") || "";
-        token = hashParams.get("token") || "";
-      }
-    } catch {
-      const hashMatch = actionLink.match(/token_hash=([^&]+)/);
-      tokenHash = hashMatch?.[1] || "";
-      const tokenMatch = actionLink.match(/token=([^&]+)/);
-      token = tokenMatch?.[1] || "";
-    }
-
-    const finalToken = tokenHash || token;
-    if (!finalToken) {
-      console.error("Failed to extract token from action_link:", actionLink);
+    // Extract hashed_token from generateLink response (this is the token_hash for verifyOtp)
+    const hashedToken = sessionData.properties?.hashed_token || "";
+    
+    if (!hashedToken) {
+      // Fallback: try to get from action_link URL
+      const actionLink = sessionData.properties?.action_link || "";
+      console.error("No hashed_token in generateLink response. action_link:", actionLink, "properties:", JSON.stringify(sessionData.properties));
       return new Response(
         JSON.stringify({ error: "Failed to create session token" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const hasTokenHash = !!tokenHash;
-    console.log("Token extracted for user:", userId, "isNew:", isNew, "hasTokenHash:", hasTokenHash);
+    console.log("Token generated for user:", userId, "isNew:", isNew);
 
     return new Response(
       JSON.stringify({
-        token: finalToken,
-        has_token_hash: hasTokenHash,
+        token_hash: hashedToken,
         email,
         name,
         picture,
