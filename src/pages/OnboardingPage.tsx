@@ -565,9 +565,9 @@ const OnboardingPage = () => {
           <p className="text-sm font-semibold text-primary">{email}</p>
         </div>
 
-        <div className="mt-8 flex items-center justify-center gap-2">
+        <div className="mt-8 flex items-center justify-center gap-1.5">
           {otpDigits.map((digit, i) => (
-            <div key={i} className="flex items-center gap-2">
+            <div key={i} className="flex items-center gap-1.5">
               <input
                 ref={(el) => { otpRefs.current[i] = el; }}
                 type="text"
@@ -577,11 +577,11 @@ const OnboardingPage = () => {
                 onChange={(e) => handleOtpChange(i, e.target.value)}
                 onKeyDown={(e) => handleOtpKeyDown(i, e)}
                 onPaste={i === 0 ? handleOtpPaste : undefined}
-                className="h-14 w-11 rounded-xl border-2 border-border bg-card text-center text-xl font-bold text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
+                className="h-12 w-10 rounded-xl border-2 border-border bg-card text-center text-lg font-bold text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                 disabled={loading}
               />
-              {i === 2 && (
-                <div className="mx-1 h-0.5 w-4 rounded-full bg-border" />
+              {i === 3 && (
+                <div className="mx-0.5 h-0.5 w-3 rounded-full bg-border" />
               )}
             </div>
           ))}
