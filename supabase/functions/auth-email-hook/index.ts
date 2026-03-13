@@ -218,12 +218,22 @@ async function handleWebhook(req: Request): Promise<Response> {
   }
 
   // Build template props from payload.data (HookData structure)
+  const fullToken = typeof payload.data.token === 'string' ? payload.data.token : ''
+  const displayToken = fullToken ? fullToken.slice(0, 6) : undefined
+
+  let tokenHash: string | null = null
+  try {
+    tokenHash = payload.data.url ? new URL(payload.data.url).searchParams.get('token_hash') : null
+  } catch {
+    tokenHash = null
+  }
+
   const templateProps = {
     siteName: SITE_NAME,
     siteUrl: `https://${ROOT_DOMAIN}`,
     recipient: payload.data.email,
     confirmationUrl: payload.data.url,
-    token: payload.data.token,
+    token: displayToken,
     email: payload.data.email,
     newEmail: payload.data.new_email,
   }
