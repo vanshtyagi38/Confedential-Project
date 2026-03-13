@@ -54,7 +54,7 @@ export const SignupEmail = ({
           {token && (
             <Section style={otpSection}>
               <Text style={otpLabel}>Your verification code</Text>
-              <Text style={otpCode}>{String(token).slice(0, 6)}</Text>
+              <Text style={otpCode}>{token}</Text>
               <Text style={otpExpiry}>This code expires in 10 minutes</Text>
             </Section>
           )}
