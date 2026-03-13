@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Flame, MapPin, MessageCircle, Circle, Users } from "lucide-react";
+import { MapPin, MessageCircle, Circle, Search } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -30,6 +30,7 @@ const ActiveUsers = () => {
   const [starting, setStarting] = useState(false);
 
   useEffect(() => {
+    if (!session?.user) return;
     const load = async () => {
       const { data } = await (supabase as any)
         .from("user_profiles")
@@ -37,13 +38,11 @@ const ActiveUsers = () => {
         .eq("user_status", "online");
       
       if (data) {
-        // Filter out current user
         setUsers(data.filter((u: OnlineUser) => u.user_id !== session?.user?.id));
       }
     };
     load();
 
-    // Refresh every 30s
     const interval = setInterval(load, 30000);
     return () => clearInterval(interval);
   }, [session?.user?.id]);
@@ -53,7 +52,6 @@ const ActiveUsers = () => {
     setStarting(true);
     const myId = session.user.id;
 
-    // Check for blocks
     const { data: blocked } = await (supabase as any)
       .from("user_blocks")
       .select("id")
@@ -66,7 +64,6 @@ const ActiveUsers = () => {
       return;
     }
 
-    // Check existing room (either direction)
     const { data: existing } = await (supabase as any)
       .from("user_chat_rooms")
       .select("id")
@@ -80,7 +77,6 @@ const ActiveUsers = () => {
       return;
     }
 
-    // Create new room
     const { data: newRoom, error } = await (supabase as any)
       .from("user_chat_rooms")
       .insert({ user_a_id: myId, user_b_id: otherUserId })
@@ -109,8 +105,8 @@ const ActiveUsers = () => {
     <>
       <div className="mt-5 px-4">
         <div className="flex items-center gap-2 mb-3">
-          <Users className="h-5 w-5 text-accent" />
-          <h2 className="text-lg font-bold">Users Online</h2>
+          <Search className="h-5 w-5 text-accent" />
+          <h2 className="text-lg font-bold">Finding Someone 💫</h2>
           <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold text-accent">{users.length}</span>
         </div>
 

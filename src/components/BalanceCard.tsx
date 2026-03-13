@@ -2,14 +2,12 @@ import { Clock, UserPlus, Heart, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useState, useEffect, useRef, useCallback } from "react";
-import CompanionRegistration from "@/components/CompanionRegistration";
 import InvitePopup from "@/components/InvitePopup";
 
 const BalanceCard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const balance = profile?.balance_minutes || 0;
-  const [regOpen, setRegOpen] = useState(false);
   const [inviteOpen, setInviteOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -25,7 +23,7 @@ const BalanceCard = () => {
       cta: "Apply →",
       ctaClass: "bg-primary text-primary-foreground shadow-sm",
       gradientBg: "from-primary/8 via-card to-card",
-      onClick: () => setRegOpen(true),
+      onClick: () => navigate("/profile"),
     },
     {
       id: "recharge",
@@ -131,7 +129,7 @@ const BalanceCard = () => {
         ))}
       </div>
 
-      <CompanionRegistration open={regOpen} onClose={() => setRegOpen(false)} />
+      
       <InvitePopup
         open={inviteOpen}
         onClose={() => setInviteOpen(false)}
