@@ -177,12 +177,13 @@ const otpLabel = {
 }
 
 const otpCode = {
-  fontSize: '36px',
+  fontSize: '34px',
   fontWeight: '700' as const,
   color: '#d94072',
-  letterSpacing: '8px',
+  letterSpacing: '6px',
   fontFamily: "'SF Mono', 'Fira Code', 'Courier New', monospace",
-  margin: '0 0 8px',
+  margin: '0 auto 8px',
+  textAlign: 'center' as const,
 }
 
 const otpExpiry = {

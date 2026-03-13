@@ -37,10 +37,10 @@ const OnboardingPage = () => {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const refCode = searchParams.get("ref");
-  const { session, profile, loading: authLoading, signUpWithEmail, sendOtp, verifyOtp, createProfile } = useAuth();
+  const { session, profile, loading: authLoading, signUpWithEmail, sendOtp, createProfile } = useAuth();
   const [step, setStep] = useState<"welcome" | "email" | "otp">("welcome");
   const [email, setEmail] = useState("");
-  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", "", "", ""]);
+  const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -132,7 +132,7 @@ const OnboardingPage = () => {
     const newDigits = [...otpDigits];
     newDigits[index] = value.slice(-1);
     setOtpDigits(newDigits);
-    if (value && index < 7) {
+    if (value && index < 5) {
       otpRefs.current[index + 1]?.focus();
     }
   };
@@ -148,13 +148,13 @@ const OnboardingPage = () => {
 
   const handleOtpPaste = (e: React.ClipboardEvent) => {
     e.preventDefault();
-    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 8);
+    const pasted = e.clipboardData.getData("text").replace(/\D/g, "").slice(0, 6);
     const newDigits = [...otpDigits];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       newDigits[i] = pasted[i] || "";
     }
     setOtpDigits(newDigits);
-    const focusIndex = Math.min(pasted.length, 7);
+    const focusIndex = Math.min(pasted.length, 5);
     otpRefs.current[focusIndex]?.focus();
   };
 
@@ -285,10 +285,36 @@ const OnboardingPage = () => {
       }
     }
 
-    const { error } = await verifyOtp(email.trim(), otp);
-    if (error) {
+    const normalizedEmail = email.trim().toLowerCase();
+    let verificationError: { message?: string } | null = null;
+
+    try {
+      const lookupResp = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/verify-email-otp`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email: normalizedEmail, otp }),
+        }
+      );
+
+      const lookupData = await lookupResp.json();
+      if (!lookupResp.ok || !lookupData.token_hash) {
+        verificationError = { message: lookupData.error || "Invalid code. Try again." };
+      } else {
+        const { error } = await supabase.auth.verifyOtp({
+          token_hash: lookupData.token_hash,
+          type: "magiclink",
+        });
+        verificationError = error;
+      }
+    } catch {
+      verificationError = { message: "Verification failed. Try again." };
+    }
+
+    if (verificationError) {
       setLoading(false);
-      toast.error(error.message || "Invalid code. Try again.");
+      toast.error(verificationError.message || "Invalid code. Try again.");
       return;
     }
 
@@ -546,7 +572,7 @@ const OnboardingPage = () => {
 
       <div className="flex items-center px-4 pt-4">
         <button
-          onClick={() => { setStep("email"); setOtpDigits(["", "", "", "", "", "", "", ""]); }}
+          onClick={() => { setStep("email"); setOtpDigits(["", "", "", "", "", ""]); }}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-muted"
         >
           <ArrowLeft className="h-5 w-5 text-foreground" />
@@ -560,7 +586,7 @@ const OnboardingPage = () => {
           </div>
           <h2 className="text-2xl font-extrabold text-foreground">Check Your Email! 💌</h2>
           <p className="text-sm text-muted-foreground">
-            We sent a code to
+            We sent a 6-digit code to
           </p>
           <p className="text-sm font-semibold text-primary">{email}</p>
         </div>
@@ -580,7 +606,7 @@ const OnboardingPage = () => {
                 className="h-12 w-10 rounded-xl border-2 border-border bg-card text-center text-lg font-bold text-foreground outline-none transition-all focus:border-primary focus:ring-2 focus:ring-primary/20"
                 disabled={loading}
               />
-              {i === 3 && (
+              {i === 2 && (
                 <div className="mx-0.5 h-0.5 w-3 rounded-full bg-border" />
               )}
             </div>
@@ -597,7 +623,7 @@ const OnboardingPage = () => {
           </button>
 
           <button
-            onClick={() => { setOtpDigits(["", "", "", "", "", "", "", ""]); handleEmailSubmit(); }}
+            onClick={() => { setOtpDigits(["", "", "", "", "", ""]); handleEmailSubmit(); }}
             disabled={loading}
             className="w-full rounded-2xl border-2 border-border bg-card py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.97] disabled:opacity-50"
           >
