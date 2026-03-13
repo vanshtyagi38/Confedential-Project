@@ -271,7 +271,7 @@ const OnboardingPage = () => {
               <button
                 onClick={async () => {
                   const { error } = await lovable.auth.signInWithOAuth("google", {
-                    redirect_uri: `${window.location.origin}/auth/callback`,
+                    redirect_uri: OAUTH_REDIRECT_URI,
                   });
                   if (error) toast.error("Google sign-in failed. Try again.");
                 }}
