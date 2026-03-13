@@ -43,6 +43,7 @@ Deno.serve(async (req) => {
       `https://oauth2.googleapis.com/tokeninfo?id_token=${credential}`
     );
     if (!verifyResp.ok) {
+      console.error("Google token verification failed:", verifyResp.status);
       return new Response(
         JSON.stringify({ error: "Invalid Google token" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -53,6 +54,7 @@ Deno.serve(async (req) => {
 
     // Security: verify audience
     if (payload.aud !== GOOGLE_CLIENT_ID) {
+      console.error("Token audience mismatch:", payload.aud);
       return new Response(
         JSON.stringify({ error: "Token audience mismatch" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -83,16 +85,37 @@ Deno.serve(async (req) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
-    // Find existing user by email
-    const { data: userList } = await supabaseAdmin.auth.admin.listUsers();
-    const existingUser = userList?.users?.find(
-      (u) => u.email?.toLowerCase() === email.toLowerCase()
-    );
+    // Find existing user by email - paginate through ALL users
+    let existingUser = null;
+    let page = 1;
+    const perPage = 1000;
+    while (true) {
+      const { data: userList, error: listError } = await supabaseAdmin.auth.admin.listUsers({
+        page,
+        perPage,
+      });
+      if (listError) {
+        console.error("listUsers error:", listError);
+        break;
+      }
+      const found = userList?.users?.find(
+        (u: any) => u.email?.toLowerCase() === email.toLowerCase()
+      );
+      if (found) {
+        existingUser = found;
+        break;
+      }
+      // No more pages
+      if (!userList?.users || userList.users.length < perPage) break;
+      page++;
+    }
 
     let userId: string;
+    let isNew = false;
 
     if (existingUser) {
       userId = existingUser.id;
+      console.log("Existing user found:", userId);
     } else {
       // Create new user
       const { data: newUser, error: createError } =
@@ -107,15 +130,18 @@ Deno.serve(async (req) => {
           },
         });
       if (createError || !newUser?.user) {
+        console.error("createUser error:", createError);
         return new Response(
           JSON.stringify({ error: "Failed to create user" }),
           { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
       userId = newUser.user.id;
+      isNew = true;
+      console.log("New user created:", userId);
 
       // Create profile for new user
-      await supabaseAdmin.from("user_profiles").insert({
+      const { error: profileError } = await supabaseAdmin.from("user_profiles").insert({
         user_id: userId,
         display_name: name,
         gender: "male",
@@ -124,6 +150,9 @@ Deno.serve(async (req) => {
         email,
         image_url: picture,
       });
+      if (profileError) {
+        console.error("Profile creation error:", profileError);
+      }
     }
 
     // Generate magic link token for session creation
@@ -134,6 +163,7 @@ Deno.serve(async (req) => {
       });
 
     if (sessionError || !sessionData) {
+      console.error("generateLink error:", sessionError);
       return new Response(
         JSON.stringify({ error: "Failed to create session" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -155,17 +185,28 @@ Deno.serve(async (req) => {
       tokenHash = match?.[1] || "";
     }
 
+    if (!tokenHash) {
+      console.error("Failed to extract token_hash from action_link:", actionLink);
+      return new Response(
+        JSON.stringify({ error: "Failed to create session token" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    console.log("Successfully generated token_hash for user:", userId, "isNew:", isNew);
+
     return new Response(
       JSON.stringify({
         token_hash: tokenHash,
         email,
         name,
         picture,
-        is_new: !existingUser,
+        is_new: isNew,
       }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {
+    console.error("Unhandled error:", err);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

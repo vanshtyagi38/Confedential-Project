@@ -84,14 +84,8 @@ const GoogleOneTap = () => {
           return;
         }
 
-        if (data.is_new) {
-          await createProfile({
-            gender: "male",
-            preferred_gender: "female",
-            age: 22,
-            display_name: data.name || data.email?.split("@")[0],
-          });
-        }
+        // Profile is already created by the edge function for new users
+        // Just refresh to load it
 
         await refreshProfile();
         toast.success("Welcome! 🔥", { id: "onetap" });
