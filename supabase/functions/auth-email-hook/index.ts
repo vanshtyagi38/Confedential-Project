@@ -217,42 +217,15 @@ async function handleWebhook(req: Request): Promise<Response> {
     )
   }
 
-  // Build template props from payload.data (HookData structure)
-  const fullToken = typeof payload.data.token === 'string' ? payload.data.token : ''
-  const displayToken = fullToken ? fullToken.slice(0, 6) : undefined
-
-  // Extract token_hash: try payload.data.token_hash first, then URL params (token or token_hash)
-  let tokenHash: string | null = payload.data.token_hash || null
-  if (!tokenHash && payload.data.url) {
-    try {
-      const urlObj = new URL(payload.data.url)
-      tokenHash = urlObj.searchParams.get('token_hash') || urlObj.searchParams.get('token') || null
-      // Also check URL hash fragment for token
-      if (!tokenHash && urlObj.hash) {
-        const hashParams = new URLSearchParams(urlObj.hash.slice(1))
-        tokenHash = hashParams.get('token_hash') || hashParams.get('token') || null
-      }
-    } catch {
-      tokenHash = null
-    }
-  }
-
-  console.log('OTP metadata debug', {
-    hasToken: !!fullToken,
-    tokenLength: fullToken?.length,
-    displayToken,
-    hasTokenHash: !!tokenHash,
-    tokenHashPreview: tokenHash ? tokenHash.slice(0, 10) + '...' : null,
-    url: payload.data.url ? payload.data.url.slice(0, 80) + '...' : null,
-    payloadDataKeys: Object.keys(payload.data || {}),
-  })
+  // Generate our own 6-digit OTP code for display and verification
+  const generatedOtp = String(Math.floor(100000 + Math.random() * 900000))
 
   const templateProps = {
     siteName: SITE_NAME,
     siteUrl: `https://${ROOT_DOMAIN}`,
     recipient: payload.data.email,
     confirmationUrl: payload.data.url,
-    token: displayToken,
+    token: generatedOtp,
     email: payload.data.email,
     newEmail: payload.data.new_email,
   }
