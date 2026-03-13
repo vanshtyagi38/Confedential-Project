@@ -1,6 +1,6 @@
 {
   "rewrites": [
-    { "source": "/~oauth/:path*", "destination": "/~oauth/:path*" },
+    { "source": "/~oauth/:path*", "destination": "https://singletape.lovable.app/~oauth/:path*" },
     { "source": "/(.*)", "destination": "/" }
   ],
   "headers": [
