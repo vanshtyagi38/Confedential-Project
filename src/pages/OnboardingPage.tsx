@@ -597,7 +597,7 @@ const OnboardingPage = () => {
           </button>
 
           <button
-            onClick={() => { setOtpDigits(["", "", "", "", "", ""]); handleEmailSubmit(); }}
+            onClick={() => { setOtpDigits(["", "", "", "", "", "", "", ""]); handleEmailSubmit(); }}
             disabled={loading}
             className="w-full rounded-2xl border-2 border-border bg-card py-3.5 text-sm font-semibold text-foreground transition-all hover:bg-secondary active:scale-[0.97] disabled:opacity-50"
           >
