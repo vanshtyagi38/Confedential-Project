@@ -65,6 +65,31 @@ const ProfilePage = () => {
     }
   }, []);
 
+  // Load user status
+  useEffect(() => {
+    if (!session?.user) return;
+    const loadStatus = async () => {
+      const { data } = await (supabase as any).from("user_profiles")
+        .select("user_status")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+      if (data?.user_status) setUserStatus(data.user_status);
+    };
+    loadStatus();
+  }, [session?.user]);
+
+  const handleToggleStatus = async () => {
+    if (!session?.user || statusLoading) return;
+    setStatusLoading(true);
+    const newStatus = userStatus === "online" ? "offline" : "online";
+    await (supabase as any).from("user_profiles")
+      .update({ user_status: newStatus })
+      .eq("user_id", session.user.id);
+    setUserStatus(newStatus);
+    setStatusLoading(false);
+    toast.success(newStatus === "online" ? "You're now visible to others! 🟢" : "You're now offline 🔴");
+  };
+
   const handleSignOut = async () => {
     await signOut();
     navigate("/onboarding", { replace: true });
