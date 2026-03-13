@@ -54,7 +54,7 @@ export const SignupEmail = ({
           {token && (
             <Section style={otpSection}>
               <Text style={otpLabel}>Your verification code</Text>
-              <Text style={otpCode}>{token}</Text>
+              <Text style={otpCode}>{String(token).slice(0, 6)}</Text>
               <Text style={otpExpiry}>This code expires in 10 minutes</Text>
             </Section>
           )}
@@ -74,8 +74,8 @@ export const SignupEmail = ({
           </Section>
 
           <Text style={linkFallback}>
-            If the button doesn't work, copy and paste this link into your browser:{' '}
-            <Link href={confirmationUrl} style={link}>{confirmationUrl}</Link>
+            If the button doesn't work,{' '}
+            <Link href={confirmationUrl} style={link}>click here to verify</Link>.
           </Text>
         </Section>
 
