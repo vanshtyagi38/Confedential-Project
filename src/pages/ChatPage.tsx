@@ -184,6 +184,34 @@ const ChatPage = () => {
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
   const [deleteChatOpen, setDeleteChatOpen] = useState(false);
+  const [blockedUntil, setBlockedUntil] = useState<number | null>(null);
+
+  // Load block state from localStorage on mount
+  useEffect(() => {
+    if (!companion) return;
+    const key = `block_${session?.user?.id}_${companion.id}`;
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const until = parseInt(stored, 10);
+      if (Date.now() < until) {
+        setBlockedUntil(until);
+      } else {
+        localStorage.removeItem(key);
+      }
+    }
+  }, [companion, session?.user?.id]);
+
+  // Timer to auto-clear block when expired
+  useEffect(() => {
+    if (!blockedUntil) return;
+    const remaining = blockedUntil - Date.now();
+    if (remaining <= 0) { setBlockedUntil(null); return; }
+    const timer = setTimeout(() => setBlockedUntil(null), remaining);
+    return () => clearTimeout(timer);
+  }, [blockedUntil]);
+
+  const isBlocked = blockedUntil !== null && Date.now() < blockedUntil;
+  const blockMinutesLeft = isBlocked ? Math.ceil((blockedUntil! - Date.now()) / 60000) : 0;
 
   // Determine if this is a real user companion (no AI)
   const isRealUser = companion?.isRealUser === true;
