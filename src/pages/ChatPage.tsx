@@ -990,7 +990,7 @@ const ChatPage = () => {
           </button>
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            disabled={streaming || (!isOwnerMode && outOfBalance)}
+            disabled={streaming || isBlocked || (!isOwnerMode && outOfBalance)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-all hover:text-foreground active:scale-90 disabled:opacity-40"
           >
             <Smile className="h-5 w-5" />
