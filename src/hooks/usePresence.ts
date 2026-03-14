@@ -2,8 +2,8 @@ import { useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
 
-const HEARTBEAT_INTERVAL = 60000; // 60 seconds (reduced from 30s for scale)
-const DEBOUNCE_MS = 2000; // Debounce rapid visibility changes
+const HEARTBEAT_INTERVAL = 60_000; // 60s heartbeat for scale
+const DEBOUNCE_MS = 2_000; // Debounce rapid visibility changes
 
 export function usePresence() {
   const { session } = useAuth();
