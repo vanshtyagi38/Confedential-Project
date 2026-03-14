@@ -167,60 +167,40 @@ const OnboardingPage = () => {
     }
     setLoading(true);
 
-    if (isReturning) {
-      const { error } = await sendOtp(trimmed);
-      setLoading(false);
-      if (error) {
+    // Always send OTP - for both new and returning users
+    // First check if user already exists by trying sendOtp
+    const { error } = await sendOtp(trimmed);
+    if (error) {
+      // If sendOtp fails for new users (user not found), create user first then send OTP
+      if (error.message?.includes("Signups not allowed") || error.message?.includes("not found")) {
+        // Create user account first (auto-confirm so OTP can be sent)
+        const { error: signupError } = await signUpWithEmail(trimmed);
+        if (signupError && !signupError.message?.includes("already registered")) {
+          setLoading(false);
+          toast.error(signupError.message || "Sign up failed");
+          return;
+        }
+        // Sign out immediately - user must verify OTP before getting access
+        await supabase.auth.signOut();
+        // Now send OTP to the newly created user
+        const { error: otpError } = await sendOtp(trimmed);
+        if (otpError) {
+          setLoading(false);
+          toast.error(otpError.message || "Failed to send code");
+          return;
+        }
+      } else {
+        setLoading(false);
         toast.error(error.message || "Failed to send code");
         return;
       }
-      toast.success("Check your email for the code! 💌");
-      setStep("otp");
     } else {
-      const { error, session: newSession } = await signUpWithEmail(trimmed);
-      if (error) {
-        if (error.message?.includes("already registered")) {
-          const { error: otpError } = await sendOtp(trimmed);
-          setLoading(false);
-          if (otpError) {
-            toast.error(otpError.message || "Failed to send code");
-            return;
-          }
-          toast.info("Welcome back! Check your email to sign in 💕");
-          setIsReturning(true);
-          setStep("otp");
-          return;
-        }
-        setLoading(false);
-        toast.error(error.message || "Sign up failed");
-        return;
-      }
-
-      const { error: profileError } = await createProfile({
-        gender: "male",
-        preferred_gender: "female",
-        age: 22,
-        display_name: trimmed.split("@")[0],
-      });
-      if (profileError) {
-        setLoading(false);
-        toast.error("Something went wrong. Try again.");
-        return;
-      }
-      if (refCode) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const userId = sessionData?.session?.user?.id;
-        if (userId) {
-          await (supabase as any).rpc("process_referral", {
-            p_referral_code: refCode,
-            p_referred_user_id: userId,
-          });
-        }
-      }
-      setLoading(false);
-      toast.success("You're in! Start chatting now 🔥");
-      navigate("/", { replace: true });
+      // sendOtp succeeded - user exists, mark as returning
+      setIsReturning(true);
     }
+    setLoading(false);
+    toast.success("Check your email for the code! 💌");
+    setStep("otp");
   };
 
   /* ── OTP verify ─────────────────────────────────── */
@@ -318,33 +298,37 @@ const OnboardingPage = () => {
       return;
     }
 
-    if (isReturning) {
-      setLoading(false);
-      navigate("/", { replace: true });
-      return;
-    }
+    // After successful OTP, check if profile exists — if not, create one
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    if (userId) {
+      const { data: existingProfile } = await (supabase as any)
+        .from("user_profiles")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    const { error: profileError } = await createProfile({
-      gender: "male",
-      preferred_gender: "female",
-      age: 22,
-      display_name: email.split("@")[0],
-    });
-    if (profileError) {
-      setLoading(false);
-      toast.error("Something went wrong. Try again.");
-      return;
-    }
-    if (refCode) {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-      if (userId) {
-        await (supabase as any).rpc("process_referral", {
-          p_referral_code: refCode,
-          p_referred_user_id: userId,
+      if (!existingProfile) {
+        const { error: profileError } = await createProfile({
+          gender: "male",
+          preferred_gender: "female",
+          age: 22,
+          display_name: email.split("@")[0],
         });
+        if (profileError) {
+          setLoading(false);
+          toast.error("Something went wrong. Try again.");
+          return;
+        }
+        if (refCode) {
+          await (supabase as any).rpc("process_referral", {
+            p_referral_code: refCode,
+            p_referred_user_id: userId,
+          });
+        }
       }
     }
+
     setLoading(false);
     navigate("/", { replace: true });
   };
