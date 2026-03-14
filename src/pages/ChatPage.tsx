@@ -430,7 +430,7 @@ const ChatPage = () => {
   }
 
   const sendMessage = async (text: string) => {
-    if (streaming || chatLocked) return;
+    if (streaming || chatLocked || aiLockRef.current) return;
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
 
