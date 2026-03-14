@@ -920,12 +920,12 @@ const ChatPage = () => {
 
       {/* Quick replies */}
       {!isOwnerMode && messages.length <= 1 && !outOfBalance && (
-        <div className="flex gap-2 overflow-x-auto px-4 pb-2">
+        <div className="flex gap-2 overflow-x-auto px-4 py-2 border-t border-border/50 bg-background no-scrollbar">
           {quickReplies.map((qr) => (
             <button
               key={qr}
               onClick={() => sendMessage(qr)}
-              className="shrink-0 rounded-full border bg-card px-4 py-2 text-xs font-medium text-foreground transition-all hover:bg-secondary active:scale-95"
+              className="shrink-0 rounded-full border border-border bg-card px-4 py-2 text-xs font-medium text-foreground transition-all hover:bg-secondary active:scale-95"
             >
               {qr}
             </button>
