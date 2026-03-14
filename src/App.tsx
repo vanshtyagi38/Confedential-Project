@@ -101,6 +101,9 @@ const App = () => (
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/refund" element={<RefundPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PresenceTracker>

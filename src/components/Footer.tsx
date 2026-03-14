@@ -535,17 +535,17 @@ const Footer = () => {
         </p>
 
         <div className="flex items-center justify-center gap-1 text-[10px]">
-          <button onClick={() => handlePolicyClick("privacy")} className="text-primary/70 hover:text-primary transition-colors">
+          <a href="/privacy" className="text-primary/70 hover:text-primary transition-colors">
             Privacy policy
-          </button>
+          </a>
           <span className="text-muted-foreground">·</span>
-          <button onClick={() => handlePolicyClick("terms")} className="text-primary/70 hover:text-primary transition-colors">
+          <a href="/terms" className="text-primary/70 hover:text-primary transition-colors">
             Terms & conditions
-          </button>
+          </a>
           <span className="text-muted-foreground">·</span>
-          <button onClick={() => handlePolicyClick("refund")} className="text-primary/70 hover:text-primary transition-colors">
+          <a href="/refund" className="text-primary/70 hover:text-primary transition-colors">
             Refund policy
-          </button>
+          </a>
         </div>
       </footer>
 
