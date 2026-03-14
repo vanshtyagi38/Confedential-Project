@@ -463,6 +463,7 @@ const ChatPage = () => {
       toast.error(`You're blocked for ${blockMinutesLeft} more minute(s). Please wait.`, { duration: 4000 });
       return;
     }
+    const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
 
     // Only check balance for normal users (not companion owners)
