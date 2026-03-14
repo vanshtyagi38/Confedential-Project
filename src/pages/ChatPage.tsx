@@ -20,7 +20,7 @@ type MessageStatus = "sending" | "sent" | "delivered" | "seen";
 type Message = {
   id: string;
   text: string;
-  sender: "user" | "companion";
+  sender: "user" | "companion" | "system";
   time: string;
   imageUrl?: string;
   status?: MessageStatus;
