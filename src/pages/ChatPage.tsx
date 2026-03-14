@@ -20,7 +20,7 @@ type MessageStatus = "sending" | "sent" | "delivered" | "seen";
 type Message = {
   id: string;
   text: string;
-  sender: "user" | "companion";
+  sender: "user" | "companion" | "system";
   time: string;
   imageUrl?: string;
   status?: MessageStatus;
@@ -184,6 +184,34 @@ const ChatPage = () => {
   const [reportReason, setReportReason] = useState("");
   const [reporting, setReporting] = useState(false);
   const [deleteChatOpen, setDeleteChatOpen] = useState(false);
+  const [blockedUntil, setBlockedUntil] = useState<number | null>(null);
+
+  // Load block state from localStorage on mount
+  useEffect(() => {
+    if (!companion) return;
+    const key = `block_${session?.user?.id}_${companion.id}`;
+    const stored = localStorage.getItem(key);
+    if (stored) {
+      const until = parseInt(stored, 10);
+      if (Date.now() < until) {
+        setBlockedUntil(until);
+      } else {
+        localStorage.removeItem(key);
+      }
+    }
+  }, [companion, session?.user?.id]);
+
+  // Timer to auto-clear block when expired
+  useEffect(() => {
+    if (!blockedUntil) return;
+    const remaining = blockedUntil - Date.now();
+    if (remaining <= 0) { setBlockedUntil(null); return; }
+    const timer = setTimeout(() => setBlockedUntil(null), remaining);
+    return () => clearTimeout(timer);
+  }, [blockedUntil]);
+
+  const isBlocked = blockedUntil !== null && Date.now() < blockedUntil;
+  const blockMinutesLeft = isBlocked ? Math.ceil((blockedUntil! - Date.now()) / 60000) : 0;
 
   // Determine if this is a real user companion (no AI)
   const isRealUser = companion?.isRealUser === true;
@@ -431,6 +459,10 @@ const ChatPage = () => {
 
   const sendMessage = async (text: string) => {
     if (streaming || chatLocked || aiLockRef.current) return;
+    if (isBlocked) {
+      toast.error(`You're blocked for ${blockMinutesLeft} more minute(s). Please wait.`, { duration: 4000 });
+      return;
+    }
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
 
@@ -568,32 +600,70 @@ const ChatPage = () => {
         onDelta: (chunk) => {
           streamTextRef.current += chunk;
           const currentText = streamTextRef.current;
+          // Intercept block tag during streaming — don't show it
+          if (currentText.includes("[BLOCK_USER_30MIN]")) {
+            // Abort the stream immediately
+            abortRef.current?.abort();
+            releaseLock();
+            // Activate 30-min block
+            const until = Date.now() + 30 * 60 * 1000;
+            const key = `block_${session?.user?.id}_${companion.id}`;
+            localStorage.setItem(key, until.toString());
+            setBlockedUntil(until);
+            // Remove streamed message, show system warning
+            setMessages((prev) => [
+              ...prev.filter((m) => m.id !== companionMsgId),
+              {
+                id: `block-${Date.now()}`,
+                text: `⚠️ ${companion.name} has blocked you for 30 minutes due to repeated inappropriate behavior. Please be respectful when chatting.`,
+                sender: "system",
+                time: getTimeString(),
+              },
+            ]);
+            saveMessage(companion.id, "assistant", "[User blocked for 30 minutes due to abuse]");
+            toast.error(`Blocked for 30 minutes by ${companion.name}`, { duration: 8000 });
+            return;
+          }
+          // Filter out any partial block tag from display
+          const displayText = currentText.replace(/\[BLOCK_USER_30MIN\]/g, "").trim();
           setMessages((prev) =>
-            prev.map((m) => (m.id === companionMsgId ? { ...m, text: currentText } : m))
+            prev.map((m) => (m.id === companionMsgId ? { ...m, text: displayText } : m))
           );
         },
         onDone: () => {
           releaseLock();
           const finalText = streamTextRef.current.trim();
           
-          // Check if AI triggered abuse block
+          // Double-check block tag in final text
           if (finalText.includes("[BLOCK_USER_30MIN]")) {
-            // Remove the AI message and show block notice
-            setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
-            const blockMsg: Message = {
-              id: `block-${Date.now()}`,
-              text: "You've been blocked for 30 minutes due to inappropriate behavior. Please be respectful.",
-              sender: "companion",
-              time: getTimeString(),
-            };
-            setMessages((prev) => [...prev, blockMsg]);
-            saveMessage(companion.id, "assistant", "You've been temporarily blocked for inappropriate behavior.");
-            toast.error("Blocked for 30 minutes due to abuse.", { duration: 8000 });
+            const until = Date.now() + 30 * 60 * 1000;
+            const key = `block_${session?.user?.id}_${companion.id}`;
+            localStorage.setItem(key, until.toString());
+            setBlockedUntil(until);
+            setMessages((prev) => [
+              ...prev.filter((m) => m.id !== companionMsgId),
+              {
+                id: `block-${Date.now()}`,
+                text: `⚠️ ${companion.name} has blocked you for 30 minutes due to repeated inappropriate behavior. Please be respectful when chatting.`,
+                sender: "system",
+                time: getTimeString(),
+              },
+            ]);
+            saveMessage(companion.id, "assistant", "[User blocked for 30 minutes due to abuse]");
+            toast.error(`Blocked for 30 minutes by ${companion.name}`, { duration: 8000 });
             return;
           }
           
-          setChatHistory((prev) => [...prev, { role: "assistant", content: finalText }]);
-          saveMessage(companion.id, "assistant", finalText);
+          const cleanText = finalText.replace(/\[BLOCK_USER_30MIN\]/g, "").trim();
+          if (cleanText) {
+            setMessages((prev) =>
+              prev.map((m) => (m.id === companionMsgId ? { ...m, text: cleanText } : m))
+            );
+            setChatHistory((prev) => [...prev, { role: "assistant", content: cleanText }]);
+            saveMessage(companion.id, "assistant", cleanText);
+          } else {
+            setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
+          }
         },
         onError: (err) => {
           releaseLock();
@@ -602,8 +672,6 @@ const ChatPage = () => {
             toast.error("Too many messages! Wait a moment.", { duration: 5000 });
           } else if (err.includes("402")) {
             toast.error("AI credits exhausted. Try again later.", { duration: 5000 });
-          } else if (err.includes("blocked")) {
-            toast.error("You've been blocked for 30 minutes due to inappropriate behavior.", { duration: 8000 });
           } else {
             toast.error(err, {
               action: { label: "Retry", onClick: () => sendMessage(trimmed) },
@@ -713,7 +781,16 @@ const ChatPage = () => {
         </div>
       )}
 
-      {/* Out of balance banner */}
+      {/* User blocked banner */}
+      {isBlocked && !chatLocked && (
+        <div className="flex items-center justify-center gap-2 bg-destructive/10 px-4 py-3">
+          <Ban className="h-4 w-4 text-destructive" />
+          <span className="text-xs font-bold text-destructive">
+            🚫 You're blocked for {blockMinutesLeft} minute(s). Please be respectful.
+          </span>
+        </div>
+      )}
+
       {!isOwnerMode && outOfBalance && !chatLocked && (
         <div className="flex items-center justify-between bg-destructive/10 px-4 py-2.5">
           <div className="flex items-center gap-2 text-xs font-medium text-destructive">
@@ -732,6 +809,14 @@ const ChatPage = () => {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((msg) => (
+          msg.sender === "system" ? (
+            <div key={msg.id} className="flex justify-center animate-fade-in-up my-2">
+              <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-2.5 max-w-[85%] text-center">
+                <p className="text-xs font-medium text-destructive">{msg.text}</p>
+                <p className="text-[9px] text-muted-foreground mt-1">{msg.time}</p>
+              </div>
+            </div>
+          ) : (
           <div
             key={msg.id}
             className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in-up ${selectMode ? "cursor-pointer" : ""}`}
@@ -770,6 +855,7 @@ const ChatPage = () => {
               </div>
             </div>
           </div>
+          )
         ))}
 
         {showTypingIndicator && (
@@ -897,14 +983,14 @@ const ChatPage = () => {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={streaming || (!isOwnerMode && outOfBalance)}
+            disabled={streaming || isBlocked || (!isOwnerMode && outOfBalance)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-all hover:text-foreground active:scale-90 disabled:opacity-40"
           >
             <ImageIcon className="h-5 w-5" />
           </button>
           <button
             onClick={() => setShowEmojiPicker(!showEmojiPicker)}
-            disabled={streaming || (!isOwnerMode && outOfBalance)}
+            disabled={streaming || isBlocked || (!isOwnerMode && outOfBalance)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-secondary text-muted-foreground transition-all hover:text-foreground active:scale-90 disabled:opacity-40"
           >
             <Smile className="h-5 w-5" />
@@ -918,7 +1004,9 @@ const ChatPage = () => {
             }}
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
             placeholder={
-              !isOwnerMode && outOfBalance
+              isBlocked
+                ? `Blocked for ${blockMinutesLeft} min...`
+                : !isOwnerMode && outOfBalance
                 ? "Recharge to continue chatting..."
                 : pendingImage
                 ? "Add a caption..."
@@ -926,12 +1014,12 @@ const ChatPage = () => {
                 ? "Reply as your companion..."
                 : "Type a message..."
             }
-            disabled={streaming || (!isOwnerMode && outOfBalance)}
+            disabled={streaming || isBlocked || (!isOwnerMode && outOfBalance)}
             className="flex-1 rounded-full bg-secondary px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={(!input.trim() && !pendingImage) || streaming || (!isOwnerMode && outOfBalance)}
+            disabled={(!input.trim() && !pendingImage) || streaming || isBlocked || (!isOwnerMode && outOfBalance)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-primary text-primary-foreground transition-transform active:scale-90 disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
