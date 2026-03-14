@@ -168,6 +168,7 @@ const ChatPage = () => {
   const streamTextRef = useRef("");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const aiLockRef = useRef(false); // Prevents duplicate AI generation
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
@@ -429,7 +430,7 @@ const ChatPage = () => {
   }
 
   const sendMessage = async (text: string) => {
-    if (streaming || chatLocked) return;
+    if (streaming || chatLocked || aiLockRef.current) return;
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
 
@@ -511,7 +512,9 @@ const ChatPage = () => {
       return;
     }
 
-    // AI companion flow
+    // AI companion flow — acquire lock immediately to prevent duplicates
+    aiLockRef.current = true;
+
     let userContent: ChatContent;
     if (imageUrl) {
       const parts: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> = [];
@@ -542,6 +545,12 @@ const ChatPage = () => {
 
     abortRef.current = new AbortController();
 
+    const releaseLock = () => {
+      aiLockRef.current = false;
+      setStreaming(false);
+      abortRef.current = null;
+    };
+
     try {
       await streamChat({
         messages: newHistory.slice(-20),
@@ -564,20 +573,37 @@ const ChatPage = () => {
           );
         },
         onDone: () => {
-          setStreaming(false);
-          abortRef.current = null;
-          const finalText = streamTextRef.current;
+          releaseLock();
+          const finalText = streamTextRef.current.trim();
+          
+          // Check if AI triggered abuse block
+          if (finalText.includes("[BLOCK_USER_30MIN]")) {
+            // Remove the AI message and show block notice
+            setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
+            const blockMsg: Message = {
+              id: `block-${Date.now()}`,
+              text: "You've been blocked for 30 minutes due to inappropriate behavior. Please be respectful.",
+              sender: "companion",
+              time: getTimeString(),
+            };
+            setMessages((prev) => [...prev, blockMsg]);
+            saveMessage(companion.id, "assistant", "You've been temporarily blocked for inappropriate behavior.");
+            toast.error("Blocked for 30 minutes due to abuse.", { duration: 8000 });
+            return;
+          }
+          
           setChatHistory((prev) => [...prev, { role: "assistant", content: finalText }]);
           saveMessage(companion.id, "assistant", finalText);
         },
         onError: (err) => {
-          setStreaming(false);
-          abortRef.current = null;
+          releaseLock();
           setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
           if (err.includes("429")) {
             toast.error("Too many messages! Wait a moment.", { duration: 5000 });
           } else if (err.includes("402")) {
             toast.error("AI credits exhausted. Try again later.", { duration: 5000 });
+          } else if (err.includes("blocked")) {
+            toast.error("You've been blocked for 30 minutes due to inappropriate behavior.", { duration: 8000 });
           } else {
             toast.error(err, {
               action: { label: "Retry", onClick: () => sendMessage(trimmed) },
@@ -586,8 +612,8 @@ const ChatPage = () => {
         },
       });
     } catch (e: any) {
+      releaseLock();
       if (e.name === "AbortError") return;
-      setStreaming(false);
       setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
       toast.error("Connection lost.", {
         action: { label: "Retry", onClick: () => sendMessage(trimmed) },
