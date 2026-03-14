@@ -298,33 +298,37 @@ const OnboardingPage = () => {
       return;
     }
 
-    if (isReturning) {
-      setLoading(false);
-      navigate("/", { replace: true });
-      return;
-    }
+    // After successful OTP, check if profile exists — if not, create one
+    const { data: sessionData } = await supabase.auth.getSession();
+    const userId = sessionData?.session?.user?.id;
+    if (userId) {
+      const { data: existingProfile } = await (supabase as any)
+        .from("user_profiles")
+        .select("user_id")
+        .eq("user_id", userId)
+        .maybeSingle();
 
-    const { error: profileError } = await createProfile({
-      gender: "male",
-      preferred_gender: "female",
-      age: 22,
-      display_name: email.split("@")[0],
-    });
-    if (profileError) {
-      setLoading(false);
-      toast.error("Something went wrong. Try again.");
-      return;
-    }
-    if (refCode) {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData?.session?.user?.id;
-      if (userId) {
-        await (supabase as any).rpc("process_referral", {
-          p_referral_code: refCode,
-          p_referred_user_id: userId,
+      if (!existingProfile) {
+        const { error: profileError } = await createProfile({
+          gender: "male",
+          preferred_gender: "female",
+          age: 22,
+          display_name: email.split("@")[0],
         });
+        if (profileError) {
+          setLoading(false);
+          toast.error("Something went wrong. Try again.");
+          return;
+        }
+        if (refCode) {
+          await (supabase as any).rpc("process_referral", {
+            p_referral_code: refCode,
+            p_referred_user_id: userId,
+          });
+        }
       }
     }
+
     setLoading(false);
     navigate("/", { replace: true });
   };
