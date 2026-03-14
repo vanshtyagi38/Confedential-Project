@@ -295,7 +295,7 @@ const UserChatPage = () => {
   const otherName = otherUser?.display_name || "User";
 
   return (
-    <div className="mx-auto flex h-screen w-full max-w-2xl flex-col bg-background">
+    <div className="mx-auto flex h-[100dvh] w-full max-w-2xl flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-card px-3 py-3">
         <button onClick={() => navigate("/chats")} className="p-1">
@@ -454,7 +454,7 @@ const UserChatPage = () => {
       </Dialog>
 
       {/* Input */}
-      <div className="border-t bg-card px-3 py-3">
+      <div className="border-t bg-card px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
           <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageSelect} />
           <button

@@ -743,7 +743,7 @@ const ChatPage = () => {
   const headerName = isOwnerMode ? "Chat" : companion.name;
 
   return (
-    <div className="mx-auto flex h-screen w-full max-w-2xl flex-col bg-background">
+    <div className="mx-auto flex h-[100dvh] w-full max-w-2xl flex-col bg-background">
       {!online && (
         <div className="bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground">
           You're offline. Messages will send when connected.
@@ -920,12 +920,12 @@ const ChatPage = () => {
 
       {/* Quick replies */}
       {!isOwnerMode && messages.length <= 1 && !outOfBalance && (
-        <div className="flex gap-2 overflow-x-auto px-4 pb-2">
+        <div className="flex gap-2 overflow-x-auto px-4 py-2 border-t border-border/50 bg-background no-scrollbar">
           {quickReplies.map((qr) => (
             <button
               key={qr}
               onClick={() => sendMessage(qr)}
-              className="shrink-0 rounded-full border bg-card px-4 py-2 text-xs font-medium text-foreground transition-all hover:bg-secondary active:scale-95"
+              className="shrink-0 rounded-full border border-border bg-card px-4 py-2 text-xs font-medium text-foreground transition-all hover:bg-secondary active:scale-95"
             >
               {qr}
             </button>
@@ -1020,7 +1020,7 @@ const ChatPage = () => {
       </Dialog>
 
       {/* Input */}
-      <div className="border-t bg-card px-3 py-3">
+      <div className="border-t bg-card px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
           <input
             type="file"
