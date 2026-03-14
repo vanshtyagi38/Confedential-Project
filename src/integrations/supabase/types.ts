@@ -80,6 +80,72 @@ export type Database = {
         }
         Relationships: []
       }
+      api_alert_thresholds: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          last_triggered_at: string | null
+          metric_name: string
+          threshold_value: number
+          updated_at: string
+          window_minutes: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          metric_name: string
+          threshold_value: number
+          updated_at?: string
+          window_minutes?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          last_triggered_at?: string | null
+          metric_name?: string
+          threshold_value?: number
+          updated_at?: string
+          window_minutes?: number
+        }
+        Relationships: []
+      }
+      api_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          current_value: number
+          details: Json | null
+          id: string
+          metric_name: string
+          resolved_at: string | null
+          threshold_value: number
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          current_value: number
+          details?: Json | null
+          id?: string
+          metric_name: string
+          resolved_at?: string | null
+          threshold_value: number
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          current_value?: number
+          details?: Json | null
+          id?: string
+          metric_name?: string
+          resolved_at?: string | null
+          threshold_value?: number
+        }
+        Relationships: []
+      }
       api_request_logs: {
         Row: {
           api_version: string | null
