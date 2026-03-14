@@ -172,6 +172,9 @@ const ChatPage = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
+  const lastActivityRef = useRef(Date.now());
+  const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const IDLE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes of inactivity stops billing
   const streakUpdatedRef = useRef(false);
   const [showInstallPopup, setShowInstallPopup] = useState(false);
   const installPromptShownRef = useRef(false);
