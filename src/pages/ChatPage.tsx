@@ -1004,7 +1004,9 @@ const ChatPage = () => {
             }}
             onKeyDown={(e) => e.key === "Enter" && sendMessage(input)}
             placeholder={
-              !isOwnerMode && outOfBalance
+              isBlocked
+                ? `Blocked for ${blockMinutesLeft} min...`
+                : !isOwnerMode && outOfBalance
                 ? "Recharge to continue chatting..."
                 : pendingImage
                 ? "Add a caption..."
@@ -1012,7 +1014,7 @@ const ChatPage = () => {
                 ? "Reply as your companion..."
                 : "Type a message..."
             }
-            disabled={streaming || (!isOwnerMode && outOfBalance)}
+            disabled={streaming || isBlocked || (!isOwnerMode && outOfBalance)}
             className="flex-1 rounded-full bg-secondary px-4 py-2.5 text-sm outline-none placeholder:text-muted-foreground disabled:opacity-50"
           />
           <button
