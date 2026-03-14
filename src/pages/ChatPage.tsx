@@ -172,6 +172,9 @@ const ChatPage = () => {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const minutesUsedRef = useRef(0);
   const chatActiveRef = useRef(false);
+  const lastActivityRef = useRef(Date.now());
+  const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const IDLE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes of inactivity stops billing
   const streakUpdatedRef = useRef(false);
   const [showInstallPopup, setShowInstallPopup] = useState(false);
   const installPromptShownRef = useRef(false);
@@ -326,39 +329,84 @@ const ChatPage = () => {
     if ((profile?.balance_minutes || 0) <= 0) setOutOfBalance(true);
   }, [profile?.balance_minutes, isOwnerMode]);
 
+  const stopTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    chatActiveRef.current = false;
+  }, []);
+
+  const resetIdleTimeout = useCallback(() => {
+    if (isOwnerMode) return;
+    lastActivityRef.current = Date.now();
+    if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+    idleTimeoutRef.current = setTimeout(() => {
+      // User idle for 2 min — stop billing
+      stopTimer();
+    }, IDLE_TIMEOUT_MS);
+  }, [isOwnerMode, stopTimer]);
+
   const startTimer = useCallback(() => {
-    if (isOwnerMode) return; // Owners don't pay
-    if (chatActiveRef.current || timerRef.current) return;
+    if (isOwnerMode) return;
+    resetIdleTimeout(); // Reset idle on every activity
+    if (timerRef.current) return; // Already running
     chatActiveRef.current = true;
     timerRef.current = setInterval(() => {
+      // Check if still active (not idle)
+      if (Date.now() - lastActivityRef.current > IDLE_TIMEOUT_MS) {
+        stopTimer();
+        return;
+      }
       minutesUsedRef.current += 1;
       setDisplayBalance((prev) => {
         const next = Math.max(0, prev - 1);
-        if (next <= 0) setOutOfBalance(true);
+        if (next <= 0) {
+          setOutOfBalance(true);
+          stopTimer(); // Stop billing when balance hits 0
+        }
         return next;
       });
     }, 60000);
-  }, [isOwnerMode]);
+  }, [isOwnerMode, resetIdleTimeout, stopTimer]);
+
+  // Save used minutes to DB — uses minutesUsedRef (actual minutes consumed)
+  const saveUsedMinutes = useCallback(async () => {
+    if (minutesUsedRef.current <= 0 || !session?.user?.id) return;
+    const used = minutesUsedRef.current;
+    minutesUsedRef.current = 0; // Reset to prevent double-saving
+    // Atomically deduct: fetch current balance, subtract used, save
+    const { data: currentProfile } = await (supabase as any)
+      .from("user_profiles")
+      .select("balance_minutes")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+    if (currentProfile) {
+      const newBalance = Math.max(0, currentProfile.balance_minutes - used);
+      await (supabase as any)
+        .from("user_profiles")
+        .update({ balance_minutes: newBalance })
+        .eq("user_id", session.user.id);
+    }
+  }, [session?.user?.id]);
 
   useEffect(() => {
     if (isOwnerMode) return;
-    const saveBalance = async () => {
-      if (minutesUsedRef.current > 0 && session?.user && profile) {
-        const newBalance = Math.max(0, profile.balance_minutes - minutesUsedRef.current);
-        await (supabase as any)
-          .from("user_profiles")
-          .update({ balance_minutes: newBalance })
-          .eq("user_id", session.user.id);
+    const handleUnload = () => {
+      // Use sendBeacon for reliable save on tab close
+      const used = minutesUsedRef.current;
+      if (used > 0 && session?.user?.id) {
+        saveUsedMinutes();
       }
     };
-    const handleUnload = () => saveBalance();
     window.addEventListener("beforeunload", handleUnload);
     return () => {
       window.removeEventListener("beforeunload", handleUnload);
-      if (timerRef.current) clearInterval(timerRef.current);
-      saveBalance().then(() => refreshProfile());
+      stopTimer();
+      if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+      saveUsedMinutes().then(() => refreshProfile());
     };
-  }, [session?.user, profile, isOwnerMode]);
+  }, [session?.user?.id, isOwnerMode, stopTimer, saveUsedMinutes, refreshProfile]);
 
   const saveMessage = async (companionSlug: string, role: string, content: string, userId?: string, imageUrl?: string) => {
     const uid = userId || session?.user?.id;
