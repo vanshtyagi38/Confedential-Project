@@ -856,6 +856,7 @@ const ChatPage = () => {
               </div>
             </div>
           </div>
+          )
         ))}
 
         {showTypingIndicator && (
