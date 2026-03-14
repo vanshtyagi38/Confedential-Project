@@ -574,7 +574,24 @@ const ChatPage = () => {
         },
         onDone: () => {
           releaseLock();
-          const finalText = streamTextRef.current;
+          const finalText = streamTextRef.current.trim();
+          
+          // Check if AI triggered abuse block
+          if (finalText.includes("[BLOCK_USER_30MIN]")) {
+            // Remove the AI message and show block notice
+            setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
+            const blockMsg: Message = {
+              id: `block-${Date.now()}`,
+              text: "You've been blocked for 30 minutes due to inappropriate behavior. Please be respectful.",
+              sender: "companion",
+              time: getTimeString(),
+            };
+            setMessages((prev) => [...prev, blockMsg]);
+            saveMessage(companion.id, "assistant", "You've been temporarily blocked for inappropriate behavior.");
+            toast.error("Blocked for 30 minutes due to abuse.", { duration: 8000 });
+            return;
+          }
+          
           setChatHistory((prev) => [...prev, { role: "assistant", content: finalText }]);
           saveMessage(companion.id, "assistant", finalText);
         },
