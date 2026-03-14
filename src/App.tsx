@@ -29,6 +29,7 @@ import AdminSupport from "./pages/admin/AdminSupport";
 import AdminWishlist from "./pages/admin/AdminWishlist";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSecurity from "./pages/admin/AdminSecurity";
+import AdminApiAnalytics from "./pages/admin/AdminApiAnalytics";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
