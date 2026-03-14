@@ -6,12 +6,19 @@ import { VitePWA } from "vite-plugin-pwa";
 
 export default defineConfig(({ mode }) => ({
   build: {
-    sourcemap: false, // Never expose source maps in production
+    sourcemap: false,
     rollupOptions: {
       output: {
-        manualChunks: undefined, // Prevent chunk analysis
+        // Code splitting for better load times at scale
+        manualChunks: {
+          vendor: ["react", "react-dom", "react-router-dom"],
+          supabase: ["@supabase/supabase-js"],
+          ui: ["recharts", "lucide-react"],
+        },
       },
     },
+    // Increase chunk size warning limit
+    chunkSizeWarningLimit: 600,
   },
   server: {
     host: "::",
@@ -29,6 +36,25 @@ export default defineConfig(({ mode }) => ({
       workbox: {
         navigateFallbackDenylist: [/^\/~oauth/],
         globPatterns: ["**/*.{js,css,html,ico,png,jpg,svg,woff2}"],
+        // Scalability: aggressive caching to reduce server load
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/rest\/v1\/companions/,
+            handler: "StaleWhileRevalidate",
+            options: {
+              cacheName: "companions-cache",
+              expiration: { maxEntries: 50, maxAgeSeconds: 300 }, // 5 min
+            },
+          },
+          {
+            urlPattern: /^https:\/\/.*\.supabase\.co\/storage/,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "storage-cache",
+              expiration: { maxEntries: 200, maxAgeSeconds: 86400 }, // 24h
+            },
+          },
+        ],
       },
       manifest: {
         name: "SingleTape – Chat & Vibe",
