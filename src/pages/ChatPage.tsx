@@ -809,10 +809,19 @@ const ChatPage = () => {
       {/* Messages */}
       <div ref={scrollRef} className="flex-1 overflow-y-auto px-4 py-4 space-y-3">
         {messages.map((msg) => (
+          msg.sender === "system" ? (
+            <div key={msg.id} className="flex justify-center animate-fade-in-up my-2">
+              <div className="rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-2.5 max-w-[85%] text-center">
+                <p className="text-xs font-medium text-destructive">{msg.text}</p>
+                <p className="text-[9px] text-muted-foreground mt-1">{msg.time}</p>
+              </div>
+            </div>
+          ) : (
           <div
             key={msg.id}
             className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in-up ${selectMode ? "cursor-pointer" : ""}`}
             onClick={() => selectMode && toggleSelectMessage(msg.id)}
+          >
           >
             {selectMode && (
               <div className={`flex items-center mr-2 ${msg.sender === "user" ? "order-1 ml-2 mr-0" : ""}`}>
