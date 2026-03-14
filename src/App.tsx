@@ -14,6 +14,9 @@ import EarnPage from "./pages/EarnPage";
 import ProfilePage from "./pages/ProfilePage";
 import OnboardingPage from "./pages/OnboardingPage";
 import NotFound from "./pages/NotFound";
+import PrivacyPage from "./pages/PrivacyPage";
+import TermsPage from "./pages/TermsPage";
+import RefundPage from "./pages/RefundPage";
 import AuthCallbackPage from "./pages/AuthCallbackPage";
 import AdminLogin from "./pages/admin/AdminLogin";
 import AdminLayout from "./components/admin/AdminLayout";
@@ -98,6 +101,9 @@ const App = () => (
                 <Route path="settings" element={<AdminSettings />} />
               </Route>
 
+              <Route path="/privacy" element={<PrivacyPage />} />
+              <Route path="/terms" element={<TermsPage />} />
+              <Route path="/refund" element={<RefundPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PresenceTracker>
