@@ -512,7 +512,9 @@ const ChatPage = () => {
       return;
     }
 
-    // AI companion flow
+    // AI companion flow — acquire lock immediately to prevent duplicates
+    aiLockRef.current = true;
+
     let userContent: ChatContent;
     if (imageUrl) {
       const parts: Array<{ type: "text"; text: string } | { type: "image_url"; image_url: { url: string } }> = [];
@@ -543,6 +545,12 @@ const ChatPage = () => {
 
     abortRef.current = new AbortController();
 
+    const releaseLock = () => {
+      aiLockRef.current = false;
+      setStreaming(false);
+      abortRef.current = null;
+    };
+
     try {
       await streamChat({
         messages: newHistory.slice(-20),
@@ -565,20 +573,20 @@ const ChatPage = () => {
           );
         },
         onDone: () => {
-          setStreaming(false);
-          abortRef.current = null;
+          releaseLock();
           const finalText = streamTextRef.current;
           setChatHistory((prev) => [...prev, { role: "assistant", content: finalText }]);
           saveMessage(companion.id, "assistant", finalText);
         },
         onError: (err) => {
-          setStreaming(false);
-          abortRef.current = null;
+          releaseLock();
           setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
           if (err.includes("429")) {
             toast.error("Too many messages! Wait a moment.", { duration: 5000 });
           } else if (err.includes("402")) {
             toast.error("AI credits exhausted. Try again later.", { duration: 5000 });
+          } else if (err.includes("blocked")) {
+            toast.error("You've been blocked for 30 minutes due to inappropriate behavior.", { duration: 8000 });
           } else {
             toast.error(err, {
               action: { label: "Retry", onClick: () => sendMessage(trimmed) },
@@ -587,8 +595,8 @@ const ChatPage = () => {
         },
       });
     } catch (e: any) {
+      releaseLock();
       if (e.name === "AbortError") return;
-      setStreaming(false);
       setMessages((prev) => prev.filter((m) => m.id !== companionMsgId));
       toast.error("Connection lost.", {
         action: { label: "Retry", onClick: () => sendMessage(trimmed) },
