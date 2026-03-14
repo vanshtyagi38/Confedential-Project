@@ -1019,7 +1019,7 @@ const ChatPage = () => {
           />
           <button
             onClick={() => sendMessage(input)}
-            disabled={(!input.trim() && !pendingImage) || streaming || (!isOwnerMode && outOfBalance)}
+            disabled={(!input.trim() && !pendingImage) || streaming || isBlocked || (!isOwnerMode && outOfBalance)}
             className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full gradient-primary text-primary-foreground transition-transform active:scale-90 disabled:opacity-40"
           >
             <Send className="h-4 w-4" />
