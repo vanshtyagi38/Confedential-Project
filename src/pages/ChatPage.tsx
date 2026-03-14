@@ -781,7 +781,16 @@ const ChatPage = () => {
         </div>
       )}
 
-      {/* Out of balance banner */}
+      {/* User blocked banner */}
+      {isBlocked && !chatLocked && (
+        <div className="flex items-center justify-center gap-2 bg-destructive/10 px-4 py-3">
+          <Ban className="h-4 w-4 text-destructive" />
+          <span className="text-xs font-bold text-destructive">
+            🚫 You're blocked for {blockMinutesLeft} minute(s). Please be respectful.
+          </span>
+        </div>
+      )}
+
       {!isOwnerMode && outOfBalance && !chatLocked && (
         <div className="flex items-center justify-between bg-destructive/10 px-4 py-2.5">
           <div className="flex items-center gap-2 text-xs font-medium text-destructive">
