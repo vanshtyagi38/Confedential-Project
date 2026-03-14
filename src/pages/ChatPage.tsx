@@ -822,7 +822,6 @@ const ChatPage = () => {
             className={`flex ${msg.sender === "user" ? "justify-end" : "justify-start"} animate-fade-in-up ${selectMode ? "cursor-pointer" : ""}`}
             onClick={() => selectMode && toggleSelectMessage(msg.id)}
           >
-          >
             {selectMode && (
               <div className={`flex items-center mr-2 ${msg.sender === "user" ? "order-1 ml-2 mr-0" : ""}`}>
                 <div className={`h-5 w-5 rounded-full border-2 flex items-center justify-center ${selectedIds.has(msg.id) ? "border-primary bg-primary" : "border-muted-foreground"}`}>
