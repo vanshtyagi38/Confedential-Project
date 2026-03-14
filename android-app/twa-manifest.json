@@ -1,36 +1,51 @@
 {
-  "packageId": "com.singletape.app",
+  "packageId": "in.singletape.app",
   "host": "www.singletape.in",
-  "name": "SingleTape",
+  "name": "Single Tape",
   "launcherName": "SingleTape",
   "display": "standalone",
-  "themeColor": "#1a1a2e",
-  "navigationColor": "#1a1a2e",
-  "navigationColorDark": "#1a1a2e",
-  "navigationDividerColor": "#1a1a2e",
-  "navigationDividerColorDark": "#1a1a2e",
-  "backgroundColor": "#1a1a2e",
+  "themeColor": "#E11D48",
+  "themeColorDark": "#000000",
+  "navigationColor": "#000000",
+  "navigationColorDark": "#000000",
+  "navigationDividerColor": "#000000",
+  "navigationDividerColorDark": "#000000",
+  "backgroundColor": "#0A0A0A",
   "enableNotifications": true,
   "startUrl": "/",
   "iconUrl": "https://www.singletape.in/pwa-512.png",
   "maskableIconUrl": "https://www.singletape.in/pwa-512.png",
   "splashScreenFadeOutDuration": 300,
   "signingKey": {
-    "path": "./android.keystore",
-    "alias": "singletape"
+    "path": "C:\\Users\\nisha\\Confedential-Project\\android-app\\android.keystore",
+    "alias": "androidtape"
   },
+  "appVersionName": "1",
   "appVersionCode": 1,
-  "appVersionName": "1.0.0",
   "shortcuts": [],
   "generatorApp": "bubblewrap-cli",
   "webManifestUrl": "https://www.singletape.in/manifest.webmanifest",
   "fallbackType": "customtabs",
-  "features": {},
-  "enableSiteSettingsShortcut": "enabled",
+  "features": {
+    "playBilling": {
+      "enabled": true
+    }
+  },
+  "alphaDependencies": {
+    "enabled": false
+  },
+  "enableSiteSettingsShortcut": true,
   "isChromeOSOnly": false,
   "isMetaQuest": false,
   "fullScopeUrl": "https://www.singletape.in/",
-  "minSdkVersion": 19,
-  "targetSdkVersion": 34,
-  "orientation": "portrait"
+  "minSdkVersion": 21,
+  "orientation": "portrait",
+  "fingerprints": [],
+  "additionalTrustedOrigins": [],
+  "retainedBundles": [],
+  "protocolHandlers": [],
+  "fileHandlers": [],
+  "launchHandlerClientMode": "",
+  "displayOverride": [],
+  "appVersion": "1"
 }
