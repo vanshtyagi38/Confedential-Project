@@ -15,6 +15,7 @@ const links = [
   { to: "/admin/activity", icon: Activity, label: "Activity Log" },
   { to: "/admin/support", icon: HelpCircle, label: "Help & Support" },
   { to: "/admin/wishlist", icon: UserPlus, label: "Wishlist" },
+  { to: "/admin/api-analytics", icon: Gauge, label: "API Analytics" },
   { to: "/admin/security", icon: ShieldCheck, label: "Security" },
   { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
