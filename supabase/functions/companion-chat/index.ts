@@ -1,10 +1,30 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
+    "authorization, x-client-info, apikey, content-type, x-api-version, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+async function logRequest(functionName: string, method: string, statusCode: number, responseTimeMs: number, apiVersion: string, errorMessage?: string, ip?: string) {
+  try {
+    const supabaseAdmin = createClient(
+      Deno.env.get("SUPABASE_URL")!,
+      Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    );
+    await supabaseAdmin.from("api_request_logs").insert({
+      function_name: functionName,
+      method,
+      status_code: statusCode,
+      response_time_ms: responseTimeMs,
+      api_version: apiVersion,
+      error_message: errorMessage || null,
+      ip_address: ip || null,
+    });
+  } catch (_) { /* non-critical */ }
+}
 
 const commonInstructions = `
 CRITICAL IDENTITY RULES — READ FIRST:
@@ -227,10 +247,16 @@ serve(async (req) => {
     return new Response(null, { headers: corsHeaders });
   }
 
+  const start = Date.now();
+  const apiVersion = req.headers.get("X-API-Version") || "v1";
+  const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null;
+
   try {
     const { messages, companionId, companionMeta } = await req.json();
 
     if (!messages || !companionId) {
+      const elapsed = Date.now() - start;
+      await logRequest("companion-chat", req.method, 400, elapsed, apiVersion, "Missing params", ip || undefined);
       return new Response(
         JSON.stringify({ error: "messages and companionId required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -239,6 +265,8 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) {
+      const elapsed = Date.now() - start;
+      await logRequest("companion-chat", req.method, 500, elapsed, apiVersion, "API key not configured", ip || undefined);
       return new Response(
         JSON.stringify({ error: "API key not configured" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -255,7 +283,6 @@ serve(async (req) => {
       bio: "",
     };
 
-    // Get IST time
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
     const istDate = new Date(now.getTime() + istOffset + now.getTimezoneOffset() * 60 * 1000);
@@ -309,24 +336,22 @@ ${commonInstructions}`;
     });
 
     if (!response.ok) {
+      const elapsed = Date.now() - start;
+      const errorMsg = response.status === 429 ? "Rate limited" : response.status === 402 ? "Credits exhausted" : `AI error: ${response.status}`;
+      await logRequest("companion-chat", req.method, response.status, elapsed, apiVersion, errorMsg, ip || undefined);
+
       if (response.status === 429) {
-        return new Response(
-          JSON.stringify({ error: "Too many requests. Please wait." }),
-          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "Too many requests. Please wait." }), { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
       if (response.status === 402) {
-        return new Response(
-          JSON.stringify({ error: "AI credits exhausted" }),
-          { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+        return new Response(JSON.stringify({ error: "AI credits exhausted" }), { status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" } });
       }
-      const errorText = await response.text();
-      return new Response(
-        JSON.stringify({ error: `AI error: ${response.status}` }),
-        { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: `AI error: ${response.status}` }), { status: response.status, headers: { ...corsHeaders, "Content-Type": "application/json" } });
     }
+
+    // Log success
+    const elapsed = Date.now() - start;
+    logRequest("companion-chat", req.method, 200, elapsed, apiVersion, undefined, ip || undefined);
 
     return new Response(response.body, {
       headers: {
@@ -337,6 +362,8 @@ ${commonInstructions}`;
       },
     });
   } catch (error) {
+    const elapsed = Date.now() - start;
+    await logRequest("companion-chat", req.method, 500, elapsed, apiVersion, "Internal server error", ip || undefined);
     return new Response(
       JSON.stringify({ error: "Internal server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
