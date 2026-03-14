@@ -454,7 +454,7 @@ const UserChatPage = () => {
       </Dialog>
 
       {/* Input */}
-      <div className="border-t bg-card px-3 py-3">
+      <div className="border-t bg-card px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
           <input type="file" ref={fileInputRef} accept="image/*" className="hidden" onChange={handleImageSelect} />
           <button
