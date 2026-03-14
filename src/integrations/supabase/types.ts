@@ -80,6 +80,45 @@ export type Database = {
         }
         Relationships: []
       }
+      api_request_logs: {
+        Row: {
+          api_version: string | null
+          created_at: string
+          error_message: string | null
+          function_name: string
+          id: string
+          ip_address: string | null
+          method: string
+          response_time_ms: number
+          status_code: number
+          user_id: string | null
+        }
+        Insert: {
+          api_version?: string | null
+          created_at?: string
+          error_message?: string | null
+          function_name: string
+          id?: string
+          ip_address?: string | null
+          method?: string
+          response_time_ms: number
+          status_code: number
+          user_id?: string | null
+        }
+        Update: {
+          api_version?: string | null
+          created_at?: string
+          error_message?: string | null
+          function_name?: string
+          id?: string
+          ip_address?: string | null
+          method?: string
+          response_time_ms?: number
+          status_code?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       chat_messages: {
         Row: {
           companion_slug: string
