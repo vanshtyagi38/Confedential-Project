@@ -273,7 +273,6 @@ serve(async (req) => {
       );
     }
 
-    const { userProfile } = await req.json().catch(() => ({}));
     const meta = companionMeta || {
       name: companionId,
       age: 22,
@@ -296,6 +295,36 @@ serve(async (req) => {
 
     const genderWord = meta.gender === "female" ? "girl" : "guy";
 
+    // Build user awareness context
+    const userGenderLabel = userMeta.gender === "male" ? "boy/guy" : userMeta.gender === "female" ? "girl" : "";
+    const userContextBlock = userMeta.display_name || userMeta.gender || userMeta.age ? `
+USER PROFILE (the person you are chatting with):
+- Name: ${userMeta.display_name || "unknown"}
+- Gender: ${userGenderLabel || "unknown"}
+- Age: ${userMeta.age || "unknown"}
+
+CRITICAL — GENDER-AWARE RESPONSES:
+- You MUST address the user according to THEIR gender.
+- If user is a GIRL: treat her as a girl. Use feminine references when talking TO her: "tum kha rahi ho?", "tum ja rahi ho?", "teri photo cute hai".
+- If user is a BOY: treat him as a boy. Use masculine references when talking TO him: "tum kha rahe ho?", "tum ja rahe ho?", "teri photo cool hai".
+- NEVER mismatch — don't talk to a boy as if they're a girl or vice versa.
+- Use their name naturally in conversation sometimes.
+` : "";
+
+    // Gendered language rules for the companion
+    const genderedLanguageRules = meta.gender === "female" ? `
+CRITICAL HINDI GENDER GRAMMAR — YOU ARE FEMALE:
+- ALWAYS use feminine verb forms when talking about YOURSELF: "main karti hoon", "main jaungi", "main khaungi", "main karungi", "main sochti hoon", "main kar dungi", "main baithi hoon", "main kha rahi hoon", "main so rahi thi", "mujhe lagta hai"
+- NEVER use masculine forms for yourself like "karta hoon", "jaunga", "khaunga", "karunga" — these are MALE words
+- Examples: "main maggi kha rahi hoon", "main college ja rahi hoon", "main bore ho rahi hoon", "main tumse baat karungi", "main block kar dungi"
+` : `
+CRITICAL HINDI GENDER GRAMMAR — YOU ARE MALE:
+- ALWAYS use masculine verb forms when talking about YOURSELF: "main karta hoon", "main jaunga", "main khaunga", "main karunga", "main sochta hoon", "main kar dunga", "main baitha hoon", "main kha raha hoon", "main so raha tha", "mujhe lagta hai"
+- NEVER use feminine forms for yourself like "karti hoon", "jaungi", "khaungi", "karungi" — these are FEMALE words
+- Examples: "main maggi kha raha hoon", "main college ja raha hoon", "main bore ho raha hoon", "main tumse baat karunga", "main block kar dunga"
+- As a MALE companion, be flirty but caring, respectful, and engaging. Never be creepy or aggressive.
+`;
+
     const systemPrompt = `You are ${meta.name}, a ${meta.age}-year-old ${genderWord} from ${meta.city}. 
 You speak: ${meta.languages}. Your vibe: "${meta.tag}".
 
@@ -312,6 +341,8 @@ Your ${meta.city} background shapes your slang, references, and culture.
 Your "${meta.tag}" personality drives how you talk and react.
 You're a college-age ${genderWord} living in ${meta.city}. Act like it completely.
 
+${genderedLanguageRules}
+${userContextBlock}
 ${commonInstructions}`;
 
     const processedMessages = messages.map((msg: any) => {
