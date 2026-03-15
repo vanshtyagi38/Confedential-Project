@@ -126,6 +126,21 @@ export const imageKeyMap: Record<string, string> = {
   "companion-43": companion43,
   "companion-44": companion44,
   "companion-45": companion45,
+  "companion-46": companion46,
+  "companion-47": companion47,
+  "companion-48": companion48,
+  "companion-49": companion49,
+  "companion-50": companion50,
+  "companion-51": companion51,
+  "companion-52": companion52,
+  "companion-53": companion53,
+  "companion-54": companion54,
+  "companion-55": companion55,
+  "companion-56": companion56,
+  "companion-57": companion57,
+  "companion-58": companion58,
+  "companion-59": companion59,
+  "companion-60": companion60,
 };
 
 // Convert DB row to Companion type
