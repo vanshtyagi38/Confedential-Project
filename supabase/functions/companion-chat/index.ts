@@ -252,7 +252,7 @@ serve(async (req) => {
   const ip = req.headers.get("x-forwarded-for") || req.headers.get("cf-connecting-ip") || null;
 
   try {
-    const { messages, companionId, companionMeta } = await req.json();
+    const { messages, companionId, companionMeta, userProfile } = await req.json();
 
     if (!messages || !companionId) {
       const elapsed = Date.now() - start;
