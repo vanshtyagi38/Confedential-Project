@@ -58,6 +58,21 @@ import companion57 from "@/assets/companion-57.jpg";
 import companion58 from "@/assets/companion-58.jpg";
 import companion59 from "@/assets/companion-59.jpg";
 import companion60 from "@/assets/companion-60.jpg";
+import companion61 from "@/assets/companion-61.jpg";
+import companion62 from "@/assets/companion-62.jpg";
+import companion63 from "@/assets/companion-63.jpg";
+import companion64 from "@/assets/companion-64.jpg";
+import companion65 from "@/assets/companion-65.jpg";
+import companion66 from "@/assets/companion-66.jpg";
+import companion67 from "@/assets/companion-67.jpg";
+import companion68 from "@/assets/companion-68.jpg";
+import companion69 from "@/assets/companion-69.jpg";
+import companion70 from "@/assets/companion-70.jpg";
+import companion71 from "@/assets/companion-71.jpg";
+import companion72 from "@/assets/companion-72.jpg";
+import companion73 from "@/assets/companion-73.jpg";
+import companion74 from "@/assets/companion-74.jpg";
+import companion75 from "@/assets/companion-75.jpg";
 
 export type Companion = {
   id: string;
@@ -141,6 +156,21 @@ export const imageKeyMap: Record<string, string> = {
   "companion-58": companion58,
   "companion-59": companion59,
   "companion-60": companion60,
+  "companion-61": companion61,
+  "companion-62": companion62,
+  "companion-63": companion63,
+  "companion-64": companion64,
+  "companion-65": companion65,
+  "companion-66": companion66,
+  "companion-67": companion67,
+  "companion-68": companion68,
+  "companion-69": companion69,
+  "companion-70": companion70,
+  "companion-71": companion71,
+  "companion-72": companion72,
+  "companion-73": companion73,
+  "companion-74": companion74,
+  "companion-75": companion75,
 };
 
 // Convert DB row to Companion type
