@@ -273,6 +273,7 @@ serve(async (req) => {
       );
     }
 
+    const { userProfile } = await req.json().catch(() => ({}));
     const meta = companionMeta || {
       name: companionId,
       age: 22,
@@ -282,6 +283,7 @@ serve(async (req) => {
       languages: "English / Hindi",
       bio: "",
     };
+    const userMeta = userProfile || {};
 
     const now = new Date();
     const istOffset = 5.5 * 60 * 60 * 1000;
