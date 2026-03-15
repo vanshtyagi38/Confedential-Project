@@ -52,11 +52,12 @@ function getStreamStartDelay(): number {
 }
 
 async function streamChat({
-  messages, companionId, companionMeta, onDelta, onDone, onError, signal,
+  messages, companionId, companionMeta, userProfile, onDelta, onDone, onError, signal,
 }: {
   messages: ChatMsg[];
   companionId: string;
   companionMeta: any;
+  userProfile?: any;
   onDelta: (text: string) => void;
   onDone: () => void;
   onError: (err: string) => void;
@@ -68,7 +69,7 @@ async function streamChat({
       "Content-Type": "application/json",
       Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
     },
-    body: JSON.stringify({ messages, companionId, companionMeta }),
+    body: JSON.stringify({ messages, companionId, companionMeta, userProfile }),
     signal,
   });
 
