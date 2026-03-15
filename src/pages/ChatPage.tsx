@@ -644,6 +644,11 @@ const ChatPage = () => {
           languages: companion.languages,
           bio: companion.bio,
         },
+        userProfile: profile ? {
+          display_name: profile.display_name,
+          gender: profile.gender,
+          age: profile.age,
+        } : undefined,
         signal: abortRef.current.signal,
         onDelta: (chunk) => {
           streamTextRef.current += chunk;
