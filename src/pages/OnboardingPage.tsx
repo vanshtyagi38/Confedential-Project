@@ -248,10 +248,13 @@ const OnboardingPage = () => {
             const { data: sessionData } = await supabase.auth.getSession();
             const userId = sessionData?.session?.user?.id;
             if (userId) {
-              await (supabase as any).rpc("process_referral", {
+              const { data: refResult } = await (supabase as any).rpc("process_referral", {
                 p_referral_code: refCode,
                 p_referred_user_id: userId,
               });
+              if (refResult) {
+                toast.success("Referral bonus! You got 5 free minutes 🎉", { duration: 5000 });
+              }
             }
           }
         }
