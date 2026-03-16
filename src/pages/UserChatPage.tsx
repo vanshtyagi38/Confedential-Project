@@ -304,9 +304,11 @@ const UserChatPage = ({ embedded = false, embeddedRoomId }: UserChatPageProps = 
     <div className={`mx-auto flex ${embedded ? "h-full" : "h-[100dvh]"} w-full ${embedded ? "" : "max-w-2xl"} flex-col bg-background`}>
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-card px-3 py-3">
-        <button onClick={() => navigate("/chats")} className="p-1">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        {!embedded && (
+          <button onClick={() => navigate("/chats")} className="p-1">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
         <div className="relative">
           {otherUser?.image_url ? (
             <img src={otherUser.image_url} alt={otherName} className="h-10 w-10 rounded-full object-cover" />

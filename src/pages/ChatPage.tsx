@@ -764,9 +764,11 @@ const ChatPage = ({ embedded = false, companionSlug }: ChatPageProps = {}) => {
 
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-card px-3 py-3">
-        <button onClick={() => navigate(-1)} className="p-1">
-          <ArrowLeft className="h-5 w-5" />
-        </button>
+        {!embedded && (
+          <button onClick={() => navigate(-1)} className="p-1">
+            <ArrowLeft className="h-5 w-5" />
+          </button>
+        )}
         <button className="relative" onClick={() => !isOwnerMode && setReportOpen(true)}>
           <img src={companion.image} alt={companion.name} className="h-10 w-10 rounded-full object-cover" />
           <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${online ? "bg-accent" : "bg-muted-foreground"}`} />
