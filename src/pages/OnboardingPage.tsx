@@ -657,11 +657,10 @@ const OnboardingPage = () => {
   }
 
   /* ── OTP SCREEN ─────────────────────────────────── */
-  return (
-    <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
-      <GoogleOneTap />
+    return (
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
 
-      <div className="flex items-center px-4 pt-4">
+        <div className="flex items-center px-4 pt-4">
         <button
           onClick={() => { setStep("email"); setOtpDigits(["", "", "", "", "", ""]); }}
           className="flex h-10 w-10 items-center justify-center rounded-full bg-secondary transition-colors hover:bg-muted"
