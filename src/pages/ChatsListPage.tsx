@@ -144,42 +144,6 @@ const ChatsListPage = () => {
     loadUserChats();
   }, [session?.user]);
 
-  // Load inbox
-  useEffect(() => {
-    if (!session?.user || !ownedCompanion) return;
-    const loadInbox = async () => {
-      const { data } = await (supabase as any)
-        .from("chat_messages")
-        .select("*")
-        .eq("companion_slug", ownedCompanion.slug)
-        .order("created_at", { ascending: false })
-        .limit(500);
-
-      if (data) {
-        const inboxMap = new Map<string, any>();
-        data.forEach((msg: any) => {
-          if (msg.user_id === session.user.id) return;
-          if (!inboxMap.has(msg.user_id)) {
-            inboxMap.set(msg.user_id, msg);
-          }
-        });
-
-        const inbox: InboxChat[] = [];
-        inboxMap.forEach((msg, userId) => {
-          inbox.push({
-            user_id: userId,
-            companion_slug: ownedCompanion.slug,
-            last_message: msg.content,
-            last_time: new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-            companion_name: ownedCompanion.name,
-            companion_image: ownedCompanion.image_url || "",
-          });
-        });
-        setInboxChats(inbox);
-      }
-    };
-    loadInbox();
-  }, [session?.user, ownedCompanion]);
 
   const chattedSlugs = new Set(chats.map((c) => c.companion_slug));
   const suggestions = companions
