@@ -241,7 +241,6 @@ const ProfilePage = () => {
         setEditSaving(false);
         return;
       }
-      // Check if user has an existing profile image or uploaded a new one
       const { data: existingProfile } = await (supabase as any).from("user_profiles").select("image_url").eq("user_id", session.user.id).maybeSingle();
       if (!editImageFile && !imageUrl && !existingProfile?.image_url) {
         toast.error("Photo is required to list your profile");
@@ -254,35 +253,83 @@ const ProfilePage = () => {
         return;
       }
 
-      // Upload to companion-images bucket too
-      let listingImageUrl = imageUrl;
-      if (editImageFile && !listingImageUrl) {
-        const ext = editImageFile.name.split(".").pop() || "jpg";
-        const path = `app-${session.user.id}-${Date.now()}.${ext}`;
-        const { error: uploadErr } = await supabase.storage.from("companion-images").upload(path, editImageFile, { contentType: editImageFile.type });
-        if (!uploadErr) {
-          const { data } = supabase.storage.from("companion-images").getPublicUrl(path);
-          listingImageUrl = data.publicUrl;
+      // Check if user already has an application
+      const { data: existingApp } = await (supabase as any)
+        .from("companion_applications")
+        .select("id, admin_status")
+        .eq("user_id", session.user.id)
+        .maybeSingle();
+
+      if (existingApp?.admin_status === "approved") {
+        // Sync updates to existing companion instead
+        const { data: existingComp } = await (supabase as any)
+          .from("companions")
+          .select("id")
+          .eq("owner_user_id", session.user.id)
+          .eq("is_real_user", true)
+          .maybeSingle();
+
+        let listingImageUrl = imageUrl;
+        if (editImageFile && !listingImageUrl) {
+          const ext = editImageFile.name.split(".").pop() || "jpg";
+          const path = `app-${session.user.id}-${Date.now()}.${ext}`;
+          const { error: uploadErr } = await supabase.storage.from("companion-images").upload(path, editImageFile, { contentType: editImageFile.type });
+          if (!uploadErr) {
+            const { data } = supabase.storage.from("companion-images").getPublicUrl(path);
+            listingImageUrl = data.publicUrl;
+          }
         }
+
+        const updatePayload = {
+          name: editName, age: editAge, gender: editGender,
+          city: editCity || "Delhi", languages: editLanguages,
+          tag: editTag || "New Companion", bio: editBio, interests: editInterests,
+          ...(listingImageUrl ? { image_url: listingImageUrl } : {}),
+          updated_at: new Date().toISOString(),
+        };
+
+        if (existingComp) {
+          await (supabase as any).from("companions").update(updatePayload).eq("id", existingComp.id);
+        }
+        await (supabase as any).from("companion_applications").update({ ...updatePayload, admin_status: "approved" }).eq("id", existingApp.id);
+
+        toast.success("Your listing has been updated! ✅");
+      } else if (existingApp?.admin_status === "pending") {
+        toast.info("You already have a pending application! ⏳");
+        setEditSaving(false);
+        setEditOpen(false);
+        return;
+      } else {
+        // Upload to companion-images bucket too
+        let listingImageUrl = imageUrl;
+        if (editImageFile && !listingImageUrl) {
+          const ext = editImageFile.name.split(".").pop() || "jpg";
+          const path = `app-${session.user.id}-${Date.now()}.${ext}`;
+          const { error: uploadErr } = await supabase.storage.from("companion-images").upload(path, editImageFile, { contentType: editImageFile.type });
+          if (!uploadErr) {
+            const { data } = supabase.storage.from("companion-images").getPublicUrl(path);
+            listingImageUrl = data.publicUrl;
+          }
+        }
+
+        const listingData = {
+          name: editName, age: editAge, gender: editGender,
+          city: editCity || "Delhi", languages: editLanguages,
+          tag: editTag || "New Companion", bio: editBio, interests: editInterests,
+          image_url: listingImageUrl || imageUrl || existingProfile?.image_url || null,
+          payment_status: "free", admin_status: "pending",
+          rejection_reason: null, updated_at: new Date().toISOString(),
+        };
+
+        if (existingApp?.admin_status === "rejected") {
+          await (supabase as any).from("companion_applications").update(listingData).eq("id", existingApp.id);
+        } else {
+          await (supabase as any).from("companion_applications").insert({ user_id: session.user.id, ...listingData });
+        }
+
+        toast.success("Profile submitted for review! We'll approve within 24 hours 🎉");
+        setHasPendingApp(true);
       }
-
-      await (supabase as any).from("companion_applications").insert({
-        user_id: session.user.id,
-        name: editName,
-        age: editAge,
-        gender: editGender,
-        city: editCity || "Delhi",
-        languages: editLanguages,
-        tag: editTag || "New Companion",
-        bio: editBio,
-        interests: editInterests,
-        image_url: listingImageUrl || imageUrl || existingProfile?.image_url || null,
-        payment_status: "free",
-        admin_status: "pending",
-      });
-
-      toast.success("Profile submitted for review! We'll approve within 24 hours 🎉");
-      setHasPendingApp(true);
     } else if (!profileCompletionRewardClaimed) {
       // already handled above
     } else {
