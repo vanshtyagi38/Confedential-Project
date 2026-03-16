@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { lovable } from "@/integrations/lovable/index";
 import { Loader2, ArrowLeft, Mail, Heart, Shield, MessageCircle, Sparkles, Flame } from "lucide-react";
 import { toast } from "sonner";
 import hero1 from "@/assets/onboard-hero-1.png";
