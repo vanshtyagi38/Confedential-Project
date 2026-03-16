@@ -43,16 +43,13 @@ const ProfilePage = () => {
   const { notifications } = useNotifications();
   const [copying, setCopying] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [editForListing, setEditForListing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [userStatus, setUserStatus] = useState<"online" | "offline">("offline");
   const [statusLoading, setStatusLoading] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
-
-  // Unified edit profile state
-  const [editOpen, setEditOpen] = useState(false);
-  const [editForListing, setEditForListing] = useState(false);
 
   // Check if user has a verified companion listing
   const [hasVerifiedListing, setHasVerifiedListing] = useState(false);
