@@ -56,6 +56,37 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
       toast.error("Please upload your photo");
       return;
     }
+
+    // Check if user already has a listing or application
+    const { data: existingApp } = await (supabase as any)
+      .from("companion_applications")
+      .select("id, admin_status")
+      .eq("user_id", session.user.id)
+      .maybeSingle();
+    
+    if (existingApp) {
+      if (existingApp.admin_status === "pending") {
+        toast.info("You already have a pending application! ⏳");
+        return;
+      }
+      if (existingApp.admin_status === "approved") {
+        toast.info("You already have an approved listing! ✅");
+        return;
+      }
+    }
+
+    const { data: existingCompanion } = await (supabase as any)
+      .from("companions")
+      .select("id")
+      .eq("owner_user_id", session.user.id)
+      .eq("is_real_user", true)
+      .maybeSingle();
+    
+    if (existingCompanion) {
+      toast.info("You already have a listed profile! ✅");
+      return;
+    }
+
     setSaving(true);
 
     let imageUrl = null;
@@ -69,27 +100,62 @@ const CompanionRegistration = ({ open, onClose }: { open: boolean; onClose: () =
       imageUrl = data.publicUrl;
     }
 
-    const { error } = await (supabase as any)
-      .from("companion_applications")
-      .insert({
-        user_id: session.user.id,
-        name: form.name,
-        age: parseInt(form.age),
-        gender: form.gender,
-        city: form.city || "Delhi",
-        languages: form.languages,
-        tag: form.tag || "New Companion",
-        bio: form.bio,
-        interests: form.interests,
-        image_url: imageUrl,
-        payment_status: "free",
-        admin_status: "pending",
-      });
+    // Also sync photo to user_profiles
+    if (imageUrl) {
+      await (supabase as any).from("user_profiles")
+        .update({ image_url: imageUrl })
+        .eq("user_id", session.user.id);
+    }
 
-    if (error) {
-      toast.error("Failed to submit application");
-      setSaving(false);
-      return;
+    // If rejected before, update existing app; otherwise insert new
+    if (existingApp?.admin_status === "rejected") {
+      const { error } = await (supabase as any)
+        .from("companion_applications")
+        .update({
+          name: form.name,
+          age: parseInt(form.age),
+          gender: form.gender,
+          city: form.city || "Delhi",
+          languages: form.languages,
+          tag: form.tag || "New Companion",
+          bio: form.bio,
+          interests: form.interests,
+          image_url: imageUrl,
+          payment_status: "free",
+          admin_status: "pending",
+          rejection_reason: null,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", existingApp.id);
+
+      if (error) {
+        toast.error("Failed to resubmit application");
+        setSaving(false);
+        return;
+      }
+    } else {
+      const { error } = await (supabase as any)
+        .from("companion_applications")
+        .insert({
+          user_id: session.user.id,
+          name: form.name,
+          age: parseInt(form.age),
+          gender: form.gender,
+          city: form.city || "Delhi",
+          languages: form.languages,
+          tag: form.tag || "New Companion",
+          bio: form.bio,
+          interests: form.interests,
+          image_url: imageUrl,
+          payment_status: "free",
+          admin_status: "pending",
+        });
+
+      if (error) {
+        toast.error("Failed to submit application");
+        setSaving(false);
+        return;
+      }
     }
 
     setSaving(false);
