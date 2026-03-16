@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { usePresence } from "@/hooks/usePresence";
+import { useReferralNotifications } from "@/hooks/useReferralNotifications";
 import Index from "./pages/Index";
 import ChatPage from "./pages/ChatPage";
 import UserChatPage from "./pages/UserChatPage";
@@ -57,9 +58,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Component that initializes presence tracking
+// Component that initializes presence tracking and referral notifications
 const PresenceTracker = ({ children }: { children: React.ReactNode }) => {
+  const { session } = useAuth();
   usePresence();
+  useReferralNotifications(session?.user?.id);
   return <>{children}</>;
 };
 
