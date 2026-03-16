@@ -334,16 +334,19 @@ const OnboardingPage = () => {
     navigate("/", { replace: true });
   };
 
-  /* ── Google sign-in trigger ─────────────────────── */
-  const triggerGoogle = () => {
-    if (window.google?.accounts?.id) {
-      window.google.accounts.id.prompt((notification: any) => {
-        if (notification.isNotDisplayed()) {
-          toast.error("Google sign-in popup blocked. Please allow popups.");
-        }
+  /* ── Google sign-in via OAuth redirect ────────────── */
+  const triggerGoogle = async () => {
+    try {
+      const { error } = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
       });
-    } else {
-      toast.error("Google sign-in is loading. Please try again.");
+      if (error) {
+        console.error("Google OAuth error:", error);
+        toast.error("Google sign-in failed. Please try again.");
+      }
+    } catch (err) {
+      console.error("Google sign-in error:", err);
+      toast.error("Google sign-in failed. Please try again.");
     }
   };
 
