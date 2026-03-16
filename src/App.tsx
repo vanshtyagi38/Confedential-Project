@@ -33,6 +33,7 @@ import AdminWishlist from "./pages/admin/AdminWishlist";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminApiAnalytics from "./pages/admin/AdminApiAnalytics";
+import AdminGA4Analytics from "./pages/admin/AdminGA4Analytics";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
