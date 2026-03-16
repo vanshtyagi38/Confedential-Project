@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   HelpCircle, LogOut, Clock, Copy, Share2, Flame, Gift,
   Users, TrendingUp, ChevronRight, Zap, Star, UserPlus, Edit3,
-  CheckCircle, Trash2, Camera, Bell, Radio, ChevronDown,
+  CheckCircle, Trash2, Bell, Radio, ChevronDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,22 +12,14 @@ import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import onboardBoy from "@/assets/onboard-boy.png";
 import onboardGirl from "@/assets/onboard-girl.png";
 
 const STREAK_MILESTONES = [3, 7, 14, 30];
-const cities = ["Delhi", "Gurugram", "Noida", "Ghaziabad", "Faridabad", "Mumbai", "Bangalore", "Hyderabad", "Pune", "Kolkata", "Chennai", "Jaipur", "Lucknow"];
 
 function getNextMilestone(current: number): { next: number; bonus: number } {
   const found = STREAK_MILESTONES.find((m) => m > current);
