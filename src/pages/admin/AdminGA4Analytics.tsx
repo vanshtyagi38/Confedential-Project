@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Eye, Globe, FileText, Activity, TrendingUp, RefreshCw, Calendar } from "lucide-react";
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
+import { Users, Eye, Globe, FileText, Activity, TrendingUp, RefreshCw, Calendar, UserPlus, UserCheck, Repeat } from "lucide-react";
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell, Legend } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 type GA4Data = {
   activeUsers: string;
@@ -16,6 +17,8 @@ type GA4Data = {
   countries: { dimensions: string[]; metrics: string[] }[];
   topPages: { dimensions: string[]; metrics: string[] }[];
   dailyVisitors: { dimensions: string[]; metrics: string[] }[];
+  newVsReturning: { dimensions: string[]; metrics: string[] }[];
+  userLifecycle: { dimensions: string[]; metrics: string[] }[];
 };
 
 const COLORS = [
@@ -135,10 +138,13 @@ const AdminGA4Analytics = () => {
   const useFullDate = parseInt(dateRange) > 30 || dateRange === "max";
   const dateFormatter = useFullDate ? formatDateFull : formatDate;
 
+  // Daily visitors with new users
   const dailyChartData = data.dailyVisitors.map((r) => ({
     date: dateFormatter(r.dimensions[0]),
     users: parseInt(r.metrics[0]),
     sessions: parseInt(r.metrics[1]),
+    newUsers: parseInt(r.metrics[2] || "0"),
+    returningUsers: Math.max(0, parseInt(r.metrics[0]) - parseInt(r.metrics[2] || "0")),
   }));
 
   const pageViewsChartData = data.pageViewsByDay.map((r) => ({
@@ -157,10 +163,38 @@ const AdminGA4Analytics = () => {
     views: parseInt(r.metrics[0]),
   }));
 
-  // Calculate totals for the selected range
+  // New vs Returning breakdown
+  const newVsReturningData = data.newVsReturning.map((r) => ({
+    type: r.dimensions[0] === "new" ? "New Users" : r.dimensions[0] === "returning" ? "Returning Users" : r.dimensions[0],
+    users: parseInt(r.metrics[0]),
+    sessions: parseInt(r.metrics[1]),
+    engagedSessions: parseInt(r.metrics[2]),
+    avgDuration: parseFloat(r.metrics[3]),
+  }));
+
+  const newUsersTotal = newVsReturningData.find(d => d.type === "New Users")?.users || 0;
+  const returningUsersTotal = newVsReturningData.find(d => d.type === "Returning Users")?.users || 0;
+
+  const newVsPieData = [
+    { name: "New Users", value: newUsersTotal },
+    { name: "Returning Users", value: returningUsersTotal },
+  ].filter(d => d.value > 0);
+
+  // User lifecycle: daily unique new visitors
+  const lifecycleData = data.userLifecycle.map((r) => ({
+    date: dateFormatter(r.dimensions[0]),
+    rawDate: r.dimensions[0],
+    newUsers: parseInt(r.metrics[0]),
+    totalUsers: parseInt(r.metrics[1]),
+    returningUsers: Math.max(0, parseInt(r.metrics[1]) - parseInt(r.metrics[0])),
+    newUserPct: parseInt(r.metrics[1]) > 0 ? Math.round((parseInt(r.metrics[0]) / parseInt(r.metrics[1])) * 100) : 0,
+  }));
+
+  // Calculate totals
   const totalVisitors = dailyChartData.reduce((sum, d) => sum + d.users, 0);
   const totalSessions = dailyChartData.reduce((sum, d) => sum + d.sessions, 0);
   const totalPageViews = pageViewsChartData.reduce((sum, d) => sum + d.views, 0);
+  const totalNewUsers = lifecycleData.reduce((sum, d) => sum + d.newUsers, 0);
 
   return (
     <div className="space-y-6">
@@ -185,34 +219,135 @@ const AdminGA4Analytics = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard title="Active Now" value={data.activeUsers} icon={Activity} color="bg-green-500/10 text-green-500" subtitle="Real-time" />
-        <StatCard title={`Visitors (${selectedLabel})`} value={totalVisitors} icon={Users} color="bg-primary/10 text-primary" subtitle={`Today: ${data.todayVisitors}`} />
-        <StatCard title={`Page Views (${selectedLabel})`} value={totalPageViews} icon={Eye} color="bg-blue-500/10 text-blue-500" subtitle={`Today: ${data.todayPageViews}`} />
-        <StatCard title={`Sessions (${selectedLabel})`} value={totalSessions} icon={TrendingUp} color="bg-amber-500/10 text-amber-500" subtitle={`Today: ${data.todaySessions}`} />
+        <StatCard title={`Visitors`} value={totalVisitors} icon={Users} color="bg-primary/10 text-primary" subtitle={`Today: ${data.todayVisitors}`} />
+        <StatCard title={`New Users`} value={totalNewUsers} icon={UserPlus} color="bg-blue-500/10 text-blue-500" subtitle={`${selectedLabel}`} />
+        <StatCard title={`Returning`} value={returningUsersTotal} icon={Repeat} color="bg-amber-500/10 text-amber-500" subtitle={`${selectedLabel}`} />
+        <StatCard title={`Sessions`} value={totalSessions} icon={TrendingUp} color="bg-purple-500/10 text-purple-500" subtitle={`Today: ${data.todaySessions}`} />
       </div>
 
-      {/* Charts Row 1 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="border-border/40">
-          <CardHeader><CardTitle className="text-base">Daily Visitors ({selectedLabel})</CardTitle></CardHeader>
+      {/* Charts Row 1: Daily Visitors + New vs Returning Pie */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <Card className="border-border/40 lg:col-span-2">
+          <CardHeader><CardTitle className="text-base">New vs Returning Users ({selectedLabel})</CardTitle></CardHeader>
           <CardContent>
             {dailyChartData.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-16">No visitor data for this period</p>
             ) : (
-              <ResponsiveContainer width="100%" height={240}>
+              <ResponsiveContainer width="100%" height={260}>
                 <AreaChart data={dailyChartData}>
                   <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
                   <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
                   <Tooltip />
-                  <Area type="monotone" dataKey="users" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" name="Users" />
-                  <Area type="monotone" dataKey="sessions" stroke="hsl(142 76% 36%)" fill="hsl(142 76% 36% / 0.1)" name="Sessions" />
+                  <Legend />
+                  <Area type="monotone" dataKey="newUsers" stackId="1" stroke="hsl(217 91% 60%)" fill="hsl(217 91% 60% / 0.3)" name="New Users" />
+                  <Area type="monotone" dataKey="returningUsers" stackId="1" stroke="hsl(142 76% 36%)" fill="hsl(142 76% 36% / 0.15)" name="Returning Users" />
                 </AreaChart>
               </ResponsiveContainer>
             )}
           </CardContent>
         </Card>
 
+        <Card className="border-border/40">
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><UserCheck className="h-4 w-4" /> User Breakdown</CardTitle></CardHeader>
+          <CardContent>
+            {newVsPieData.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-8">No data available</p>
+            ) : (
+              <div className="flex flex-col items-center gap-4">
+                <ResponsiveContainer width="100%" height={180}>
+                  <PieChart>
+                    <Pie data={newVsPieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} innerRadius={35}>
+                      <Cell fill="hsl(217 91% 60%)" />
+                      <Cell fill="hsl(142 76% 36%)" />
+                    </Pie>
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+                <div className="w-full space-y-2">
+                  {newVsReturningData.map((d, i) => (
+                    <div key={d.type} className="flex items-center justify-between text-sm">
+                      <div className="flex items-center gap-2">
+                        <div className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: i === 0 ? "hsl(217, 91%, 60%)" : "hsl(142, 76%, 36%)" }} />
+                        <span className="text-foreground">{d.type}</span>
+                      </div>
+                      <span className="font-medium text-muted-foreground">{d.users}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Unique New Users Day-wise Report */}
+      <Card className="border-border/40">
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <UserPlus className="h-4 w-4" /> Unique First-Time Visitors — Day-wise ({selectedLabel})
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {lifecycleData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No data available</p>
+          ) : (
+            <div className="space-y-4">
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={lifecycleData}>
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip content={({ active, payload, label }) => {
+                    if (!active || !payload?.length) return null;
+                    const d = payload[0].payload;
+                    return (
+                      <div className="rounded-lg border bg-background p-3 shadow-md text-sm">
+                        <p className="font-medium mb-1">{label}</p>
+                        <p className="text-blue-500">New Users: {d.newUsers}</p>
+                        <p className="text-green-500">Returning: {d.returningUsers}</p>
+                        <p className="text-muted-foreground">Total: {d.totalUsers}</p>
+                        <p className="text-muted-foreground">New %: {d.newUserPct}%</p>
+                      </div>
+                    );
+                  }} />
+                  <Bar dataKey="newUsers" fill="hsl(217 91% 60%)" radius={[4, 4, 0, 0]} name="New Users" />
+                  <Bar dataKey="returningUsers" fill="hsl(142 76% 36%)" radius={[4, 4, 0, 0]} name="Returning" />
+                </BarChart>
+              </ResponsiveContainer>
+
+              {/* Day-wise table */}
+              <div className="max-h-[300px] overflow-auto rounded-md border">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead className="text-right">New Users</TableHead>
+                      <TableHead className="text-right">Returning</TableHead>
+                      <TableHead className="text-right">Total</TableHead>
+                      <TableHead className="text-right">New %</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {[...lifecycleData].reverse().map((d) => (
+                      <TableRow key={d.rawDate}>
+                        <TableCell className="font-medium">{d.date}</TableCell>
+                        <TableCell className="text-right text-blue-500 font-medium">{d.newUsers}</TableCell>
+                        <TableCell className="text-right text-green-500 font-medium">{d.returningUsers}</TableCell>
+                        <TableCell className="text-right">{d.totalUsers}</TableCell>
+                        <TableCell className="text-right text-muted-foreground">{d.newUserPct}%</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Charts Row 2: Page Views + Countries */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-border/40">
           <CardHeader><CardTitle className="text-base">Page Views ({selectedLabel})</CardTitle></CardHeader>
           <CardContent>
@@ -230,10 +365,7 @@ const AdminGA4Analytics = () => {
             )}
           </CardContent>
         </Card>
-      </div>
 
-      {/* Charts Row 2 */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-border/40">
           <CardHeader><CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4" /> Top Countries ({selectedLabel})</CardTitle></CardHeader>
           <CardContent>
@@ -266,36 +398,37 @@ const AdminGA4Analytics = () => {
             )}
           </CardContent>
         </Card>
-
-        <Card className="border-border/40">
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> Most Visited Pages ({selectedLabel})</CardTitle></CardHeader>
-          <CardContent>
-            {topPagesData.length === 0 ? (
-              <p className="text-sm text-muted-foreground text-center py-8">No data available</p>
-            ) : (
-              <div className="space-y-3">
-                {topPagesData.slice(0, 8).map((p, i) => {
-                  const maxViews = topPagesData[0]?.views || 1;
-                  return (
-                    <div key={i} className="space-y-1">
-                      <div className="flex items-center justify-between text-sm">
-                        <span className="text-foreground truncate max-w-[200px]" title={p.fullPage}>{p.page}</span>
-                        <span className="font-medium text-muted-foreground">{p.views}</span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-muted overflow-hidden">
-                        <div
-                          className="h-full rounded-full bg-primary transition-all"
-                          style={{ width: `${(p.views / maxViews) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Top Pages */}
+      <Card className="border-border/40">
+        <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> Most Visited Pages ({selectedLabel})</CardTitle></CardHeader>
+        <CardContent>
+          {topPagesData.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-8">No data available</p>
+          ) : (
+            <div className="space-y-3">
+              {topPagesData.slice(0, 8).map((p, i) => {
+                const maxViews = topPagesData[0]?.views || 1;
+                return (
+                  <div key={i} className="space-y-1">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-foreground truncate max-w-[200px]" title={p.fullPage}>{p.page}</span>
+                      <span className="font-medium text-muted-foreground">{p.views}</span>
+                    </div>
+                    <div className="h-1.5 rounded-full bg-muted overflow-hidden">
+                      <div
+                        className="h-full rounded-full bg-primary transition-all"
+                        style={{ width: `${(p.views / maxViews) * 100}%` }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
