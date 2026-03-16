@@ -336,7 +336,6 @@ const OnboardingPage = () => {
   };
 
   /* ── Google sign-in via popup flow ────────────────── */
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const triggerGoogle = () => {
     if (isGoogleLoading) return;
