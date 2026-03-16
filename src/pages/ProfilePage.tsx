@@ -15,6 +15,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import onboardBoy from "@/assets/onboard-boy.png";
 import onboardGirl from "@/assets/onboard-girl.png";
