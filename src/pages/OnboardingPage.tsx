@@ -459,7 +459,7 @@ const OnboardingPage = () => {
   if (step === "welcome") {
     return (
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
-        <GoogleOneTap />
+        {/* Ambient glow effects */}
 
         {/* Ambient glow effects */}
         <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 h-[300px] w-[300px] rounded-full bg-primary/15 blur-[100px]" />
