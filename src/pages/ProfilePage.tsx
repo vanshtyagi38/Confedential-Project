@@ -97,7 +97,6 @@ const ProfilePage = () => {
         toast.info("Your profile is under review. You'll be able to go online once approved! ⏳");
         return;
       }
-      toast.info("Submit your profile first to go online! 📝");
       openEditDialog(true);
       return;
     }
