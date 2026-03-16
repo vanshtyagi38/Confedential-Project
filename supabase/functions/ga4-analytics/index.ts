@@ -199,6 +199,8 @@ serve(async (req) => {
       countries: parseRows(countriesRes),
       topPages: parseRows(topPagesRes),
       dailyVisitors: parseRows(dailyRes),
+      newVsReturning: parseRows(newVsReturningRes),
+      userLifecycle: parseRows(userLifecycleRes),
     };
 
     return new Response(JSON.stringify(result), {
