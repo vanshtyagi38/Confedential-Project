@@ -48,8 +48,14 @@ const StatusIcon = ({ status }: { status?: MessageStatus }) => {
   }
 };
 
-const UserChatPage = () => {
-  const { roomId } = useParams<{ roomId: string }>();
+interface UserChatPageProps {
+  embedded?: boolean;
+  embeddedRoomId?: string;
+}
+
+const UserChatPage = ({ embedded = false, embeddedRoomId }: UserChatPageProps = {}) => {
+  const { roomId: paramRoomId } = useParams<{ roomId: string }>();
+  const roomId = embedded ? embeddedRoomId : paramRoomId;
   const navigate = useNavigate();
   const { session } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);

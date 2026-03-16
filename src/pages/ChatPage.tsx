@@ -148,8 +148,14 @@ const StatusIcon = ({ status }: { status?: MessageStatus }) => {
   }
 };
 
-const ChatPage = () => {
-  const { id } = useParams<{ id: string }>();
+interface ChatPageProps {
+  embedded?: boolean;
+  companionSlug?: string;
+}
+
+const ChatPage = ({ embedded = false, companionSlug }: ChatPageProps = {}) => {
+  const { id: paramId } = useParams<{ id: string }>();
+  const id = embedded ? companionSlug : paramId;
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
