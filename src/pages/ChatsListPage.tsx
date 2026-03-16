@@ -5,11 +5,8 @@ import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useCompanions } from "@/hooks/useCompanions";
-import { useIsMobile } from "@/hooks/use-mobile";
 import onboardBoy from "@/assets/onboard-boy.png";
 import onboardGirl from "@/assets/onboard-girl.png";
-import ChatPage from "@/pages/ChatPage";
-import UserChatPage from "@/pages/UserChatPage";
 
 type ChatPreview = {
   companion_slug: string;
@@ -18,6 +15,7 @@ type ChatPreview = {
   companion_name: string;
   companion_image: string;
 };
+
 
 type UserChatPreview = {
   room_id: string;
@@ -29,10 +27,6 @@ type UserChatPreview = {
   last_time: string;
 };
 
-type SelectedChat = 
-  | { type: "companion"; id: string }
-  | { type: "user"; roomId: string };
-
 const hookLines = [
   "Chat with 1 more… maybe she'll be your true love 💘",
   "Your soulmate is just one chat away ✨",
@@ -43,30 +37,16 @@ const hookLines = [
   "The next chat might be the one you remember forever 🌙",
 ];
 
-const DESKTOP_BREAKPOINT = 1024;
-
-function useIsDesktop() {
-  const [isDesktop, setIsDesktop] = useState(false);
-  useEffect(() => {
-    const check = () => setIsDesktop(window.innerWidth >= DESKTOP_BREAKPOINT);
-    check();
-    const mql = window.matchMedia(`(min-width: ${DESKTOP_BREAKPOINT}px)`);
-    mql.addEventListener("change", check);
-    return () => mql.removeEventListener("change", check);
-  }, []);
-  return isDesktop;
-}
-
 const ChatsListPage = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
   const { companions, getCompanionBySlug } = useCompanions();
   const [chats, setChats] = useState<ChatPreview[]>([]);
+  
   const [userChats, setUserChats] = useState<UserChatPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const [hookIndex] = useState(() => Math.floor(Math.random() * hookLines.length));
-  const [selectedChat, setSelectedChat] = useState<SelectedChat | null>(null);
-  const isDesktop = useIsDesktop();
+
 
   useEffect(() => {
     if (!session?.user) return;
@@ -116,10 +96,12 @@ const ChatsListPage = () => {
 
       if (!rooms || rooms.length === 0) return;
 
-      const otherUserIds = rooms.map((room: any) =>
+      // Batch fetch all other user IDs
+      const otherUserIds = rooms.map((room: any) => 
         room.user_a_id === userId ? room.user_b_id : room.user_a_id
       );
 
+      // Fetch all profiles at once
       const { data: profiles } = await (supabase as any)
         .from("user_profiles")
         .select("user_id, display_name, image_url, gender")
@@ -128,6 +110,7 @@ const ChatsListPage = () => {
       const profileMap = new Map<string, any>();
       (profiles || []).forEach((p: any) => profileMap.set(p.user_id, p));
 
+      // Fetch last messages for all rooms at once
       const roomIds = rooms.map((r: any) => r.id);
       const { data: allMessages } = await (supabase as any)
         .from("user_chat_messages")
@@ -161,6 +144,7 @@ const ChatsListPage = () => {
     loadUserChats();
   }, [session?.user]);
 
+
   const chattedSlugs = new Set(chats.map((c) => c.companion_slug));
   const suggestions = companions
     .filter((c) => !chattedSlugs.has(c.id))
@@ -172,41 +156,11 @@ const ChatsListPage = () => {
     return chat.other_gender === "male" ? onboardBoy : onboardGirl;
   };
 
+  // Merged list: all companion chats + user chats combined as "Love Birds"
   const totalActive = chats.length + userChats.length;
 
-  const handleUserChatClick = (chat: UserChatPreview) => {
-    if (isDesktop) {
-      setSelectedChat({ type: "user", roomId: chat.room_id });
-    } else {
-      navigate(`/user-chat/${chat.room_id}`);
-    }
-  };
-
-  const handleCompanionChatClick = (chat: ChatPreview) => {
-    if (isDesktop) {
-      setSelectedChat({ type: "companion", id: chat.companion_slug });
-    } else {
-      navigate(`/chat/${chat.companion_slug}`);
-    }
-  };
-
-  const handleSuggestionClick = (companionId: string) => {
-    if (isDesktop) {
-      setSelectedChat({ type: "companion", id: companionId });
-    } else {
-      navigate(`/chat/${companionId}`);
-    }
-  };
-
-  const isSelected = (type: "companion" | "user", id: string) => {
-    if (!selectedChat) return false;
-    if (type === "companion" && selectedChat.type === "companion") return selectedChat.id === id;
-    if (type === "user" && selectedChat.type === "user") return selectedChat.roomId === id;
-    return false;
-  };
-
-  const chatListContent = (
-    <>
+  return (
+    <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -217,6 +171,7 @@ const ChatsListPage = () => {
             {totalActive} active
           </span>
         </div>
+
       </div>
 
       <div className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 p-3">
@@ -230,6 +185,7 @@ const ChatsListPage = () => {
         </div>
       </div>
 
+      {/* Merged Love Birds section: companion chats + user chats */}
       {loading ? (
         <div className="flex justify-center py-20">
           <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
@@ -253,11 +209,12 @@ const ChatsListPage = () => {
         </div>
       ) : (
         <div className="px-4 mt-2 space-y-1">
+          {/* User-to-user chats first */}
           {userChats.map((chat, i) => (
             <button
               key={chat.room_id}
-              onClick={() => handleUserChatClick(chat)}
-              className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all hover:bg-card active:scale-[0.98] animate-fade-in-up ${isSelected("user", chat.room_id) ? "bg-card ring-1 ring-primary/30" : ""}`}
+              onClick={() => navigate(`/user-chat/${chat.room_id}`)}
+              className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all hover:bg-card active:scale-[0.98] animate-fade-in-up"
               style={{ animationDelay: `${i * 50}ms` }}
             >
               <div className="relative">
@@ -274,15 +231,16 @@ const ChatsListPage = () => {
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{chat.last_message}</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground/40 shrink-0 lg:hidden" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
             </button>
           ))}
 
+          {/* Companion chats */}
           {chats.map((chat, i) => (
             <button
               key={chat.companion_slug}
-              onClick={() => handleCompanionChatClick(chat)}
-              className={`flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all hover:bg-card active:scale-[0.98] animate-fade-in-up ${isSelected("companion", chat.companion_slug) ? "bg-card ring-1 ring-primary/30" : ""}`}
+              onClick={() => navigate(`/chat/${chat.companion_slug}`)}
+              className="flex w-full items-center gap-3 rounded-2xl p-3 text-left transition-all hover:bg-card active:scale-[0.98] animate-fade-in-up"
               style={{ animationDelay: `${(userChats.length + i) * 50}ms` }}
             >
               <div className="relative">
@@ -296,7 +254,7 @@ const ChatsListPage = () => {
                 </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{chat.last_message}</p>
               </div>
-              <ArrowRight className="h-4 w-4 text-muted-foreground/40 shrink-0 lg:hidden" />
+              <ArrowRight className="h-4 w-4 text-muted-foreground/40 shrink-0" />
             </button>
           ))}
         </div>
@@ -313,7 +271,7 @@ const ChatsListPage = () => {
             </div>
             <div className="flex gap-3">
               {suggestions.map((c) => (
-                <button key={c.id} onClick={() => handleSuggestionClick(c.id)} className="flex-1 flex flex-col items-center gap-1.5 rounded-xl bg-secondary/50 p-2.5 transition-transform active:scale-95">
+                <button key={c.id} onClick={() => navigate(`/chat/${c.id}`)} className="flex-1 flex flex-col items-center gap-1.5 rounded-xl bg-secondary/50 p-2.5 transition-transform active:scale-95">
                   <div className="relative">
                     <img src={c.image} alt={c.name} className="h-14 w-14 rounded-full object-cover ring-2 ring-accent/30" />
                     <span className="absolute bottom-0 right-0 h-2.5 w-2.5 rounded-full bg-green-500 ring-2 ring-card" />
@@ -329,79 +287,7 @@ const ChatsListPage = () => {
           </p>
         </div>
       )}
-    </>
-  );
 
-  // Desktop split-view
-  if (isDesktop) {
-    return (
-      <div className="flex h-[100dvh] w-full bg-background overflow-hidden">
-        {/* Chat list panel */}
-        <div className="w-[380px] shrink-0 flex flex-col border-r border-border bg-card/50">
-          <div className="flex-1 overflow-y-auto pb-4">
-            {chatListContent}
-          </div>
-        </div>
-
-        {/* Active chat panel */}
-        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-          <div className="flex-1 min-h-0 overflow-hidden">
-            {selectedChat ? (
-              selectedChat.type === "companion" ? (
-                <ChatPage key={selectedChat.id} embedded companionSlug={selectedChat.id} />
-              ) : (
-                <UserChatPage key={selectedChat.roomId} embedded embeddedRoomId={selectedChat.roomId} />
-              )
-            ) : (
-              <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center px-8 h-full">
-                <div className="relative">
-                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 shadow-elevated">
-                    <Heart className="h-12 w-12 text-primary animate-pulse" fill="currentColor" />
-                  </div>
-                  <span className="absolute -top-2 -right-2 text-2xl onboard-float-1">💕</span>
-                  <span className="absolute -bottom-1 -left-3 text-xl onboard-float-2">✨</span>
-                  <span className="absolute top-0 -left-4 text-lg onboard-float-3">🔥</span>
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-xl font-extrabold text-foreground">Your love story starts here 💘</h3>
-                  <p className="text-sm text-muted-foreground max-w-[320px] leading-relaxed">
-                    Pick someone from the left and send your first message. They're already waiting for you! 😍
-                  </p>
-                </div>
-                <div className="flex flex-col items-center gap-2 mt-2">
-                  <div className="flex -space-x-3">
-                    {companions.slice(0, 5).map((c, i) => (
-                      <img key={c.id} src={c.image} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-background" style={{ zIndex: 5 - i }} />
-                    ))}
-                  </div>
-                  <p className="text-xs text-muted-foreground font-medium">
-                    <span className="text-primary font-bold">{companions.length}+</span> people online right now
-                  </p>
-                </div>
-                <button
-                  onClick={() => {
-                    if (chats[0]) setSelectedChat({ type: "companion", id: chats[0].companion_slug });
-                    else if (userChats[0]) setSelectedChat({ type: "user", roomId: userChats[0].room_id });
-                    else if (suggestions[0]) setSelectedChat({ type: "companion", id: suggestions[0].id });
-                  }}
-                  className="rounded-full gradient-primary px-8 py-3 text-sm font-bold text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95"
-                >
-                  <Sparkles className="h-4 w-4 inline mr-2" />
-                  Start Chatting Now
-                </button>
-              </div>
-            )}
-          </div>
-          <BottomNav />
-        </div>
-      </div>
-    );
-  }
-
-  // Mobile layout (unchanged)
-  return (
-    <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
-      {chatListContent}
       <BottomNav />
     </div>
   );

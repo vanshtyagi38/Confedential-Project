@@ -5,7 +5,6 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { usePresence } from "@/hooks/usePresence";
-import { useDisableDevTools } from "@/hooks/useDisableDevTools";
 import Index from "./pages/Index";
 import ChatPage from "./pages/ChatPage";
 import UserChatPage from "./pages/UserChatPage";
@@ -60,7 +59,6 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Component that initializes presence tracking
 const PresenceTracker = ({ children }: { children: React.ReactNode }) => {
   usePresence();
-  useDisableDevTools();
   return <>{children}</>;
 };
 

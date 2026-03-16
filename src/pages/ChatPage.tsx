@@ -148,14 +148,8 @@ const StatusIcon = ({ status }: { status?: MessageStatus }) => {
   }
 };
 
-interface ChatPageProps {
-  embedded?: boolean;
-  companionSlug?: string;
-}
-
-const ChatPage = ({ embedded = false, companionSlug }: ChatPageProps = {}) => {
-  const { id: paramId } = useParams<{ id: string }>();
-  const id = embedded ? companionSlug : paramId;
+const ChatPage = () => {
+  const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
@@ -755,7 +749,7 @@ const ChatPage = ({ embedded = false, companionSlug }: ChatPageProps = {}) => {
   const headerName = isOwnerMode ? "Chat" : companion.name;
 
   return (
-    <div className={`mx-auto flex ${embedded ? "h-full" : "h-[100dvh]"} w-full ${embedded ? "" : "max-w-2xl"} flex-col bg-background overflow-hidden`}>
+    <div className="mx-auto flex h-[100dvh] w-full max-w-2xl flex-col bg-background">
       {!online && (
         <div className="bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground">
           You're offline. Messages will send when connected.
@@ -764,11 +758,9 @@ const ChatPage = ({ embedded = false, companionSlug }: ChatPageProps = {}) => {
 
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-card px-3 py-3">
-        {!embedded && (
-          <button onClick={() => navigate(-1)} className="p-1">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-        )}
+        <button onClick={() => navigate(-1)} className="p-1">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
         <button className="relative" onClick={() => !isOwnerMode && setReportOpen(true)}>
           <img src={companion.image} alt={companion.name} className="h-10 w-10 rounded-full object-cover" />
           <span className={`absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-card ${online ? "bg-accent" : "bg-muted-foreground"}`} />

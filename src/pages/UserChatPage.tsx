@@ -48,14 +48,8 @@ const StatusIcon = ({ status }: { status?: MessageStatus }) => {
   }
 };
 
-interface UserChatPageProps {
-  embedded?: boolean;
-  embeddedRoomId?: string;
-}
-
-const UserChatPage = ({ embedded = false, embeddedRoomId }: UserChatPageProps = {}) => {
-  const { roomId: paramRoomId } = useParams<{ roomId: string }>();
-  const roomId = embedded ? embeddedRoomId : paramRoomId;
+const UserChatPage = () => {
+  const { roomId } = useParams<{ roomId: string }>();
   const navigate = useNavigate();
   const { session } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
@@ -301,14 +295,12 @@ const UserChatPage = ({ embedded = false, embeddedRoomId }: UserChatPageProps = 
   const otherName = otherUser?.display_name || "User";
 
   return (
-    <div className={`mx-auto flex ${embedded ? "h-full" : "h-[100dvh]"} w-full ${embedded ? "" : "max-w-2xl"} flex-col bg-background overflow-hidden`}>
+    <div className="mx-auto flex h-[100dvh] w-full max-w-2xl flex-col bg-background">
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-card px-3 py-3">
-        {!embedded && (
-          <button onClick={() => navigate("/chats")} className="p-1">
-            <ArrowLeft className="h-5 w-5" />
-          </button>
-        )}
+        <button onClick={() => navigate("/chats")} className="p-1">
+          <ArrowLeft className="h-5 w-5" />
+        </button>
         <div className="relative">
           {otherUser?.image_url ? (
             <img src={otherUser.image_url} alt={otherName} className="h-10 w-10 rounded-full object-cover" />
