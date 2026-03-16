@@ -335,15 +335,17 @@ const ChatsListPage = () => {
   // Desktop split-view
   if (isDesktop) {
     return (
-      <div className="flex h-[100dvh] w-full bg-background">
+      <div className="flex h-[100dvh] w-full bg-background overflow-hidden">
         {/* Chat list panel */}
-        <div className="w-[380px] shrink-0 overflow-y-auto border-r border-border pb-24 bg-card/50">
-          {chatListContent}
+        <div className="w-[380px] shrink-0 flex flex-col border-r border-border bg-card/50">
+          <div className="flex-1 overflow-y-auto pb-4">
+            {chatListContent}
+          </div>
           <BottomNav />
         </div>
 
         {/* Active chat panel */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           {selectedChat ? (
             selectedChat.type === "companion" ? (
               <ChatPage key={selectedChat.id} embedded companionSlug={selectedChat.id} />
