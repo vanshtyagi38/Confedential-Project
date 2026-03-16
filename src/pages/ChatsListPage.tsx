@@ -151,8 +151,6 @@ const ChatsListPage = () => {
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
 
-  const hasInbox = !!ownedCompanion;
-
   const getAvatar = (chat: UserChatPreview) => {
     if (chat.other_image) return chat.other_image;
     return chat.other_gender === "male" ? onboardBoy : onboardGirl;
