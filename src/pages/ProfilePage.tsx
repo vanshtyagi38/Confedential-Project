@@ -50,22 +50,9 @@ const ProfilePage = () => {
   const [statusLoading, setStatusLoading] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
 
-  // Unified edit profile + listing state
-  const [editName, setEditName] = useState(profile?.display_name || "");
-  const [editGender, setEditGender] = useState(profile?.gender || "male");
-  const [editAge, setEditAge] = useState(profile?.age || 22);
-  const [editContact, setEditContact] = useState("");
-  const [editCity, setEditCity] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-  const [editBio, setEditBio] = useState("");
-  const [editTag, setEditTag] = useState("");
-  const [editInterests, setEditInterests] = useState("");
-  const [editLanguages, setEditLanguages] = useState("Hindi / English");
-  const [editSaving, setEditSaving] = useState(false);
-  const [editImageFile, setEditImageFile] = useState<File | null>(null);
-  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
-  const [submitAsListing, setSubmitAsListing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+  // Unified edit profile state
+  const [editOpen, setEditOpen] = useState(false);
+  const [editForListing, setEditForListing] = useState(false);
 
   // Check if user has a verified companion listing
   const [hasVerifiedListing, setHasVerifiedListing] = useState(false);
