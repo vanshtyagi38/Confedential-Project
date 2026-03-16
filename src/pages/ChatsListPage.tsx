@@ -16,14 +16,6 @@ type ChatPreview = {
   companion_image: string;
 };
 
-type InboxChat = {
-  user_id: string;
-  companion_slug: string;
-  last_message: string;
-  last_time: string;
-  companion_name: string;
-  companion_image: string;
-};
 
 type UserChatPreview = {
   room_id: string;
