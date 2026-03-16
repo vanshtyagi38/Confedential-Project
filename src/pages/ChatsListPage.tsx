@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Heart, Sparkles, Flame, ArrowRight, Inbox, Users } from "lucide-react";
+import { MessageCircle, Heart, Sparkles, Flame, ArrowRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -16,14 +16,6 @@ type ChatPreview = {
   companion_image: string;
 };
 
-type InboxChat = {
-  user_id: string;
-  companion_slug: string;
-  last_message: string;
-  last_time: string;
-  companion_name: string;
-  companion_image: string;
-};
 
 type UserChatPreview = {
   room_id: string;
@@ -50,28 +42,11 @@ const ChatsListPage = () => {
   const { session } = useAuth();
   const { companions, getCompanionBySlug } = useCompanions();
   const [chats, setChats] = useState<ChatPreview[]>([]);
-  const [inboxChats, setInboxChats] = useState<InboxChat[]>([]);
+  
   const [userChats, setUserChats] = useState<UserChatPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const [hookIndex] = useState(() => Math.floor(Math.random() * hookLines.length));
 
-  // Check if user owns any real companion
-  const [ownedCompanion, setOwnedCompanion] = useState<any>(null);
-
-  useEffect(() => {
-    if (!session?.user) return;
-    const checkOwned = async () => {
-      const { data } = await (supabase as any)
-        .from("companions")
-        .select("*")
-        .eq("owner_user_id", session.user.id)
-        .eq("is_real_user", true)
-        .eq("status", "active")
-        .maybeSingle();
-      setOwnedCompanion(data || null);
-    };
-    checkOwned();
-  }, [session?.user]);
 
   useEffect(() => {
     if (!session?.user) return;
@@ -169,50 +144,12 @@ const ChatsListPage = () => {
     loadUserChats();
   }, [session?.user]);
 
-  // Load inbox
-  useEffect(() => {
-    if (!session?.user || !ownedCompanion) return;
-    const loadInbox = async () => {
-      const { data } = await (supabase as any)
-        .from("chat_messages")
-        .select("*")
-        .eq("companion_slug", ownedCompanion.slug)
-        .order("created_at", { ascending: false })
-        .limit(500);
-
-      if (data) {
-        const inboxMap = new Map<string, any>();
-        data.forEach((msg: any) => {
-          if (msg.user_id === session.user.id) return;
-          if (!inboxMap.has(msg.user_id)) {
-            inboxMap.set(msg.user_id, msg);
-          }
-        });
-
-        const inbox: InboxChat[] = [];
-        inboxMap.forEach((msg, userId) => {
-          inbox.push({
-            user_id: userId,
-            companion_slug: ownedCompanion.slug,
-            last_message: msg.content,
-            last_time: new Date(msg.created_at).toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" }),
-            companion_name: ownedCompanion.name,
-            companion_image: ownedCompanion.image_url || "",
-          });
-        });
-        setInboxChats(inbox);
-      }
-    };
-    loadInbox();
-  }, [session?.user, ownedCompanion]);
 
   const chattedSlugs = new Set(chats.map((c) => c.companion_slug));
   const suggestions = companions
     .filter((c) => !chattedSlugs.has(c.id))
     .sort(() => Math.random() - 0.5)
     .slice(0, 3);
-
-  const hasInbox = !!ownedCompanion;
 
   const getAvatar = (chat: UserChatPreview) => {
     if (chat.other_image) return chat.other_image;
@@ -235,27 +172,6 @@ const ChatsListPage = () => {
           </span>
         </div>
 
-        {/* Inbox tab only if owned companion */}
-        {hasInbox && (
-          <div className="flex mt-2 gap-1 bg-secondary rounded-xl p-1">
-            <button className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold bg-primary text-primary-foreground">
-              <Heart className="h-3.5 w-3.5" />
-              Love Birds
-            </button>
-            <button
-              onClick={() => navigate("/chats?tab=inbox")}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-muted-foreground"
-            >
-              <Inbox className="h-3.5 w-3.5" />
-              Inbox
-              {inboxChats.length > 0 && (
-                <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold bg-accent text-accent-foreground">
-                  {inboxChats.length}
-                </span>
-              )}
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 p-3">
