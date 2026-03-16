@@ -75,7 +75,11 @@ async function runReport(accessToken: string, propertyId: string, body: any) {
       body: JSON.stringify(body),
     }
   );
-  return res.json();
+  const data = await res.json();
+  if (data.error) {
+    console.error("GA4 runReport error:", JSON.stringify(data.error));
+  }
+  return data;
 }
 
 async function runRealtimeReport(accessToken: string, propertyId: string, body: any) {
@@ -90,7 +94,11 @@ async function runRealtimeReport(accessToken: string, propertyId: string, body: 
       body: JSON.stringify(body),
     }
   );
-  return res.json();
+  const data = await res.json();
+  if (data.error) {
+    console.error("GA4 runRealtimeReport error:", JSON.stringify(data.error));
+  }
+  return data;
 }
 
 serve(async (req) => {
@@ -104,6 +112,17 @@ serve(async (req) => {
 
     if (!serviceAccountJson || !propertyId) {
       throw new Error("Missing GA_SERVICE_ACCOUNT_JSON or GA4_PROPERTY_ID");
+    }
+
+    // Parse request body for date range
+    let startDate = "7daysAgo";
+    let endDate = "today";
+    try {
+      const body = await req.json();
+      if (body.startDate) startDate = body.startDate;
+      if (body.endDate) endDate = body.endDate;
+    } catch {
+      // No body or invalid JSON, use defaults
     }
 
     const serviceAccount = JSON.parse(serviceAccountJson);
@@ -120,32 +139,32 @@ serve(async (req) => {
         dateRanges: [{ startDate: "today", endDate: "today" }],
         metrics: [{ name: "totalUsers" }, { name: "screenPageViews" }, { name: "sessions" }],
       }),
-      // Page views last 7 days
+      // Page views for selected range
       runReport(accessToken, propertyId, {
-        dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate, endDate }],
         metrics: [{ name: "screenPageViews" }],
         dimensions: [{ name: "date" }],
         orderBys: [{ dimension: { dimensionName: "date" } }],
       }),
-      // Top countries
+      // Top countries for selected range
       runReport(accessToken, propertyId, {
-        dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate, endDate }],
         metrics: [{ name: "totalUsers" }],
         dimensions: [{ name: "country" }],
         orderBys: [{ metric: { metricName: "totalUsers" }, desc: true }],
         limit: 10,
       }),
-      // Top pages
+      // Top pages for selected range
       runReport(accessToken, propertyId, {
-        dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate, endDate }],
         metrics: [{ name: "screenPageViews" }],
         dimensions: [{ name: "pagePath" }],
         orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
         limit: 10,
       }),
-      // Daily visitors last 7 days
+      // Daily visitors for selected range
       runReport(accessToken, propertyId, {
-        dateRanges: [{ startDate: "7daysAgo", endDate: "today" }],
+        dateRanges: [{ startDate, endDate }],
         metrics: [{ name: "totalUsers" }, { name: "sessions" }],
         dimensions: [{ name: "date" }],
         orderBys: [{ dimension: { dimensionName: "date" } }],

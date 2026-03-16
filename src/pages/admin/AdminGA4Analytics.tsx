@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Users, Eye, Globe, FileText, Activity, TrendingUp, RefreshCw } from "lucide-react";
+import { Users, Eye, Globe, FileText, Activity, TrendingUp, RefreshCw, Calendar } from "lucide-react";
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type GA4Data = {
   activeUsers: string;
@@ -28,12 +29,31 @@ const COLORS = [
   "hsl(30 80% 55%)",
 ];
 
+const DATE_RANGES = [
+  { label: "Last 7 days", value: "7", startDate: "7daysAgo" },
+  { label: "Last 14 days", value: "14", startDate: "14daysAgo" },
+  { label: "Last 30 days", value: "30", startDate: "30daysAgo" },
+  { label: "Last 90 days", value: "90", startDate: "90daysAgo" },
+  { label: "Last 6 months", value: "180", startDate: "180daysAgo" },
+  { label: "Last 12 months", value: "365", startDate: "365daysAgo" },
+  { label: "Maximum (16 months)", value: "max", startDate: "480daysAgo" },
+];
+
 const formatDate = (dateStr: string) => {
   if (!dateStr || dateStr.length !== 8) return dateStr;
   const m = parseInt(dateStr.slice(4, 6));
   const d = parseInt(dateStr.slice(6, 8));
   const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
   return `${months[m - 1]} ${d}`;
+};
+
+const formatDateFull = (dateStr: string) => {
+  if (!dateStr || dateStr.length !== 8) return dateStr;
+  const y = dateStr.slice(0, 4);
+  const m = parseInt(dateStr.slice(4, 6));
+  const d = parseInt(dateStr.slice(6, 8));
+  const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  return `${months[m - 1]} ${d}, ${y}`;
 };
 
 const StatCard = ({ title, value, icon: Icon, color, subtitle }: {
@@ -57,12 +77,20 @@ const AdminGA4Analytics = () => {
   const [data, setData] = useState<GA4Data | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dateRange, setDateRange] = useState("7");
+
+  const getStartDate = () => {
+    const range = DATE_RANGES.find(r => r.value === dateRange);
+    return range?.startDate || "7daysAgo";
+  };
 
   const fetchData = async () => {
     setLoading(true);
     setError(null);
     try {
-      const { data: result, error: fnError } = await supabase.functions.invoke("ga4-analytics");
+      const { data: result, error: fnError } = await supabase.functions.invoke("ga4-analytics", {
+        body: { startDate: getStartDate(), endDate: "today" },
+      });
       if (fnError) throw fnError;
       if (result?.error) throw new Error(result.error);
       setData(result);
@@ -73,7 +101,9 @@ const AdminGA4Analytics = () => {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { fetchData(); }, [dateRange]);
+
+  const selectedLabel = DATE_RANGES.find(r => r.value === dateRange)?.label || "Last 7 days";
 
   if (loading) {
     return (
@@ -102,14 +132,17 @@ const AdminGA4Analytics = () => {
 
   if (!data) return null;
 
+  const useFullDate = parseInt(dateRange) > 30 || dateRange === "max";
+  const dateFormatter = useFullDate ? formatDateFull : formatDate;
+
   const dailyChartData = data.dailyVisitors.map((r) => ({
-    date: formatDate(r.dimensions[0]),
+    date: dateFormatter(r.dimensions[0]),
     users: parseInt(r.metrics[0]),
     sessions: parseInt(r.metrics[1]),
   }));
 
   const pageViewsChartData = data.pageViewsByDay.map((r) => ({
-    date: formatDate(r.dimensions[0]),
+    date: dateFormatter(r.dimensions[0]),
     views: parseInt(r.metrics[0]),
   }));
 
@@ -124,60 +157,85 @@ const AdminGA4Analytics = () => {
     views: parseInt(r.metrics[0]),
   }));
 
+  // Calculate totals for the selected range
+  const totalVisitors = dailyChartData.reduce((sum, d) => sum + d.users, 0);
+  const totalSessions = dailyChartData.reduce((sum, d) => sum + d.sessions, 0);
+  const totalPageViews = pageViewsChartData.reduce((sum, d) => sum + d.views, 0);
+
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="text-3xl font-bold text-foreground">Google Analytics</h1>
-        <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
-          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
-        </Button>
+        <div className="flex items-center gap-2">
+          <Select value={dateRange} onValueChange={setDateRange}>
+            <SelectTrigger className="w-[200px]">
+              <Calendar className="h-4 w-4 mr-2 text-muted-foreground" />
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {DATE_RANGES.map(r => (
+                <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button onClick={fetchData} variant="outline" size="sm" disabled={loading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} /> Refresh
+          </Button>
+        </div>
       </div>
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard title="Active Now" value={data.activeUsers} icon={Activity} color="bg-green-500/10 text-green-500" subtitle="Real-time" />
-        <StatCard title="Visitors Today" value={data.todayVisitors} icon={Users} color="bg-primary/10 text-primary" />
-        <StatCard title="Page Views Today" value={data.todayPageViews} icon={Eye} color="bg-blue-500/10 text-blue-500" />
-        <StatCard title="Sessions Today" value={data.todaySessions} icon={TrendingUp} color="bg-amber-500/10 text-amber-500" />
+        <StatCard title={`Visitors (${selectedLabel})`} value={totalVisitors} icon={Users} color="bg-primary/10 text-primary" subtitle={`Today: ${data.todayVisitors}`} />
+        <StatCard title={`Page Views (${selectedLabel})`} value={totalPageViews} icon={Eye} color="bg-blue-500/10 text-blue-500" subtitle={`Today: ${data.todayPageViews}`} />
+        <StatCard title={`Sessions (${selectedLabel})`} value={totalSessions} icon={TrendingUp} color="bg-amber-500/10 text-amber-500" subtitle={`Today: ${data.todaySessions}`} />
       </div>
 
       {/* Charts Row 1 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="border-border/40">
-          <CardHeader><CardTitle className="text-base">Daily Visitors (7 days)</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Daily Visitors ({selectedLabel})</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <AreaChart data={dailyChartData}>
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Area type="monotone" dataKey="users" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" name="Users" />
-                <Area type="monotone" dataKey="sessions" stroke="hsl(142 76% 36%)" fill="hsl(142 76% 36% / 0.1)" name="Sessions" />
-              </AreaChart>
-            </ResponsiveContainer>
+            {dailyChartData.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-16">No visitor data for this period</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <AreaChart data={dailyChartData}>
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Area type="monotone" dataKey="users" stroke="hsl(var(--primary))" fill="hsl(var(--primary) / 0.2)" name="Users" />
+                  <Area type="monotone" dataKey="sessions" stroke="hsl(142 76% 36%)" fill="hsl(142 76% 36% / 0.1)" name="Sessions" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
         <Card className="border-border/40">
-          <CardHeader><CardTitle className="text-base">Page Views (7 days)</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base">Page Views ({selectedLabel})</CardTitle></CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={240}>
-              <BarChart data={pageViewsChartData}>
-                <XAxis dataKey="date" tick={{ fontSize: 12 }} />
-                <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
-                <Tooltip />
-                <Bar dataKey="views" fill="hsl(217 91% 60%)" radius={[6, 6, 0, 0]} name="Views" />
-              </BarChart>
-            </ResponsiveContainer>
+            {pageViewsChartData.length === 0 ? (
+              <p className="text-sm text-muted-foreground text-center py-16">No page view data for this period</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={240}>
+                <BarChart data={pageViewsChartData}>
+                  <XAxis dataKey="date" tick={{ fontSize: 11 }} interval="preserveStartEnd" />
+                  <YAxis allowDecimals={false} tick={{ fontSize: 12 }} />
+                  <Tooltip />
+                  <Bar dataKey="views" fill="hsl(217 91% 60%)" radius={[6, 6, 0, 0]} name="Views" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
       </div>
 
       {/* Charts Row 2 */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Top Countries */}
         <Card className="border-border/40">
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4" /> Top Countries</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><Globe className="h-4 w-4" /> Top Countries ({selectedLabel})</CardTitle></CardHeader>
           <CardContent>
             {countriesData.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No data available</p>
@@ -209,9 +267,8 @@ const AdminGA4Analytics = () => {
           </CardContent>
         </Card>
 
-        {/* Top Pages */}
         <Card className="border-border/40">
-          <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> Most Visited Pages</CardTitle></CardHeader>
+          <CardHeader><CardTitle className="text-base flex items-center gap-2"><FileText className="h-4 w-4" /> Most Visited Pages ({selectedLabel})</CardTitle></CardHeader>
           <CardContent>
             {topPagesData.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-8">No data available</p>
