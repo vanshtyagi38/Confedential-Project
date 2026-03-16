@@ -380,7 +380,8 @@ const OnboardingPage = () => {
         }
 
         toast.success(data.is_new ? "Welcome!" : "Welcome back!", { id: "google-signin" });
-        navigate("/", { replace: true });
+        // Don't navigate here — let the useEffect handle profile creation + referral processing
+        setIsGoogleLoading(false);
       } catch (err) {
         console.error("Google sign-in error:", err);
         toast.error("Sign-in failed. Please try again.", { id: "google-signin" });
