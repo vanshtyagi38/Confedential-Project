@@ -44,6 +44,7 @@ const OnboardingPage = () => {
   const [otpDigits, setOtpDigits] = useState<string[]>(["", "", "", "", "", ""]);
   const [loading, setLoading] = useState(false);
   const [isReturning, setIsReturning] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const otpRefs = useRef<(HTMLInputElement | null)[]>([]);
 
   // Rotating state
