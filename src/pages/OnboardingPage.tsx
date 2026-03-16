@@ -335,142 +335,126 @@ const OnboardingPage = () => {
     navigate("/", { replace: true });
   };
 
-  /* ── Google sign-in via popup flow ────────────────── */
-
+  /* ── Google sign-in via direct GIS SDK ────────────── */
   const triggerGoogle = () => {
     if (isGoogleLoading) return;
     setIsGoogleLoading(true);
-    
-    // Use Google Identity Services SDK for a popup-based flow
-    const width = 500;
-    const height = 600;
-    const left = window.screenX + (window.outerWidth - width) / 2;
-    const top = window.screenY + (window.outerHeight - height) / 2;
-    
-    // Open popup immediately to prevent popup blocker
-    const popup = window.open(
-      "about:blank", 
-      "googleSignIn", 
-      `width=${width},height=${height},top=${top},left=${left},toolbar=no,menubar=no,scrollbars=yes`
-    );
 
-    if (!popup) {
-      toast.error("Popup blocked. Please allow popups for Google sign-in.");
-      setIsGoogleLoading(false);
-      return;
-    }
-
-    // Fetch the Google Client ID first
-    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-oauth`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action: "get_config" }),
-    })
-      .then(res => res.json())
-      .then(config => {
-        if (!config.client_id) {
-          throw new Error("Google OAuth not configured");
-        }
-        
-        // Build Google OAuth URL for popup
-        const redirectUri = `${window.location.origin}/auth/callback`;
-        const googleUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-          `client_id=${encodeURIComponent(config.client_id)}` +
-          `&redirect_uri=${encodeURIComponent(redirectUri)}` +
-          `&response_type=token id_token` +
-          `&scope=${encodeURIComponent("openid email profile")}` +
-          `&prompt=select_account` +
-          `&nonce=${crypto.randomUUID()}`;
-        
-        popup.location.href = googleUrl;
-        
-        // Listen for message from popup
-        const messageHandler = (event: MessageEvent) => {
-          if (event.origin !== window.location.origin) return;
-          if (event.data?.type === "google_oauth_success") {
-            window.removeEventListener("message", messageHandler);
-            handleGoogleTokens(event.data.tokens);
-          } else if (event.data?.type === "google_oauth_error") {
-            window.removeEventListener("message", messageHandler);
-            toast.error("Google sign-in failed");
-            setIsGoogleLoading(false);
-          }
-        };
-        window.addEventListener("message", messageHandler);
-        
-        // Fallback: check if popup is closed
-        const checkClosed = setInterval(() => {
-          if (popup.closed) {
-            clearInterval(checkClosed);
-            window.removeEventListener("message", messageHandler);
-            setIsGoogleLoading(false);
-          }
-        }, 500);
-      })
-      .catch(err => {
-        console.error("Google sign-in error:", err);
-        toast.error("Google sign-in failed. Please try again.");
-        popup?.close();
-        setIsGoogleLoading(false);
-      });
-  };
-
-  const handleGoogleTokens = async (tokens: { credential?: string; access_token?: string }) => {
-    if (!tokens.credential) {
-      toast.error("Google sign-in failed - no token received");
-      setIsGoogleLoading(false);
-      return;
-    }
-
-    try {
-      toast.loading("Signing you in...", { id: "google-signin" });
-      
-      const resp = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-oauth`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ credential: tokens.credential }),
-        }
-      );
-
-      const data = await resp.json();
-      
-      if (!resp.ok) {
-        toast.error(data.error || "Sign-in failed", { id: "google-signin" });
+    // Use Google's Sign In With Google button approach
+    const handleCredentialResponse = async (response: { credential?: string }) => {
+      if (!response.credential) {
+        toast.error("Google sign-in cancelled");
         setIsGoogleLoading(false);
         return;
       }
 
-      // If we got session tokens directly
-      if (data.access_token) {
-        const { error: setSessionError } = await supabase.auth.setSession({
-          access_token: data.access_token,
-          refresh_token: data.refresh_token,
-        });
-        
-        if (setSessionError) {
-          throw setSessionError;
-        }
-      } else if (data.token_hash) {
-        // Fallback to magic link verification
-        const { error: verifyErr } = await supabase.auth.verifyOtp({
-          token_hash: data.token_hash,
-          type: "magiclink",
-        });
+      try {
+        toast.loading("Signing you in...", { id: "google-signin" });
 
-        if (verifyErr) {
-          throw verifyErr;
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-oauth`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential: response.credential }),
+          }
+        );
+
+        const data = await resp.json();
+        if (!resp.ok || (!data.token_hash && !data.access_token)) {
+          toast.error(data.error || "Sign-in failed", { id: "google-signin" });
+          setIsGoogleLoading(false);
+          return;
         }
+
+        // Use direct session tokens if available
+        if (data.access_token) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+          });
+          if (sessionError) throw sessionError;
+        } else if (data.token_hash) {
+          // Fallback to magic link verification
+          const { error: verifyErr } = await supabase.auth.verifyOtp({
+            token_hash: data.token_hash,
+            type: "magiclink",
+          });
+          if (verifyErr) throw verifyErr;
+        }
+
+        toast.success(data.is_new ? "Welcome! 🔥" : "Welcome back! 🔥", { id: "google-signin" });
+        navigate("/", { replace: true });
+      } catch (err) {
+        console.error("Google sign-in error:", err);
+        toast.error("Sign-in failed. Please try again.", { id: "google-signin" });
+        setIsGoogleLoading(false);
       }
+    };
 
-      toast.success(data.is_new ? "Welcome! 🔥" : "Welcome back! 🔥", { id: "google-signin" });
-      navigate("/", { replace: true });
-    } catch (err) {
-      console.error("Google sign-in error:", err);
-      toast.error("Sign-in failed. Please try again.", { id: "google-signin" });
-      setIsGoogleLoading(false);
-    }
+    // Load Google Identity Services if not already loaded
+    const loadGoogleAndSignIn = () => {
+      if (!window.google?.accounts?.id) {
+        const script = document.createElement("script");
+        script.src = "https://accounts.google.com/gsi/client";
+        script.async = true;
+        script.defer = true;
+        script.onload = () => showGooglePrompt();
+        document.head.appendChild(script);
+      } else {
+        showGooglePrompt();
+      }
+    };
+
+    const showGooglePrompt = async () => {
+      try {
+        // Get client ID from the onetap edge function
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-onetap`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "get_client_id" }),
+          }
+        );
+        const config = await resp.json();
+
+        if (!config.client_id) {
+          toast.error("Google sign-in not configured");
+          setIsGoogleLoading(false);
+          return;
+        }
+
+        // Initialize Google Sign-In
+        window.google!.accounts!.id!.initialize({
+          client_id: config.client_id,
+          callback: handleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: false,
+          context: "signin",
+          itp_support: true,
+        });
+
+        // Show the One Tap prompt immediately
+        window.google!.accounts!.id!.prompt((notification) => {
+          if (notification.isNotDisplayed()) {
+            console.log("One Tap not displayed:", notification.getNotDisplayedReason());
+            // Fallback: try showing the explicit sign-in
+            toast.error("Google sign-in unavailable. Please use email login.");
+            setIsGoogleLoading(false);
+          }
+          if (notification.isSkippedMoment()) {
+            console.log("One Tap skipped:", notification.getSkippedReason());
+            setIsGoogleLoading(false);
+          }
+        });
+      } catch {
+        toast.error("Failed to load Google sign-in");
+        setIsGoogleLoading(false);
+      }
+    };
+
+    loadGoogleAndSignIn();
   };
 
   /* ── WELCOME SCREEN ─────────────────────────────── */
