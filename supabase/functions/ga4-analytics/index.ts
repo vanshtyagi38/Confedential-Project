@@ -7,8 +7,18 @@ const corsHeaders = {
 
 async function getAccessToken(serviceAccount: any): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  const header = btoa(JSON.stringify({ alg: "RS256", typ: "JWT" }));
-  const payload = btoa(JSON.stringify({
+
+  const toBase64Url = (str: string) =>
+    btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+  const toBase64UrlFromBytes = (bytes: Uint8Array) => {
+    let binary = "";
+    for (const b of bytes) binary += String.fromCharCode(b);
+    return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  };
+
+  const header = toBase64Url(JSON.stringify({ alg: "RS256", typ: "JWT" }));
+  const payload = toBase64Url(JSON.stringify({
     iss: serviceAccount.client_email,
     scope: "https://www.googleapis.com/auth/analytics.readonly",
     aud: serviceAccount.token_uri,
@@ -18,7 +28,6 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
 
   const unsignedToken = `${header}.${payload}`;
 
-  // Import the private key
   const pemContents = serviceAccount.private_key
     .replace("-----BEGIN PRIVATE KEY-----", "")
     .replace("-----END PRIVATE KEY-----", "")
@@ -39,7 +48,7 @@ async function getAccessToken(serviceAccount: any): Promise<string> {
     new TextEncoder().encode(unsignedToken)
   );
 
-  const signedToken = `${unsignedToken}.${btoa(String.fromCharCode(...new Uint8Array(signature)))}`;
+  const signedToken = `${unsignedToken}.${toBase64UrlFromBytes(new Uint8Array(signature))}`;
 
   const tokenRes = await fetch(serviceAccount.token_uri, {
     method: "POST",
