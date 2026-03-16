@@ -150,38 +150,8 @@ const ProfilePage = () => {
     }
   };
 
-  const openEditDialog = async (forListing = false) => {
-    setEditName(profile?.display_name || "");
-    setEditGender(profile?.gender || "male");
-    setEditAge(profile?.age || 22);
-    setEditImageFile(null);
-    setEditImagePreview(null);
-    setSubmitAsListing(forListing);
-    if (session?.user) {
-      const { data } = await (supabase as any).from("user_profiles").select("contact, city, email, image_url").eq("user_id", session.user.id).maybeSingle();
-      if (data) {
-        setEditContact(data.contact || "");
-        setEditCity(data.city || "");
-        setEditEmail(data.email || session.user.email || "");
-      } else {
-        setEditContact("");
-        setEditCity("");
-        setEditEmail(session.user.email || "");
-      }
-      // Load existing application data if any
-      const { data: appData } = await (supabase as any).from("companion_applications").select("bio, tag, interests, languages").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (appData) {
-        setEditBio(appData.bio || "");
-        setEditTag(appData.tag || "");
-        setEditInterests(appData.interests || "");
-        setEditLanguages(appData.languages || "Hindi / English");
-      } else {
-        setEditBio("");
-        setEditTag("");
-        setEditInterests("");
-        setEditLanguages("Hindi / English");
-      }
-    }
+  const openEditDialog = (forListing = false) => {
+    setEditForListing(forListing);
     setEditOpen(true);
   };
 
