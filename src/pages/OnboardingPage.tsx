@@ -427,7 +427,7 @@ const OnboardingPage = () => {
         }
         container.innerHTML = "";
 
-        window.google!.accounts!.id!.renderButton(container, {
+        (window.google!.accounts!.id as any).renderButton(container, {
           type: "standard",
           size: "large",
         });
