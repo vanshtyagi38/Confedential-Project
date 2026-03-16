@@ -58,9 +58,11 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Component that initializes presence tracking
+// Component that initializes presence tracking and referral notifications
 const PresenceTracker = ({ children }: { children: React.ReactNode }) => {
+  const { session } = useAuth();
   usePresence();
+  useReferralNotifications(session?.user?.id);
   return <>{children}</>;
 };
 
