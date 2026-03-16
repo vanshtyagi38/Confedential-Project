@@ -346,53 +346,53 @@ const ChatsListPage = () => {
         {/* Active chat panel */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
           <div className="flex-1 min-h-0 overflow-hidden">
-          {selectedChat ? (
-            selectedChat.type === "companion" ? (
-              <ChatPage key={selectedChat.id} embedded companionSlug={selectedChat.id} />
+            {selectedChat ? (
+              selectedChat.type === "companion" ? (
+                <ChatPage key={selectedChat.id} embedded companionSlug={selectedChat.id} />
+              ) : (
+                <UserChatPage key={selectedChat.roomId} embedded embeddedRoomId={selectedChat.roomId} />
+              )
             ) : (
-              <UserChatPage key={selectedChat.roomId} embedded embeddedRoomId={selectedChat.roomId} />
-            )
-          ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center px-8">
-              {/* Animated hearts */}
-              <div className="relative">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 shadow-elevated">
-                  <Heart className="h-12 w-12 text-primary animate-pulse" fill="currentColor" />
+              <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center px-8 h-full">
+                <div className="relative">
+                  <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 shadow-elevated">
+                    <Heart className="h-12 w-12 text-primary animate-pulse" fill="currentColor" />
+                  </div>
+                  <span className="absolute -top-2 -right-2 text-2xl onboard-float-1">💕</span>
+                  <span className="absolute -bottom-1 -left-3 text-xl onboard-float-2">✨</span>
+                  <span className="absolute top-0 -left-4 text-lg onboard-float-3">🔥</span>
                 </div>
-                <span className="absolute -top-2 -right-2 text-2xl onboard-float-1">💕</span>
-                <span className="absolute -bottom-1 -left-3 text-xl onboard-float-2">✨</span>
-                <span className="absolute top-0 -left-4 text-lg onboard-float-3">🔥</span>
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-extrabold text-foreground">Your love story starts here 💘</h3>
-                <p className="text-sm text-muted-foreground max-w-[320px] leading-relaxed">
-                  Pick someone from the left and send your first message. They're already waiting for you! 😍
-                </p>
-              </div>
-              <div className="flex flex-col items-center gap-2 mt-2">
-                <div className="flex -space-x-3">
-                  {companions.slice(0, 5).map((c, i) => (
-                    <img key={c.id} src={c.image} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-background" style={{ zIndex: 5 - i }} />
-                  ))}
+                <div className="space-y-2">
+                  <h3 className="text-xl font-extrabold text-foreground">Your love story starts here 💘</h3>
+                  <p className="text-sm text-muted-foreground max-w-[320px] leading-relaxed">
+                    Pick someone from the left and send your first message. They're already waiting for you! 😍
+                  </p>
                 </div>
-                <p className="text-xs text-muted-foreground font-medium">
-                  <span className="text-primary font-bold">{companions.length}+</span> people online right now
-                </p>
+                <div className="flex flex-col items-center gap-2 mt-2">
+                  <div className="flex -space-x-3">
+                    {companions.slice(0, 5).map((c, i) => (
+                      <img key={c.id} src={c.image} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-background" style={{ zIndex: 5 - i }} />
+                    ))}
+                  </div>
+                  <p className="text-xs text-muted-foreground font-medium">
+                    <span className="text-primary font-bold">{companions.length}+</span> people online right now
+                  </p>
+                </div>
+                <button
+                  onClick={() => {
+                    if (chats[0]) setSelectedChat({ type: "companion", id: chats[0].companion_slug });
+                    else if (userChats[0]) setSelectedChat({ type: "user", roomId: userChats[0].room_id });
+                    else if (suggestions[0]) setSelectedChat({ type: "companion", id: suggestions[0].id });
+                  }}
+                  className="rounded-full gradient-primary px-8 py-3 text-sm font-bold text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95"
+                >
+                  <Sparkles className="h-4 w-4 inline mr-2" />
+                  Start Chatting Now
+                </button>
               </div>
-              <button
-                onClick={() => {
-                  const first = chats[0] || userChats[0];
-                  if (chats[0]) setSelectedChat({ type: "companion", id: chats[0].companion_slug });
-                  else if (userChats[0]) setSelectedChat({ type: "user", roomId: userChats[0].room_id });
-                  else if (suggestions[0]) setSelectedChat({ type: "companion", id: suggestions[0].id });
-                }}
-                className="rounded-full gradient-primary px-8 py-3 text-sm font-bold text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95"
-              >
-                <Sparkles className="h-4 w-4 inline mr-2" />
-                Start Chatting Now
-              </button>
-            </div>
-          )}
+            )}
+          </div>
+          <BottomNav />
         </div>
       </div>
     );
