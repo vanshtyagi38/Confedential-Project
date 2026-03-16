@@ -301,7 +301,7 @@ const UserChatPage = ({ embedded = false, embeddedRoomId }: UserChatPageProps = 
   const otherName = otherUser?.display_name || "User";
 
   return (
-    <div className="mx-auto flex h-[100dvh] w-full max-w-2xl flex-col bg-background">
+    <div className={`mx-auto flex ${embedded ? "h-full" : "h-[100dvh]"} w-full ${embedded ? "" : "max-w-2xl"} flex-col bg-background`}>
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-card px-3 py-3">
         <button onClick={() => navigate("/chats")} className="p-1">
