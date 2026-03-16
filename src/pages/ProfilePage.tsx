@@ -22,6 +22,7 @@ import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import EditProfileDialog from "@/components/EditProfileDialog";
 import onboardBoy from "@/assets/onboard-boy.png";
 import onboardGirl from "@/assets/onboard-girl.png";
 
