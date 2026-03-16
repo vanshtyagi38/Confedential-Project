@@ -129,7 +129,7 @@ serve(async (req) => {
     const accessToken = await getAccessToken(serviceAccount);
 
     // Run all reports in parallel
-    const [activeUsersRes, todayRes, pageViewsRes, countriesRes, topPagesRes, dailyRes] = await Promise.all([
+    const [activeUsersRes, todayRes, pageViewsRes, countriesRes, topPagesRes, dailyRes, newVsReturningRes, userLifecycleRes] = await Promise.all([
       // Active users (realtime)
       runRealtimeReport(accessToken, propertyId, {
         metrics: [{ name: "activeUsers" }],
@@ -162,10 +162,23 @@ serve(async (req) => {
         orderBys: [{ metric: { metricName: "screenPageViews" }, desc: true }],
         limit: 10,
       }),
-      // Daily visitors for selected range
+      // Daily visitors for selected range (with new vs returning)
       runReport(accessToken, propertyId, {
         dateRanges: [{ startDate, endDate }],
-        metrics: [{ name: "totalUsers" }, { name: "sessions" }],
+        metrics: [{ name: "totalUsers" }, { name: "sessions" }, { name: "newUsers" }],
+        dimensions: [{ name: "date" }],
+        orderBys: [{ dimension: { dimensionName: "date" } }],
+      }),
+      // New vs returning users breakdown
+      runReport(accessToken, propertyId, {
+        dateRanges: [{ startDate, endDate }],
+        metrics: [{ name: "totalUsers" }, { name: "sessions" }, { name: "engagedSessions" }, { name: "averageSessionDuration" }],
+        dimensions: [{ name: "newVsReturning" }],
+      }),
+      // User lifecycle: daily new users (first-time visitors)
+      runReport(accessToken, propertyId, {
+        dateRanges: [{ startDate, endDate }],
+        metrics: [{ name: "newUsers" }, { name: "totalUsers" }],
         dimensions: [{ name: "date" }],
         orderBys: [{ dimension: { dimensionName: "date" } }],
       }),
