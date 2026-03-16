@@ -47,23 +47,6 @@ const ChatsListPage = () => {
   const [loading, setLoading] = useState(true);
   const [hookIndex] = useState(() => Math.floor(Math.random() * hookLines.length));
 
-  // Check if user owns any real companion
-  const [ownedCompanion, setOwnedCompanion] = useState<any>(null);
-
-  useEffect(() => {
-    if (!session?.user) return;
-    const checkOwned = async () => {
-      const { data } = await (supabase as any)
-        .from("companions")
-        .select("*")
-        .eq("owner_user_id", session.user.id)
-        .eq("is_real_user", true)
-        .eq("status", "active")
-        .maybeSingle();
-      setOwnedCompanion(data || null);
-    };
-    checkOwned();
-  }, [session?.user]);
 
   useEffect(() => {
     if (!session?.user) return;
