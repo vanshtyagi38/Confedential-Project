@@ -60,6 +60,7 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
 // Component that initializes presence tracking
 const PresenceTracker = ({ children }: { children: React.ReactNode }) => {
   usePresence();
+  useDisableDevTools();
   return <>{children}</>;
 };
 
