@@ -1,8 +1,8 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   HelpCircle, LogOut, Clock, Copy, Share2, Flame, Gift,
   Users, TrendingUp, ChevronRight, Zap, Star, UserPlus, Edit3,
-  CheckCircle, Trash2, Camera, Bell, Radio, ChevronDown,
+  CheckCircle, Trash2, Bell, Radio, ChevronDown,
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -12,21 +12,15 @@ import { supabase } from "@/integrations/supabase/client";
 import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter,
+  Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Label } from "@/components/ui/label";
-import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+import EditProfileDialog from "@/components/EditProfileDialog";
 import onboardBoy from "@/assets/onboard-boy.png";
 import onboardGirl from "@/assets/onboard-girl.png";
 
 const STREAK_MILESTONES = [3, 7, 14, 30];
-const cities = ["Delhi", "Gurugram", "Noida", "Ghaziabad", "Faridabad", "Mumbai", "Bangalore", "Hyderabad", "Pune", "Kolkata", "Chennai", "Jaipur", "Lucknow"];
 
 function getNextMilestone(current: number): { next: number; bonus: number } {
   const found = STREAK_MILESTONES.find((m) => m > current);
@@ -42,29 +36,13 @@ const ProfilePage = () => {
   const { notifications } = useNotifications();
   const [copying, setCopying] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [editForListing, setEditForListing] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
   const [deleting, setDeleting] = useState(false);
   const [userStatus, setUserStatus] = useState<"online" | "offline">("offline");
   const [statusLoading, setStatusLoading] = useState(false);
   const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
-
-  // Unified edit profile + listing state
-  const [editName, setEditName] = useState(profile?.display_name || "");
-  const [editGender, setEditGender] = useState(profile?.gender || "male");
-  const [editAge, setEditAge] = useState(profile?.age || 22);
-  const [editContact, setEditContact] = useState("");
-  const [editCity, setEditCity] = useState("");
-  const [editEmail, setEditEmail] = useState("");
-  const [editBio, setEditBio] = useState("");
-  const [editTag, setEditTag] = useState("");
-  const [editInterests, setEditInterests] = useState("");
-  const [editLanguages, setEditLanguages] = useState("Hindi / English");
-  const [editSaving, setEditSaving] = useState(false);
-  const [editImageFile, setEditImageFile] = useState<File | null>(null);
-  const [editImagePreview, setEditImagePreview] = useState<string | null>(null);
-  const [submitAsListing, setSubmitAsListing] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Check if user has a verified companion listing
   const [hasVerifiedListing, setHasVerifiedListing] = useState(false);
@@ -109,7 +87,6 @@ const ProfilePage = () => {
         toast.info("Your profile is under review. You'll be able to go online once approved! ⏳");
         return;
       }
-      toast.info("Submit your profile first to go online! 📝");
       openEditDialog(true);
       return;
     }
@@ -163,183 +140,11 @@ const ProfilePage = () => {
     }
   };
 
-  const openEditDialog = async (forListing = false) => {
-    setEditName(profile?.display_name || "");
-    setEditGender(profile?.gender || "male");
-    setEditAge(profile?.age || 22);
-    setEditImageFile(null);
-    setEditImagePreview(null);
-    setSubmitAsListing(forListing);
-    if (session?.user) {
-      const { data } = await (supabase as any).from("user_profiles").select("contact, city, email, image_url").eq("user_id", session.user.id).maybeSingle();
-      if (data) {
-        setEditContact(data.contact || "");
-        setEditCity(data.city || "");
-        setEditEmail(data.email || session.user.email || "");
-      } else {
-        setEditContact("");
-        setEditCity("");
-        setEditEmail(session.user.email || "");
-      }
-      // Load existing application data if any
-      const { data: appData } = await (supabase as any).from("companion_applications").select("bio, tag, interests, languages").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(1).maybeSingle();
-      if (appData) {
-        setEditBio(appData.bio || "");
-        setEditTag(appData.tag || "");
-        setEditInterests(appData.interests || "");
-        setEditLanguages(appData.languages || "Hindi / English");
-      } else {
-        setEditBio("");
-        setEditTag("");
-        setEditInterests("");
-        setEditLanguages("Hindi / English");
-      }
-    }
+  const openEditDialog = (forListing = false) => {
+    setEditForListing(forListing);
     setEditOpen(true);
   };
 
-  const handleImageSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (file.size > 5 * 1024 * 1024) { toast.error("Image must be under 5MB"); return; }
-    setEditImageFile(file);
-    setEditImagePreview(URL.createObjectURL(file));
-  };
-
-  const handleSaveProfile = async () => {
-    if (!session?.user) return;
-    setEditSaving(true);
-
-    let imageUrl: string | undefined;
-    if (editImageFile) {
-      const ext = editImageFile.name.split(".").pop() || "jpg";
-      const path = `profiles/${session.user.id}.${ext}`;
-      await supabase.storage.from("chat-images").upload(path, editImageFile, { contentType: editImageFile.type, upsert: true });
-      const { data: urlData } = supabase.storage.from("chat-images").getPublicUrl(path);
-      imageUrl = urlData.publicUrl;
-    }
-
-    const updateData: any = {
-      display_name: editName, gender: editGender, age: editAge,
-      contact: editContact, city: editCity, email: editEmail,
-    };
-    if (imageUrl) updateData.image_url = imageUrl;
-
-    await (supabase as any).from("user_profiles").update(updateData).eq("user_id", session.user.id);
-
-    if (!profileCompletionRewardClaimed && editName && editGender && editAge) {
-      await (supabase as any).from("user_profiles").update({ balance_minutes: (profile?.balance_minutes || 0) + 10 }).eq("user_id", session.user.id);
-      await (supabase as any).from("wallet_transactions").insert({ user_id: session.user.id, type: "credit", minutes: 10, amount: 0, description: "🎁 Profile completion reward: +10 minutes!" });
-      localStorage.setItem(`profile_complete_${session.user.id}`, "true");
-      toast.success("🎉 Profile completed! +10 free minutes added!");
-    }
-
-    // Submit as listing if toggled
-    if (submitAsListing) {
-      if (!editBio) {
-        toast.error("Bio is required to list your profile");
-        setEditSaving(false);
-        return;
-      }
-      const { data: existingProfile } = await (supabase as any).from("user_profiles").select("image_url").eq("user_id", session.user.id).maybeSingle();
-      if (!editImageFile && !imageUrl && !existingProfile?.image_url) {
-        toast.error("Photo is required to list your profile");
-        setEditSaving(false);
-        return;
-      }
-      if (editAge < 18) {
-        toast.error("You must be at least 18 years old");
-        setEditSaving(false);
-        return;
-      }
-
-      // Check if user already has an application
-      const { data: existingApp } = await (supabase as any)
-        .from("companion_applications")
-        .select("id, admin_status")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-
-      if (existingApp?.admin_status === "approved") {
-        // Sync updates to existing companion instead
-        const { data: existingComp } = await (supabase as any)
-          .from("companions")
-          .select("id")
-          .eq("owner_user_id", session.user.id)
-          .eq("is_real_user", true)
-          .maybeSingle();
-
-        let listingImageUrl = imageUrl;
-        if (editImageFile && !listingImageUrl) {
-          const ext = editImageFile.name.split(".").pop() || "jpg";
-          const path = `app-${session.user.id}-${Date.now()}.${ext}`;
-          const { error: uploadErr } = await supabase.storage.from("companion-images").upload(path, editImageFile, { contentType: editImageFile.type });
-          if (!uploadErr) {
-            const { data } = supabase.storage.from("companion-images").getPublicUrl(path);
-            listingImageUrl = data.publicUrl;
-          }
-        }
-
-        const updatePayload = {
-          name: editName, age: editAge, gender: editGender,
-          city: editCity || "Delhi", languages: editLanguages,
-          tag: editTag || "New Companion", bio: editBio, interests: editInterests,
-          ...(listingImageUrl ? { image_url: listingImageUrl } : {}),
-          updated_at: new Date().toISOString(),
-        };
-
-        if (existingComp) {
-          await (supabase as any).from("companions").update(updatePayload).eq("id", existingComp.id);
-        }
-        await (supabase as any).from("companion_applications").update({ ...updatePayload, admin_status: "approved" }).eq("id", existingApp.id);
-
-        toast.success("Your listing has been updated! ✅");
-      } else if (existingApp?.admin_status === "pending") {
-        toast.info("You already have a pending application! ⏳");
-        setEditSaving(false);
-        setEditOpen(false);
-        return;
-      } else {
-        // Upload to companion-images bucket too
-        let listingImageUrl = imageUrl;
-        if (editImageFile && !listingImageUrl) {
-          const ext = editImageFile.name.split(".").pop() || "jpg";
-          const path = `app-${session.user.id}-${Date.now()}.${ext}`;
-          const { error: uploadErr } = await supabase.storage.from("companion-images").upload(path, editImageFile, { contentType: editImageFile.type });
-          if (!uploadErr) {
-            const { data } = supabase.storage.from("companion-images").getPublicUrl(path);
-            listingImageUrl = data.publicUrl;
-          }
-        }
-
-        const listingData = {
-          name: editName, age: editAge, gender: editGender,
-          city: editCity || "Delhi", languages: editLanguages,
-          tag: editTag || "New Companion", bio: editBio, interests: editInterests,
-          image_url: listingImageUrl || imageUrl || existingProfile?.image_url || null,
-          payment_status: "free", admin_status: "pending",
-          rejection_reason: null, updated_at: new Date().toISOString(),
-        };
-
-        if (existingApp?.admin_status === "rejected") {
-          await (supabase as any).from("companion_applications").update(listingData).eq("id", existingApp.id);
-        } else {
-          await (supabase as any).from("companion_applications").insert({ user_id: session.user.id, ...listingData });
-        }
-
-        toast.success("Profile submitted for review! We'll approve within 24 hours 🎉");
-        setHasPendingApp(true);
-      }
-    } else if (!profileCompletionRewardClaimed) {
-      // already handled above
-    } else {
-      toast.success("Profile updated! ✅");
-    }
-
-    await refreshProfile();
-    setEditSaving(false);
-    setEditOpen(false);
-  };
 
   const handleTogglePreference = async () => {
     if (!session?.user) return;
@@ -633,112 +438,7 @@ const ProfilePage = () => {
         </button>
       </div>
 
-      {/* Unified Edit Profile + List Profile Dialog */}
-      <Dialog open={editOpen} onOpenChange={setEditOpen}>
-        <DialogContent className="max-w-md rounded-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>{submitAsListing ? "Submit Your Profile 📝" : "Edit Profile ✨"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-3">
-            <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
-              🔒 Your data is 100% safe and secured. We never share your info.
-            </div>
-
-            <div className="flex justify-center">
-              <button onClick={() => fileInputRef.current?.click()} className="relative">
-                <img src={editImagePreview || avatarImg} alt="Avatar" className="h-20 w-20 rounded-full object-cover border-2 border-border" />
-                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-primary border-2 border-background">
-                  <Camera className="h-3.5 w-3.5 text-primary-foreground" />
-                </div>
-              </button>
-              <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleImageSelect} />
-            </div>
-            {submitAsListing && <p className="text-center text-[10px] text-muted-foreground">Photo is required for listing *</p>}
-
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-xs">Name *</Label>
-                <Input value={editName} onChange={(e) => setEditName(e.target.value)} placeholder="Display name" />
-              </div>
-              <div>
-                <Label className="text-xs">Age *</Label>
-                <Input type="number" min={18} max={60} value={editAge} onChange={(e) => setEditAge(Number(e.target.value))} />
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-xs">Email</Label>
-              <Input value={editEmail} onChange={(e) => setEditEmail(e.target.value)} type="email" />
-            </div>
-
-            <div>
-              <Label className="text-xs">Contact Number</Label>
-              <Input value={editContact} onChange={(e) => setEditContact(e.target.value)} type="tel" placeholder="+91 9876543210" />
-            </div>
-
-            <div>
-              <Label className="text-xs">Gender</Label>
-              <div className="mt-1 flex gap-2">
-                {["male", "female"].map((g) => (
-                  <button key={g} onClick={() => setEditGender(g)} className={`flex-1 rounded-xl border py-2.5 text-sm font-semibold transition-colors ${editGender === g ? "border-primary bg-primary/10 text-primary" : "border-border bg-secondary text-muted-foreground"}`}>
-                    {g === "male" ? "👦 Boy" : "👧 Girl"}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            <div>
-              <Label className="text-xs">City</Label>
-              <Select value={editCity} onValueChange={setEditCity}>
-                <SelectTrigger><SelectValue placeholder="Select city" /></SelectTrigger>
-                <SelectContent>
-                  {cities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
-                </SelectContent>
-              </Select>
-            </div>
-
-            {/* Listing-specific fields - always shown */}
-            <div className="border-t border-border pt-3 mt-2">
-              <div className="flex items-center justify-between mb-2">
-                <p className="text-xs font-bold text-foreground">Listing Details</p>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] text-muted-foreground">Submit as listing</span>
-                  <Switch checked={submitAsListing} onCheckedChange={setSubmitAsListing} />
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                <div>
-                  <Label className="text-xs">Languages</Label>
-                  <Input value={editLanguages} onChange={(e) => setEditLanguages(e.target.value)} placeholder="Hindi / English" />
-                </div>
-                <div>
-                  <Label className="text-xs">Tagline</Label>
-                  <Input value={editTag} onChange={(e) => setEditTag(e.target.value)} placeholder="e.g. College Cutie, Fitness Babe" />
-                </div>
-                <div>
-                  <Label className="text-xs">Interests</Label>
-                  <Input value={editInterests} onChange={(e) => setEditInterests(e.target.value)} placeholder="Music, Movies, Gaming, Travel" />
-                </div>
-                <div>
-                  <Label className="text-xs">Bio {submitAsListing && "*"}</Label>
-                  <Textarea value={editBio} onChange={(e) => setEditBio(e.target.value)} placeholder="Tell something fun about yourself..." rows={3} />
-                </div>
-              </div>
-            </div>
-
-            {submitAsListing && (
-              <div className="flex items-center gap-2 rounded-xl bg-primary/5 px-3 py-2 text-[11px] text-muted-foreground">
-                🔒 Your profile will be reviewed by admin before going live. Only approved profiles appear in the grid.
-              </div>
-            )}
-
-            <Button onClick={handleSaveProfile} disabled={editSaving} className="w-full">
-              {editSaving ? "Saving..." : submitAsListing ? "Save & Submit for Review" : "Save Profile"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <EditProfileDialog open={editOpen} onClose={() => setEditOpen(false)} forListing={editForListing} />
 
       {/* Delete Account Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>

@@ -735,16 +735,23 @@ export type Database = {
           age: number
           balance_minutes: number
           city: string | null
+          college_company: string | null
           contact: string | null
+          country: string | null
           created_at: string | null
           display_name: string | null
           email: string | null
+          facebook: string | null
           gender: string
           id: string
           image_url: string | null
+          instagram: string | null
+          linkedin: string | null
           preferred_gender: string
           referral_code: string | null
+          snapchat: string | null
           spin_credits: number
+          state: string | null
           user_id: string
           user_status: string
         }
@@ -752,16 +759,23 @@ export type Database = {
           age: number
           balance_minutes?: number
           city?: string | null
+          college_company?: string | null
           contact?: string | null
+          country?: string | null
           created_at?: string | null
           display_name?: string | null
           email?: string | null
+          facebook?: string | null
           gender: string
           id?: string
           image_url?: string | null
+          instagram?: string | null
+          linkedin?: string | null
           preferred_gender: string
           referral_code?: string | null
+          snapchat?: string | null
           spin_credits?: number
+          state?: string | null
           user_id: string
           user_status?: string
         }
@@ -769,16 +783,23 @@ export type Database = {
           age?: number
           balance_minutes?: number
           city?: string | null
+          college_company?: string | null
           contact?: string | null
+          country?: string | null
           created_at?: string | null
           display_name?: string | null
           email?: string | null
+          facebook?: string | null
           gender?: string
           id?: string
           image_url?: string | null
+          instagram?: string | null
+          linkedin?: string | null
           preferred_gender?: string
           referral_code?: string | null
+          snapchat?: string | null
           spin_credits?: number
+          state?: string | null
           user_id?: string
           user_status?: string
         }
