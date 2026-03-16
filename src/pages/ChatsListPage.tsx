@@ -341,11 +341,11 @@ const ChatsListPage = () => {
           <div className="flex-1 overflow-y-auto pb-4">
             {chatListContent}
           </div>
-          <BottomNav />
         </div>
 
         {/* Active chat panel */}
         <div className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+          <div className="flex-1 min-h-0 overflow-hidden">
           {selectedChat ? (
             selectedChat.type === "companion" ? (
               <ChatPage key={selectedChat.id} embedded companionSlug={selectedChat.id} />
