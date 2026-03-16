@@ -42,7 +42,7 @@ const ChatsListPage = () => {
   const { session } = useAuth();
   const { companions, getCompanionBySlug } = useCompanions();
   const [chats, setChats] = useState<ChatPreview[]>([]);
-  const [inboxChats, setInboxChats] = useState<InboxChat[]>([]);
+  
   const [userChats, setUserChats] = useState<UserChatPreview[]>([]);
   const [loading, setLoading] = useState(true);
   const [hookIndex] = useState(() => Math.floor(Math.random() * hookLines.length));
