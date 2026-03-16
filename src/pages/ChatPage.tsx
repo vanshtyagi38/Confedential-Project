@@ -755,7 +755,7 @@ const ChatPage = ({ embedded = false, companionSlug }: ChatPageProps = {}) => {
   const headerName = isOwnerMode ? "Chat" : companion.name;
 
   return (
-    <div className={`mx-auto flex ${embedded ? "h-full" : "h-[100dvh]"} w-full ${embedded ? "" : "max-w-2xl"} flex-col bg-background`}>
+    <div className={`mx-auto flex ${embedded ? "h-full" : "h-[100dvh]"} w-full ${embedded ? "" : "max-w-2xl"} flex-col bg-background overflow-hidden`}>
       {!online && (
         <div className="bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground">
           You're offline. Messages will send when connected.

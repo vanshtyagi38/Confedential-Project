@@ -337,7 +337,7 @@ const ChatsListPage = () => {
     return (
       <div className="flex h-[100dvh] w-full bg-background">
         {/* Chat list panel */}
-        <div className="w-[380px] shrink-0 overflow-y-auto border-r border-border pb-24">
+        <div className="w-[380px] shrink-0 overflow-y-auto border-r border-border pb-24 bg-card/50">
           {chatListContent}
           <BottomNav />
         </div>
@@ -351,14 +351,44 @@ const ChatsListPage = () => {
               <UserChatPage key={selectedChat.roomId} embedded embeddedRoomId={selectedChat.roomId} />
             )
           ) : (
-            <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-                <MessageCircle className="h-10 w-10 text-primary/40" />
+            <div className="flex flex-1 flex-col items-center justify-center gap-6 text-center px-8">
+              {/* Animated hearts */}
+              <div className="relative">
+                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-primary/20 to-accent/20 shadow-elevated">
+                  <Heart className="h-12 w-12 text-primary animate-pulse" fill="currentColor" />
+                </div>
+                <span className="absolute -top-2 -right-2 text-2xl onboard-float-1">💕</span>
+                <span className="absolute -bottom-1 -left-3 text-xl onboard-float-2">✨</span>
+                <span className="absolute top-0 -left-4 text-lg onboard-float-3">🔥</span>
               </div>
-              <h3 className="text-lg font-bold text-foreground/60">Select a conversation</h3>
-              <p className="text-sm text-muted-foreground max-w-[280px]">
-                Pick a chat from the left to start talking 💬
-              </p>
+              <div className="space-y-2">
+                <h3 className="text-xl font-extrabold text-foreground">Your love story starts here 💘</h3>
+                <p className="text-sm text-muted-foreground max-w-[320px] leading-relaxed">
+                  Pick someone from the left and send your first message. They're already waiting for you! 😍
+                </p>
+              </div>
+              <div className="flex flex-col items-center gap-2 mt-2">
+                <div className="flex -space-x-3">
+                  {companions.slice(0, 5).map((c, i) => (
+                    <img key={c.id} src={c.image} alt="" className="h-10 w-10 rounded-full object-cover ring-2 ring-background" style={{ zIndex: 5 - i }} />
+                  ))}
+                </div>
+                <p className="text-xs text-muted-foreground font-medium">
+                  <span className="text-primary font-bold">{companions.length}+</span> people online right now
+                </p>
+              </div>
+              <button
+                onClick={() => {
+                  const first = chats[0] || userChats[0];
+                  if (chats[0]) setSelectedChat({ type: "companion", id: chats[0].companion_slug });
+                  else if (userChats[0]) setSelectedChat({ type: "user", roomId: userChats[0].room_id });
+                  else if (suggestions[0]) setSelectedChat({ type: "companion", id: suggestions[0].id });
+                }}
+                className="rounded-full gradient-primary px-8 py-3 text-sm font-bold text-primary-foreground shadow-elevated transition-transform hover:scale-105 active:scale-95"
+              >
+                <Sparkles className="h-4 w-4 inline mr-2" />
+                Start Chatting Now
+              </button>
             </div>
           )}
         </div>
