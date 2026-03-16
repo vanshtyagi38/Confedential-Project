@@ -587,8 +587,6 @@ const OnboardingPage = () => {
   if (step === "email") {
     return (
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
-        <GoogleOneTap />
-
         {/* Header */}
         <div className="flex items-center px-4 pt-4">
           <button
