@@ -172,27 +172,6 @@ const ChatsListPage = () => {
           </span>
         </div>
 
-        {/* Inbox tab only if owned companion */}
-        {hasInbox && (
-          <div className="flex mt-2 gap-1 bg-secondary rounded-xl p-1">
-            <button className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold bg-primary text-primary-foreground">
-              <Heart className="h-3.5 w-3.5" />
-              Love Birds
-            </button>
-            <button
-              onClick={() => navigate("/chats?tab=inbox")}
-              className="flex-1 flex items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-bold text-muted-foreground"
-            >
-              <Inbox className="h-3.5 w-3.5" />
-              Inbox
-              {inboxChats.length > 0 && (
-                <span className="ml-0.5 flex h-4 w-4 items-center justify-center rounded-full text-[9px] font-bold bg-accent text-accent-foreground">
-                  {inboxChats.length}
-                </span>
-              )}
-            </button>
-          </div>
-        )}
       </div>
 
       <div className="mx-4 mt-3 rounded-2xl bg-gradient-to-r from-primary/10 via-accent/10 to-primary/10 border border-primary/20 p-3">
