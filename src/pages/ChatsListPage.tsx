@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { MessageCircle, Heart, Sparkles, Flame, ArrowRight, Inbox, Users } from "lucide-react";
+import { MessageCircle, Heart, Sparkles, Flame, ArrowRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
