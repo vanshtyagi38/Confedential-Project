@@ -334,24 +334,138 @@ const OnboardingPage = () => {
     navigate("/", { replace: true });
   };
 
-  /* ── Google sign-in via Lovable managed OAuth ────────────── */
-  const triggerGoogle = async () => {
+  /* ── Google sign-in via GIS popup (works on any domain) ── */
+  const triggerGoogle = () => {
     if (isGoogleLoading) return;
     setIsGoogleLoading(true);
 
-    try {
-      const { error } = await lovable.auth.signInWithOAuth("google", {
-        redirect_uri: window.location.origin,
-      });
-      if (error) {
-        console.error("Google sign-in error:", error);
-        toast.error("Google sign-in failed. Please try again.");
+    const handleCredentialResponse = async (response: { credential?: string }) => {
+      if (!response.credential) {
+        toast.error("Google sign-in cancelled");
+        setIsGoogleLoading(false);
+        return;
+      }
+
+      try {
+        toast.loading("Signing you in...", { id: "google-signin" });
+
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-oauth`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ credential: response.credential }),
+          }
+        );
+
+        const data = await resp.json();
+        if (!resp.ok || (!data.token_hash && !data.access_token)) {
+          toast.error(data.error || "Sign-in failed", { id: "google-signin" });
+          setIsGoogleLoading(false);
+          return;
+        }
+
+        if (data.access_token) {
+          const { error: sessionError } = await supabase.auth.setSession({
+            access_token: data.access_token,
+            refresh_token: data.refresh_token,
+          });
+          if (sessionError) throw sessionError;
+        } else if (data.token_hash) {
+          const { error: verifyErr } = await supabase.auth.verifyOtp({
+            token_hash: data.token_hash,
+            type: "magiclink",
+          });
+          if (verifyErr) throw verifyErr;
+        }
+
+        toast.success(data.is_new ? "Welcome!" : "Welcome back!", { id: "google-signin" });
+        navigate("/", { replace: true });
+      } catch (err) {
+        console.error("Google sign-in error:", err);
+        toast.error("Sign-in failed. Please try again.", { id: "google-signin" });
         setIsGoogleLoading(false);
       }
-    } catch (err) {
-      console.error("Google sign-in error:", err);
-      toast.error("Google sign-in failed. Please try again.");
-      setIsGoogleLoading(false);
+    };
+
+    const initAndPrompt = async () => {
+      try {
+        // Get client ID from edge function
+        const resp = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/google-onetap`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ action: "get_client_id" }),
+          }
+        );
+        const config = await resp.json();
+
+        if (!config.client_id) {
+          toast.error("Google sign-in not configured");
+          setIsGoogleLoading(false);
+          return;
+        }
+
+        window.google!.accounts!.id!.initialize({
+          client_id: config.client_id,
+          callback: handleCredentialResponse,
+          auto_select: false,
+          cancel_on_tap_outside: false,
+        });
+
+        // Use renderButton in a hidden container as a reliable fallback trigger
+        // then immediately click it — works on all domains without origin restrictions
+        let container = document.getElementById("g-signin-hidden");
+        if (!container) {
+          container = document.createElement("div");
+          container.id = "g-signin-hidden";
+          container.style.position = "fixed";
+          container.style.top = "-9999px";
+          container.style.left = "-9999px";
+          document.body.appendChild(container);
+        }
+        container.innerHTML = "";
+
+        window.google!.accounts!.id!.renderButton(container, {
+          type: "standard",
+          size: "large",
+        });
+
+        // Click the rendered Google button after a short delay
+        setTimeout(() => {
+          const btn = container!.querySelector('div[role="button"]') as HTMLElement;
+          if (btn) {
+            btn.click();
+          } else {
+            // Fallback to One Tap prompt
+            window.google!.accounts!.id!.prompt((n) => {
+              if (n.isNotDisplayed() || n.isSkippedMoment()) {
+                toast.error("Google sign-in unavailable. Please use email login.");
+                setIsGoogleLoading(false);
+              }
+            });
+          }
+        }, 300);
+      } catch {
+        toast.error("Failed to load Google sign-in");
+        setIsGoogleLoading(false);
+      }
+    };
+
+    // Load GIS SDK if needed
+    if (!window.google?.accounts?.id) {
+      const script = document.createElement("script");
+      script.src = "https://accounts.google.com/gsi/client";
+      script.async = true;
+      script.onload = () => initAndPrompt();
+      script.onerror = () => {
+        toast.error("Failed to load Google sign-in");
+        setIsGoogleLoading(false);
+      };
+      document.head.appendChild(script);
+    } else {
+      initAndPrompt();
     }
   };
 
