@@ -464,7 +464,7 @@ const ProfilePage = () => {
       {/* Avatar + Info */}
       <div className="flex flex-col items-center pb-5 pt-4">
         <div className="relative">
-          <img src={avatarImg} alt="Avatar" className="h-24 w-24 rounded-full object-cover shadow-elevated" />
+          <img src={profile?.image_url || avatarImg} alt="Avatar" className="h-24 w-24 rounded-full object-cover shadow-elevated" />
           <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full border-2 border-background bg-primary">
             <Flame className="h-3.5 w-3.5 text-primary-foreground" />
           </div>
