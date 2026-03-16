@@ -11,6 +11,7 @@ export type UserProfile = {
   balance_minutes: number;
   referral_code: string | null;
   spin_credits: number;
+  image_url: string | null;
 };
 
 type AuthContextType = {
