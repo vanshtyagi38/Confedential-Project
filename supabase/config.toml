@@ -9,3 +9,5 @@ project_id = "fckraevvqfvribyiqkdo"
     verify_jwt = false
   [functions.rate-limiter]
     verify_jwt = false
+  [functions.ga4-analytics]
+    verify_jwt = false

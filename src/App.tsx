@@ -33,6 +33,7 @@ import AdminWishlist from "./pages/admin/AdminWishlist";
 import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminApiAnalytics from "./pages/admin/AdminApiAnalytics";
+import AdminGA4Analytics from "./pages/admin/AdminGA4Analytics";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
@@ -99,6 +100,7 @@ const App = () => (
                 <Route path="api-analytics" element={<AdminApiAnalytics />} />
                 <Route path="security" element={<AdminSecurity />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="ga4" element={<AdminGA4Analytics />} />
               </Route>
 
               <Route path="/privacy" element={<PrivacyPage />} />
