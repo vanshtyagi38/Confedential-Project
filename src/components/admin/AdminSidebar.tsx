@@ -17,6 +17,7 @@ const links = [
   { to: "/admin/wishlist", icon: UserPlus, label: "Wishlist" },
   { to: "/admin/api-analytics", icon: Gauge, label: "API Analytics" },
   { to: "/admin/ga4", icon: LineChart, label: "Google Analytics" },
+  { to: "/admin/seo", icon: Globe, label: "SEO Pages" },
   { to: "/admin/security", icon: ShieldCheck, label: "Security" },
   { to: "/admin/settings", icon: Settings, label: "Settings" },
 ];
