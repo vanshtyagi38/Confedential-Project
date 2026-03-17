@@ -35,6 +35,12 @@ import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminApiAnalytics from "./pages/admin/AdminApiAnalytics";
 import AdminGA4Analytics from "./pages/admin/AdminGA4Analytics";
+import AdminSeoOverview from "./pages/admin/AdminSeoOverview";
+import AdminSeoPages from "./pages/admin/AdminSeoPages";
+import AdminSeoPageEditor from "./pages/admin/AdminSeoPageEditor";
+import AdminSeoBulk from "./pages/admin/AdminSeoBulk";
+import AdminSeoTemplates from "./pages/admin/AdminSeoTemplates";
+import SeoPage from "./pages/SeoPage";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
