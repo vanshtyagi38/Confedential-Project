@@ -578,6 +578,87 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_pages: {
+        Row: {
+          city: string | null
+          content_html: string
+          created_at: string
+          created_by: string | null
+          faq_json: Json | null
+          id: string
+          meta_description: string
+          page_type: string
+          primary_keyword: string
+          related_slugs: string[] | null
+          secondary_keywords: string | null
+          slug: string
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          city?: string | null
+          content_html?: string
+          created_at?: string
+          created_by?: string | null
+          faq_json?: Json | null
+          id?: string
+          meta_description?: string
+          page_type?: string
+          primary_keyword?: string
+          related_slugs?: string[] | null
+          secondary_keywords?: string | null
+          slug: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          city?: string | null
+          content_html?: string
+          created_at?: string
+          created_by?: string | null
+          faq_json?: Json | null
+          id?: string
+          meta_description?: string
+          page_type?: string
+          primary_keyword?: string
+          related_slugs?: string[] | null
+          secondary_keywords?: string | null
+          slug?: string
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      seo_templates: {
+        Row: {
+          content_prompt: string
+          created_at: string
+          id: string
+          name: string
+          title_template: string
+        }
+        Insert: {
+          content_prompt?: string
+          created_at?: string
+          id: string
+          name?: string
+          title_template?: string
+        }
+        Update: {
+          content_prompt?: string
+          created_at?: string
+          id?: string
+          name?: string
+          title_template?: string
+        }
+        Relationships: []
+      }
       support_messages: {
         Row: {
           content: string
