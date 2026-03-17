@@ -483,100 +483,91 @@ const OnboardingPage = () => {
   /* ── WELCOME SCREEN ─────────────────────────────── */
   if (step === "welcome") {
     return (
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-white overflow-hidden relative">
         <PageSEO title="Join SingleTape | Sign Up Free" description="Sign up for SingleTape – India's most fun anonymous chat platform. Talk to amazing people safely." path="/onboarding" />
-        {/* Ambient glow effects */}
 
-        {/* Ambient glow effects */}
-        <div className="pointer-events-none absolute -top-20 left-1/2 -translate-x-1/2 h-[300px] w-[300px] rounded-full bg-primary/15 blur-[100px]" />
-        <div className="pointer-events-none absolute bottom-40 -right-20 h-[200px] w-[200px] rounded-full bg-accent/10 blur-[80px]" />
+        {/* Soft gradient background */}
+        <div className="pointer-events-none absolute inset-0 bg-gradient-to-b from-rose-50/80 via-white to-orange-50/40" />
 
-        {/* Hero image area */}
-        <div className="relative flex-1 flex items-center justify-center px-6 pt-8 pb-2">
-          <div className="relative w-full max-w-[320px] aspect-[3/4]">
-            {/* Main hero image with crossfade */}
-            <div
-              className={`absolute inset-0 rounded-[2rem] overflow-hidden shadow-elevated border-4 border-card transition-all duration-500 ease-out ${fadeClass}`}
-              style={{ transform: `rotate(${currentImage === 0 ? -2 : currentImage === 1 ? 1 : -1}deg)` }}
-            >
-              <img
-                src={HERO_IMAGES[currentImage]}
-                alt=""
-                className="h-full w-full object-cover"
-              />
-              {/* Gradient overlay at bottom */}
-              <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
-            </div>
-
-            {/* Floating badge - rotating text */}
-            <div className={`absolute -left-2 bottom-20 z-10 rounded-full gradient-primary px-4 py-2 shadow-elevated transition-all duration-500 ${fadeClass}`}>
-              <span className="text-sm font-bold text-primary-foreground whitespace-nowrap">
-                {BADGE_TEXTS[currentBadge]}
-              </span>
-            </div>
-
-            {/* Online indicator */}
-            <div className="absolute -right-1 top-6 z-10 flex items-center gap-1.5 rounded-full bg-card/90 backdrop-blur-sm px-3 py-1.5 shadow-elevated border border-border/50">
-              <span className="relative flex h-2.5 w-2.5">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
-              </span>
-              <span className="text-xs font-bold text-foreground">{onlineCount.toLocaleString()}+ online</span>
-            </div>
-
-            {/* Floating small avatars */}
-            <div className="absolute -left-3 top-12 z-10 onboard-float-1">
-              <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-card shadow-elevated">
-                <img src={HERO_IMAGES[(currentImage + 1) % HERO_IMAGES.length]} alt="" className="h-full w-full object-cover" />
-              </div>
-            </div>
-            <div className="absolute -right-3 bottom-40 z-10 onboard-float-2">
-              <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-card shadow-elevated">
-                <img src={HERO_IMAGES[(currentImage + 2) % HERO_IMAGES.length]} alt="" className="h-full w-full object-cover" />
-              </div>
-            </div>
-
-            {/* Sparkle decorations */}
-            <div className="absolute top-2 right-8 z-10 onboard-float-3">
-              <Sparkles className="h-5 w-5 text-accent" />
-            </div>
-            <div className="absolute bottom-16 right-4 z-10 onboard-float-1">
-              <Heart className="h-4 w-4 text-primary fill-primary" />
-            </div>
+        {/* Top bar */}
+        <div className="relative z-10 flex items-center justify-between px-5 pt-5 pb-2">
+          <h2 className="text-lg font-extrabold tracking-tight text-foreground">
+            Single<span className="text-primary">Tape</span>
+          </h2>
+          <div className="flex items-center gap-1.5 rounded-full bg-green-50 border border-green-200 px-3 py-1">
+            <span className="relative flex h-2 w-2">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+              <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
+            </span>
+            <span className="text-[11px] font-bold text-green-700">{onlineCount.toLocaleString()}+ online</span>
           </div>
         </div>
 
-        {/* Bottom content */}
-        <div className="relative z-10 px-6 pb-6 pt-3 space-y-4">
-          {/* Rotating tagline */}
-          <div className="text-center space-y-1.5">
-            <h1 className="text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[68px] flex items-center justify-center">
+        {/* Hero section */}
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-6 pt-2 pb-0">
+          {/* Hero illustration with smooth crossfade */}
+          <div className="relative w-full max-w-[260px] aspect-square mb-4">
+            {HERO_IMAGES.map((img, i) => (
+              <img
+                key={i}
+                src={img}
+                alt=""
+                className={`absolute inset-0 h-full w-full object-contain transition-all duration-700 ease-in-out ${
+                  i === currentImage ? "opacity-100 scale-100" : "opacity-0 scale-95"
+                }`}
+              />
+            ))}
+
+            {/* Floating chat bubble */}
+            <div className={`absolute -left-3 bottom-16 z-10 transition-all duration-500 ${fadeClass}`}>
+              <div className="rounded-2xl rounded-bl-sm bg-white shadow-elevated border border-border/60 px-4 py-2.5">
+                <span className="text-sm font-semibold text-foreground">{BADGE_TEXTS[currentBadge]}</span>
+              </div>
+            </div>
+
+            {/* Floating reaction */}
+            <div className="absolute -right-2 top-14 z-10 onboard-float-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 shadow-card">
+                <Heart className="h-5 w-5 text-primary fill-primary" />
+              </div>
+            </div>
+
+            <div className="absolute right-4 bottom-8 z-10 onboard-float-3">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-accent/10 shadow-card">
+                <Sparkles className="h-4 w-4 text-accent" />
+              </div>
+            </div>
+          </div>
+
+          {/* Tagline */}
+          <div className="text-center space-y-2 mb-4">
+            <h1 className="text-[28px] font-extrabold tracking-tight text-foreground leading-tight min-h-[40px] flex items-center justify-center">
               <span className={`transition-all duration-300 ease-out ${taglineFade}`}>
                 {TAGLINES[currentTagline]}
               </span>
             </h1>
-            <p className="text-sm text-muted-foreground">
-              Join <span className="font-bold text-primary">{onlineCount.toLocaleString()}+</span> people chatting right now
+            <p className="text-sm text-muted-foreground max-w-[280px] mx-auto">
+              India's most fun private chat platform. Safe, anonymous & exciting.
             </p>
           </div>
 
           {/* Feature pills */}
-          <div className="flex items-center justify-center gap-4">
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
-              <Heart className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[11px] font-semibold text-foreground">Real Vibes</span>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
-              <MessageCircle className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[11px] font-semibold text-foreground">Private Chats</span>
-            </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
-              <Shield className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[11px] font-semibold text-foreground">100% Safe</span>
-            </div>
+          <div className="flex items-center justify-center gap-2 mb-5">
+            {[
+              { icon: Heart, label: "Real Vibes", color: "bg-rose-50 text-rose-600 border-rose-200" },
+              { icon: MessageCircle, label: "Private Chats", color: "bg-blue-50 text-blue-600 border-blue-200" },
+              { icon: Shield, label: "100% Safe", color: "bg-emerald-50 text-emerald-600 border-emerald-200" },
+            ].map(({ icon: Icon, label, color }) => (
+              <div key={label} className={`flex items-center gap-1.5 rounded-full border px-3 py-1.5 ${color}`}>
+                <Icon className="h-3.5 w-3.5" />
+                <span className="text-[11px] font-semibold">{label}</span>
+              </div>
+            ))}
           </div>
+        </div>
 
-          {/* CTA Buttons */}
+        {/* Bottom CTA */}
+        <div className="relative z-10 px-6 pb-6 pt-2 space-y-3">
           <button
             onClick={() => setStep("email")}
             className="group relative w-full overflow-hidden rounded-2xl gradient-primary py-4 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97]"
@@ -590,19 +581,28 @@ const OnboardingPage = () => {
 
           <button
             onClick={triggerGoogle}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-border bg-card py-3.5 text-sm font-semibold text-foreground shadow-card transition-all hover:bg-secondary active:scale-[0.97]"
+            disabled={isGoogleLoading}
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-border bg-white py-3.5 text-sm font-semibold text-foreground shadow-card transition-all hover:bg-secondary active:scale-[0.97] disabled:opacity-50"
           >
-            <svg className="h-5 w-5" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Continue with Google
+            {isGoogleLoading ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <>
+                <svg className="h-5 w-5" viewBox="0 0 24 24">
+                  <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
+                  <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+                  <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+                  <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+                </svg>
+                Continue with Google
+              </>
+            )}
           </button>
 
           <p className="text-center text-[11px] text-muted-foreground">
-            By continuing you agree to our Terms & Privacy Policy
+            By continuing you agree to our{" "}
+            <a href="/terms" className="underline text-foreground">Terms</a> &{" "}
+            <a href="/privacy" className="underline text-foreground">Privacy Policy</a>
           </p>
         </div>
       </div>
