@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import PageSEO from "@/components/PageSEO";
 import { Heart, Sparkles, Users, Circle, Loader2 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BalanceCard from "@/components/BalanceCard";
