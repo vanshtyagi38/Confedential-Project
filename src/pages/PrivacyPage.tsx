@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import PageSEO from "@/components/PageSEO";
 
 const PRIVACY_POLICY = `Privacy Policy
 

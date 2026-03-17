@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageSEO from "@/components/PageSEO";
 import { useNavigate } from "react-router-dom";
 import { MessageCircle, Heart, Sparkles, Flame, ArrowRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";

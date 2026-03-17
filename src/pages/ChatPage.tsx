@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import PageSEO from "@/components/PageSEO";
 import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { ArrowLeft, Send, Image as ImageIcon, X, CheckCheck, Check, Loader2, Clock, Zap, Ban, MoreVertical, Trash2, Flag, AlertTriangle, Smile } from "lucide-react";
 import { useCompanionStatus } from "@/hooks/useCompanions";

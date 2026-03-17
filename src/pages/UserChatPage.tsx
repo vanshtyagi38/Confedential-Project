@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import PageSEO from "@/components/PageSEO";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Send, Image as ImageIcon, X, CheckCheck, Check, Loader2, Ban, MoreVertical, Trash2, AlertTriangle, Smile } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

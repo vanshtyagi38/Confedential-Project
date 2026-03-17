@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PageSEO from "@/components/PageSEO";
 import { ArrowLeft, Send, ImagePlus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
