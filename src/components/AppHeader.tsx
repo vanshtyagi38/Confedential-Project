@@ -17,7 +17,7 @@ const AppHeader = () => {
             <img
               src={logoIcon}
               alt="SingleTape"
-              className="h-10 w-10 rounded-xl shadow-sm"
+              className="h-12 w-12 rounded-xl object-contain"
             />
             {/* Online/active indicator */}
             <span className="absolute -bottom-0.5 -right-0.5 h-3 w-3 rounded-full border-2 border-background bg-accent" />
