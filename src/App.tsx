@@ -110,6 +110,11 @@ const App = () => (
                 <Route path="security" element={<AdminSecurity />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="ga4" element={<AdminGA4Analytics />} />
+                <Route path="seo" element={<AdminSeoOverview />} />
+                <Route path="seo/pages" element={<AdminSeoPages />} />
+                <Route path="seo/pages/:id" element={<AdminSeoPageEditor />} />
+                <Route path="seo/bulk" element={<AdminSeoBulk />} />
+                <Route path="seo/templates" element={<AdminSeoTemplates />} />
               </Route>
 
               <Route path="/privacy" element={<PrivacyPage />} />
