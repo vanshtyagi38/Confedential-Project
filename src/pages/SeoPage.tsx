@@ -54,7 +54,7 @@ const SeoPage = () => {
     );
   }
 
-  if (notFound) return null; // Let the catch-all 404 handle it
+  if (notFound) return <NotFound />;
 
   const faqs = (page.faq_json as { question: string; answer: string }[]) || [];
   const faqSchema = faqs.length > 0 ? {
