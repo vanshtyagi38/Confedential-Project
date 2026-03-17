@@ -6,7 +6,7 @@ project_id = "fckraevvqfvribyiqkdo"
   [functions.companion-chat]
     verify_jwt = false
   [functions.process-email-queue]
-    verify_jwt = false
+    verify_jwt = true
   [functions.rate-limiter]
     verify_jwt = false
   [functions.ga4-analytics]
