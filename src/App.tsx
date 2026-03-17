@@ -35,6 +35,12 @@ import AdminNotifications from "./pages/admin/AdminNotifications";
 import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminApiAnalytics from "./pages/admin/AdminApiAnalytics";
 import AdminGA4Analytics from "./pages/admin/AdminGA4Analytics";
+import AdminSeoOverview from "./pages/admin/AdminSeoOverview";
+import AdminSeoPages from "./pages/admin/AdminSeoPages";
+import AdminSeoPageEditor from "./pages/admin/AdminSeoPageEditor";
+import AdminSeoBulk from "./pages/admin/AdminSeoBulk";
+import AdminSeoTemplates from "./pages/admin/AdminSeoTemplates";
+import SeoPage from "./pages/SeoPage";
 import SupportPage from "./pages/SupportPage";
 import { Loader2 } from "lucide-react";
 
@@ -104,11 +110,17 @@ const App = () => (
                 <Route path="security" element={<AdminSecurity />} />
                 <Route path="settings" element={<AdminSettings />} />
                 <Route path="ga4" element={<AdminGA4Analytics />} />
+                <Route path="seo" element={<AdminSeoOverview />} />
+                <Route path="seo/pages" element={<AdminSeoPages />} />
+                <Route path="seo/pages/:id" element={<AdminSeoPageEditor />} />
+                <Route path="seo/bulk" element={<AdminSeoBulk />} />
+                <Route path="seo/templates" element={<AdminSeoTemplates />} />
               </Route>
 
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/refund" element={<RefundPage />} />
+              <Route path="/:slug" element={<SeoPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PresenceTracker>
