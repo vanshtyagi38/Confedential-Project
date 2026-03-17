@@ -1,5 +1,6 @@
 import { ArrowLeft } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import PageSEO from "@/components/PageSEO";
 
 const REFUND_POLICY = `Refund Policy
 
@@ -46,6 +47,7 @@ const RefundPage = () => {
   const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-background text-foreground">
+      <PageSEO title="Refund Policy – SingleTape" description="SingleTape refund policy. Learn about eligible refunds and the refund process." path="/refund" />
       <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-border bg-background/80 backdrop-blur-md px-4 py-3">
         <button onClick={() => navigate(-1)} className="rounded-full p-1.5 hover:bg-muted transition-colors">
           <ArrowLeft className="h-5 w-5" />

@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageSEO from "@/components/PageSEO";
 import { useNavigate } from "react-router-dom";
 import { MessageCircle, Heart, Sparkles, Flame, ArrowRight } from "lucide-react";
 import BottomNav from "@/components/BottomNav";
@@ -161,6 +162,7 @@ const ChatsListPage = () => {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
+      <PageSEO title="Your Chats – SingleTape" description="View your active chats on SingleTape. Continue conversations with your favorite companions." path="/chats" />
       <div className="sticky top-0 z-10 bg-background/80 backdrop-blur-lg border-b border-border px-4 py-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">

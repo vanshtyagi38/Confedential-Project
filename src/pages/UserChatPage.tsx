@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect, useCallback } from "react";
+import PageSEO from "@/components/PageSEO";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Send, Image as ImageIcon, X, CheckCheck, Check, Loader2, Ban, MoreVertical, Trash2, AlertTriangle, Smile } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
@@ -296,6 +297,7 @@ const UserChatPage = () => {
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-2xl flex-col bg-background">
+      <PageSEO title="Private Chat – SingleTape" description="Private one-on-one chat on SingleTape. Safe, anonymous & fun." />
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-card px-3 py-3">
         <button onClick={() => navigate("/chats")} className="p-1">

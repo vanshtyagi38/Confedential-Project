@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PageSEO from "@/components/PageSEO";
 import { ArrowLeft, Send, ImagePlus, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -86,6 +87,7 @@ const SupportPage = () => {
 
   return (
     <div className="mx-auto flex min-h-[100dvh] w-full max-w-2xl flex-col bg-background">
+      <PageSEO title="Support – SingleTape" description="Get help from SingleTape support team. We're here to assist you." path="/support" />
       {/* Header */}
       <div className="flex items-center gap-3 border-b border-border px-4 py-3">
         <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-full bg-card border border-border">
