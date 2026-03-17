@@ -501,8 +501,9 @@ const OnboardingPage = () => {
             >
               <img
                 src={HERO_IMAGES[currentImage]}
-                alt=""
+                alt="SingleTape companion"
                 className="h-full w-full object-cover"
+                fetchPriority="high"
               />
               {/* Gradient overlay at bottom */}
               <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
