@@ -6,9 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { Loader2, ArrowLeft, Mail, Heart, Shield, MessageCircle, Sparkles, Flame } from "lucide-react";
 import { toast } from "sonner";
-import hero1 from "@/assets/onboard-hero-1.jpg";
-import hero2 from "@/assets/onboard-hero-2.jpg";
-import hero3 from "@/assets/onboard-hero-3.jpg";
+import hero1 from "@/assets/onboard-hero-1.png";
+import hero2 from "@/assets/onboard-hero-2.png";
+import hero3 from "@/assets/onboard-hero-3.png";
 
 /* ── rotating content ─────────────────────────────── */
 const HERO_IMAGES = [hero1, hero2, hero3];
@@ -501,9 +501,8 @@ const OnboardingPage = () => {
             >
               <img
                 src={HERO_IMAGES[currentImage]}
-                alt="SingleTape companion"
+                alt=""
                 className="h-full w-full object-cover"
-                fetchPriority="high"
               />
               {/* Gradient overlay at bottom */}
               <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/60 to-transparent" />
