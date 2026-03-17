@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import PageSEO from "@/components/PageSEO";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -483,6 +484,7 @@ const OnboardingPage = () => {
   if (step === "welcome") {
     return (
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
+        <PageSEO title="Join SingleTape | Sign Up Free" description="Sign up for SingleTape – India's most fun anonymous chat platform. Talk to amazing people safely." path="/onboarding" />
         {/* Ambient glow effects */}
 
         {/* Ambient glow effects */}

@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import PageSEO from "@/components/PageSEO";
 import { Heart, Sparkles, Users, Circle, Loader2 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BalanceCard from "@/components/BalanceCard";
@@ -130,6 +131,7 @@ const Index = () => {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
+      <PageSEO title="SingleTape – Chat with Crush | Anonymous Chat App" description="India's most fun private chat platform. Talk to amazing people, stay anonymous, stay safe." path="/" />
       <AppHeader />
       <BalanceCard />
       

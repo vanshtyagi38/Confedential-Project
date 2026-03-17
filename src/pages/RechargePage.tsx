@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageSEO from "@/components/PageSEO";
 import { ArrowLeft, Zap, Clock, CheckCircle2, ShieldCheck, Moon, Flame, Users, Gift, Timer, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
@@ -98,6 +99,7 @@ const RechargePage = () => {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-36">
+      <PageSEO title="Recharge Minutes | SingleTape" description="Buy chat minutes on SingleTape. Affordable plans starting from ₹199. Get bonus minutes on every recharge." path="/recharge" />
       {/* Header */}
       <div className="flex items-center gap-3 px-4 pt-5 pb-2">
         <button onClick={() => navigate(-1)} className="flex h-9 w-9 items-center justify-center rounded-full bg-card border border-border active:bg-secondary">
