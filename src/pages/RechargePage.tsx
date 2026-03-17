@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageSEO from "@/components/PageSEO";
 import { ArrowLeft, Zap, Clock, CheckCircle2, ShieldCheck, Moon, Flame, Users, Gift, Timer, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";

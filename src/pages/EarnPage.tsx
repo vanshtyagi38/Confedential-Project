@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageSEO from "@/components/PageSEO";
 import {
   Gift, Share2, Star, Users, Coins, ChevronRight,
 } from "lucide-react";

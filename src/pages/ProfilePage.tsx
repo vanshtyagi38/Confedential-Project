@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import PageSEO from "@/components/PageSEO";
 import {
   HelpCircle, LogOut, Clock, Copy, Share2, Flame, Gift,
   Users, TrendingUp, ChevronRight, Zap, Star, UserPlus, Edit3,

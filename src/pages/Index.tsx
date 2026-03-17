@@ -131,6 +131,7 @@ const Index = () => {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
+      <PageSEO title="SingleTape – Chat with Crush | Anonymous Chat App" description="India's most fun private chat platform. Talk to amazing people, stay anonymous, stay safe." path="/" />
       <AppHeader />
       <BalanceCard />
       
