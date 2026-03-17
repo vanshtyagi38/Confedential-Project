@@ -120,6 +120,7 @@ const App = () => (
               <Route path="/privacy" element={<PrivacyPage />} />
               <Route path="/terms" element={<TermsPage />} />
               <Route path="/refund" element={<RefundPage />} />
+              <Route path="/:slug" element={<SeoPage />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </PresenceTracker>
