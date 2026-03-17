@@ -193,6 +193,7 @@ const ProfilePage = () => {
 
   return (
     <div className="mx-auto min-h-[100dvh] w-full max-w-2xl bg-background pb-24">
+      <PageSEO title="Your Profile | SingleTape" description="Manage your SingleTape profile, view stats, and customize your settings." path="/profile" />
       {/* Header */}
       <div className="flex items-center justify-between px-4 pb-2 pt-5">
         <h1 className="text-xl font-extrabold tracking-tight">Profile</h1>

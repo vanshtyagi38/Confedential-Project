@@ -82,6 +82,7 @@ const EarnPage = () => {
 
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
+      <PageSEO title="Earn Free Minutes | SingleTape Rewards" description="Refer friends, spin the wheel, and maintain daily streaks to earn free chat minutes on SingleTape." path="/earn" />
       <div className="px-4 py-4">
         <h1 className="text-lg font-bold">Earn Free Minutes</h1>
         <div className="mt-1 flex items-center gap-2">
