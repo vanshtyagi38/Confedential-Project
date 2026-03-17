@@ -295,8 +295,8 @@ const UserChatPage = () => {
   const chatBlocked = isBlocked || isBlockedByOther;
   const otherName = otherUser?.display_name || "User";
 
-  return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-2xl flex-col bg-background">
+      <PageSEO title="Private Chat – SingleTape" description="Private one-on-one chat on SingleTape. Safe, anonymous & fun." />
       {/* Header */}
       <div className="flex items-center gap-3 border-b bg-card px-3 py-3">
         <button onClick={() => navigate("/chats")} className="p-1">

@@ -751,6 +751,7 @@ const ChatPage = () => {
 
   return (
     <div className="mx-auto flex h-[100dvh] w-full max-w-2xl flex-col bg-background">
+      <PageSEO title={`Chat with ${companion?.name || 'Someone'} – SingleTape`} description={`Private chat with ${companion?.name || 'someone amazing'} on SingleTape. Safe, anonymous & fun.`} />
       {!online && (
         <div className="bg-destructive px-4 py-1.5 text-center text-xs font-medium text-destructive-foreground">
           You're offline. Messages will send when connected.
