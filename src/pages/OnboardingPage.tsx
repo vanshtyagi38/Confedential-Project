@@ -484,6 +484,7 @@ const OnboardingPage = () => {
   if (step === "welcome") {
     return (
       <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
+        <PageSEO title="Join SingleTape | Sign Up Free" description="Sign up for SingleTape – India's most fun anonymous chat platform. Talk to amazing people safely." path="/onboarding" />
         {/* Ambient glow effects */}
 
         {/* Ambient glow effects */}
