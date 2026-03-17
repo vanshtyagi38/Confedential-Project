@@ -6,9 +6,9 @@ import { supabase } from "@/integrations/supabase/client";
 
 import { Loader2, ArrowLeft, Mail, Heart, Shield, MessageCircle, Sparkles, Flame } from "lucide-react";
 import { toast } from "sonner";
-import hero1 from "@/assets/onboard-hero-1.png";
-import hero2 from "@/assets/onboard-hero-2.png";
-import hero3 from "@/assets/onboard-hero-3.png";
+import hero1 from "@/assets/onboard-hero-1.jpg";
+import hero2 from "@/assets/onboard-hero-2.jpg";
+import hero3 from "@/assets/onboard-hero-3.jpg";
 
 /* ── rotating content ─────────────────────────────── */
 const HERO_IMAGES = [hero1, hero2, hero3];
