@@ -22,6 +22,7 @@ serve(async (req) => {
       { loc: "/privacy", priority: "0.3", changefreq: "yearly" },
       { loc: "/terms", priority: "0.3", changefreq: "yearly" },
       { loc: "/refund", priority: "0.3", changefreq: "yearly" },
+      { loc: "/sitemap-seo.xml", priority: "0.5", changefreq: "daily" },
     ];
 
     let xml = `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n`;
