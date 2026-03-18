@@ -20,7 +20,7 @@ const FooterBlogGrid = () => {
         .select("slug, title, city")
         .eq("status", "published")
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
       if (data) setPages(data);
     };
     fetchPages();
