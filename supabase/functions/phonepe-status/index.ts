@@ -6,13 +6,23 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-async function sha256(message: string): Promise<string> {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(message);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  return Array.from(new Uint8Array(hashBuffer))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
+const PHONEPE_SANDBOX_URL = "https://api-preprod.phonepe.com/apis/pg-sandbox";
+
+async function getAuthToken(clientId: string, clientSecret: string): Promise<string> {
+  const tokenUrl = `${PHONEPE_SANDBOX_URL}/v1/oauth/token`;
+  const body = `client_id=${clientId}&client_version=1&client_secret=${clientSecret}&grant_type=client_credentials`;
+
+  const res = await fetch(tokenUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body,
+  });
+
+  const data = await res.json();
+  if (!res.ok || !data.access_token) {
+    throw new Error(`Token fetch failed: ${JSON.stringify(data)}`);
+  }
+  return data.access_token;
 }
 
 Deno.serve(async (req) => {
@@ -44,51 +54,51 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { transactionId } = await req.json();
-    if (!transactionId) {
-      return new Response(JSON.stringify({ error: "Missing transactionId" }), {
+    const { orderId } = await req.json();
+    if (!orderId) {
+      return new Response(JSON.stringify({ error: "Missing orderId" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const merchantId = Deno.env.get("PHONEPE_MERCHANT_ID");
-    const saltKey = Deno.env.get("PHONEPE_SALT_KEY");
-    const saltIndex = Deno.env.get("PHONEPE_SALT_INDEX") || "1";
-
-    if (!merchantId || !saltKey) {
+    const clientId = Deno.env.get("PHONEPE_CLIENT_ID");
+    const clientSecret = Deno.env.get("PHONEPE_CLIENT_SECRET");
+    if (!clientId || !clientSecret) {
       return new Response(JSON.stringify({ error: "PhonePe not configured" }), {
         status: 500,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const statusUrl = `https://api-preprod.phonepe.com/apis/pg-sandbox/pg/v1/status/${merchantId}/${transactionId}`;
-    const statusChecksum = await sha256(`/pg/v1/status/${merchantId}/${transactionId}` + saltKey);
-    const xVerify = statusChecksum + "###" + saltIndex;
+    const accessToken = await getAuthToken(clientId, clientSecret);
 
-    const statusRes = await fetch(statusUrl, {
-      method: "GET",
-      headers: {
-        "Content-Type": "application/json",
-        "X-VERIFY": xVerify,
-        "X-MERCHANT-ID": merchantId,
-      },
-    });
+    const statusRes = await fetch(
+      `${PHONEPE_SANDBOX_URL}/checkout/v2/order/${orderId}/status`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `O-Bearer ${accessToken}`,
+        },
+      }
+    );
 
     const statusData = await statusRes.json();
+    const paymentState = statusData.state || statusData.data?.state;
 
     return new Response(
       JSON.stringify({
-        success: statusData.code === "PAYMENT_SUCCESS",
-        code: statusData.code,
-        data: statusData.data,
+        success: paymentState === "COMPLETED",
+        state: paymentState,
+        data: statusData,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (error) {
     console.error("Error:", error);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+    const msg = error instanceof Error ? error.message : "Internal server error";
+    return new Response(JSON.stringify({ error: msg }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
