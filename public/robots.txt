@@ -14,3 +14,4 @@ User-agent: *
 Allow: /
 
 Sitemap: https://singletape.in/sitemap.xml
+Sitemap: https://singletape.in/sitemap-seo.xml
