@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import PageSEO from "@/components/PageSEO";
-import { ArrowLeft, Zap, Clock, CheckCircle2, ShieldCheck, Moon, Flame, Users, Gift, Timer, Sparkles } from "lucide-react";
+import { ArrowLeft, Zap, Clock, CheckCircle2, ShieldCheck, Moon, Flame, Users, Gift, Timer, Sparkles, CreditCard, Smartphone } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -19,11 +19,31 @@ const plans = [
   { id: "10day", minutes: 6000, price: 999, bonus: 600, label: "10 Days Unlimited", perMin: "₹0.15/min", tagline: "10 hours/day for 10 days 👑", features: ["6000 min total", "+600 bonus min FREE", "Unlimited companions", "Build real connections", "BEST VALUE 💎"], highlight: true },
 ];
 
+type PaymentMethod = "razorpay" | "phonepe";
+
+// Load Razorpay script dynamically
+const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    if (document.getElementById("razorpay-script")) {
+      resolve(true);
+      return;
+    }
+    const script = document.createElement("script");
+    script.id = "razorpay-script";
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.onload = () => resolve(true);
+    script.onerror = () => resolve(false);
+    document.body.appendChild(script);
+  });
+};
+
 const RechargePage = () => {
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
   const [selected, setSelected] = useState("10day");
   const [loading, setLoading] = useState(false);
+  const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("razorpay");
   const [showProfileSetup, setShowProfileSetup] = useState(false);
   const [setupGender, setSetupGender] = useState("");
   const [setupPreference, setSetupPreference] = useState("");
@@ -34,6 +54,20 @@ const RechargePage = () => {
 
   const balance = Math.floor(profile?.balance_minutes || 0);
   const selectedPlan = plans.find(p => p.id === selected)!;
+
+  // Check for PhonePe return status
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("status");
+    if (status === "success") {
+      toast.success("Payment successful! Balance updated 🎉");
+      refreshProfile();
+      window.history.replaceState({}, "", "/recharge");
+    } else if (status === "failure") {
+      toast.error("Payment failed. Please try again.");
+      window.history.replaceState({}, "", "/recharge");
+    }
+  }, []);
 
   // Urgency: people buying now
   useEffect(() => {
@@ -60,11 +94,142 @@ const RechargePage = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const isProfileComplete = () => localStorage.getItem(`profile_completed_${session?.user?.id}`) === "true";
-
-  const handlePurchase = async () => {
+  const handlePurchase = () => {
     if (!session?.user || !profile) return;
-    await executePurchase();
+    setShowPaymentDialog(true);
+  };
+
+  const handlePayWithRazorpay = async () => {
+    setShowPaymentDialog(false);
+    setLoading(true);
+
+    try {
+      const scriptLoaded = await loadRazorpayScript();
+      if (!scriptLoaded) {
+        toast.error("Failed to load Razorpay. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Create order via edge function
+      const { data: orderData, error: orderError } = await supabase.functions.invoke(
+        "razorpay-create-order",
+        {
+          body: {
+            planId: selectedPlan.id,
+            minutes: selectedPlan.minutes,
+            bonus: selectedPlan.bonus,
+            price: selectedPlan.price,
+          },
+        }
+      );
+
+      if (orderError || !orderData?.order_id) {
+        console.error("Order creation failed:", orderError, orderData);
+        toast.error("Failed to create payment order. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Open Razorpay checkout
+      const options = {
+        key: orderData.key_id,
+        amount: orderData.amount,
+        currency: orderData.currency,
+        name: "SingleTape",
+        description: `${selectedPlan.label} - ${selectedPlan.minutes + selectedPlan.bonus} minutes`,
+        order_id: orderData.order_id,
+        handler: async (response: any) => {
+          // Verify payment
+          try {
+            const { data: verifyData, error: verifyError } = await supabase.functions.invoke(
+              "razorpay-verify-payment",
+              {
+                body: {
+                  razorpay_order_id: response.razorpay_order_id,
+                  razorpay_payment_id: response.razorpay_payment_id,
+                  razorpay_signature: response.razorpay_signature,
+                  planId: selectedPlan.id,
+                  minutes: selectedPlan.minutes,
+                  bonus: selectedPlan.bonus,
+                  price: selectedPlan.price,
+                },
+              }
+            );
+
+            if (verifyError || !verifyData?.success) {
+              toast.error("Payment verification failed. Contact support.");
+              setLoading(false);
+              return;
+            }
+
+            await refreshProfile();
+            toast.success(`Added ${selectedPlan.minutes + selectedPlan.bonus} minutes to your balance 🎉`);
+            setLoading(false);
+            navigate(-1);
+          } catch (err) {
+            console.error("Verification error:", err);
+            toast.error("Payment verification failed. Contact support.");
+            setLoading(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            setLoading(false);
+            toast.error("Payment cancelled");
+          },
+        },
+        prefill: {
+          email: session?.user?.email || "",
+        },
+        theme: {
+          color: "#f43f5e",
+        },
+      };
+
+      const rzp = new (window as any).Razorpay(options);
+      rzp.on("payment.failed", (response: any) => {
+        console.error("Payment failed:", response.error);
+        toast.error(`Payment failed: ${response.error?.description || "Unknown error"}`);
+        setLoading(false);
+      });
+      rzp.open();
+    } catch (err) {
+      console.error("Razorpay error:", err);
+      toast.error("Something went wrong. Please try again.");
+      setLoading(false);
+    }
+  };
+
+  const handlePayWithPhonePe = async () => {
+    setShowPaymentDialog(false);
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke("phonepe-initiate", {
+        body: {
+          planId: selectedPlan.id,
+          minutes: selectedPlan.minutes,
+          bonus: selectedPlan.bonus,
+          price: selectedPlan.price,
+          redirectUrl: `${window.location.origin}/recharge?status=success`,
+        },
+      });
+
+      if (error || !data?.redirectUrl) {
+        console.error("PhonePe initiation failed:", error, data);
+        toast.error("Failed to initiate PhonePe payment. Please try again.");
+        setLoading(false);
+        return;
+      }
+
+      // Redirect to PhonePe payment page
+      window.location.href = data.redirectUrl;
+    } catch (err) {
+      console.error("PhonePe error:", err);
+      toast.error("Something went wrong. Please try again.");
+      setLoading(false);
+    }
   };
 
   const handleProfileComplete = async () => {
@@ -76,23 +241,8 @@ const RechargePage = () => {
     await refreshProfile();
     localStorage.setItem(`profile_completed_${session?.user?.id}`, "true");
     setShowProfileSetup(false);
-    await executePurchase();
-  };
-
-  const executePurchase = async () => {
-    if (!session?.user || !profile) return;
-    setLoading(true);
-    const newBalance = profile.balance_minutes + selectedPlan.minutes + selectedPlan.bonus;
-    const { error } = await (supabase as any).from("user_profiles").update({ balance_minutes: newBalance }).eq("user_id", session.user.id);
-    if (error) { toast.error("Failed to recharge. Try again."); setLoading(false); return; }
-    await (supabase as any).from("wallet_transactions").insert({
-      user_id: session.user.id, type: "credit", minutes: selectedPlan.minutes + selectedPlan.bonus,
-      amount: selectedPlan.price, description: `Recharged ${selectedPlan.label} for ₹${selectedPlan.price}`,
-    });
-    await refreshProfile();
-    toast.success(`Added ${selectedPlan.minutes + selectedPlan.bonus} minutes to your balance 🎉`);
     setLoading(false);
-    navigate(-1);
+    handlePurchase();
   };
 
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -244,6 +394,55 @@ const RechargePage = () => {
           </div>
         </div>
       </div>
+
+      {/* Payment Method Dialog */}
+      <Dialog open={showPaymentDialog} onOpenChange={setShowPaymentDialog}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="text-center">Choose Payment Method 💳</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3 pt-2">
+            <div className="rounded-2xl bg-primary/5 border border-primary/20 p-4 text-center">
+              <p className="text-sm font-bold text-foreground">{selectedPlan.label}</p>
+              <p className="text-2xl font-extrabold text-primary mt-1">₹{selectedPlan.price}</p>
+              <p className="text-xs text-muted-foreground mt-1">{selectedPlan.minutes + selectedPlan.bonus} minutes total</p>
+            </div>
+
+            <button
+              onClick={handlePayWithRazorpay}
+              className="flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 transition-all active:scale-[0.97] hover:border-primary"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                <CreditCard className="h-6 w-6 text-blue-500" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="text-sm font-bold text-foreground">Razorpay</p>
+                <p className="text-xs text-muted-foreground">UPI, Cards, Wallets, Net Banking</p>
+              </div>
+              <span className="text-xs font-semibold text-primary">Pay →</span>
+            </button>
+
+            <button
+              onClick={handlePayWithPhonePe}
+              className="flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 transition-all active:scale-[0.97] hover:border-primary"
+            >
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10">
+                <Smartphone className="h-6 w-6 text-purple-500" />
+              </div>
+              <div className="text-left flex-1">
+                <p className="text-sm font-bold text-foreground">PhonePe</p>
+                <p className="text-xs text-muted-foreground">UPI, PhonePe Wallet</p>
+              </div>
+              <span className="text-xs font-semibold text-primary">Pay →</span>
+            </button>
+
+            <div className="flex items-center justify-center gap-1.5 pt-1">
+              <ShieldCheck className="h-3 w-3 text-muted-foreground" />
+              <p className="text-[10px] text-muted-foreground">256-bit SSL encrypted · 100% secure</p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Profile Setup Dialog */}
       <Dialog open={showProfileSetup} onOpenChange={setShowProfileSetup}>
