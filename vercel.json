@@ -3,6 +3,7 @@
     { "source": "/~oauth/:path*", "destination": "https://singletape.lovable.app/~oauth/:path*" },
     { "source": "/.well-known/:path*", "destination": "/.well-known/:path*" },
     { "source": "/sitemap.xml", "destination": "https://fckraevvqfvribyiqkdo.supabase.co/functions/v1/sitemap-generator" },
+    { "source": "/sitemap-seo.xml", "destination": "https://fckraevvqfvribyiqkdo.supabase.co/functions/v1/sitemap-seo" },
     { "source": "/(.*)", "destination": "/index.html" }
   ],
   "headers": [
