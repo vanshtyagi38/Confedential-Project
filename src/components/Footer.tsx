@@ -505,6 +505,9 @@ const Footer = () => {
       )}
 
 
+      {/* Blog Grid */}
+      <FooterBlogGrid />
+
       {/* Just Joined - above policy */}
       <JustJoined />
 
