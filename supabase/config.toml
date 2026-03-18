@@ -11,3 +11,13 @@ project_id = "fckraevvqfvribyiqkdo"
     verify_jwt = false
   [functions.ga4-analytics]
     verify_jwt = false
+  [functions.razorpay-create-order]
+    verify_jwt = false
+  [functions.razorpay-verify-payment]
+    verify_jwt = false
+  [functions.phonepe-initiate]
+    verify_jwt = false
+  [functions.phonepe-callback]
+    verify_jwt = false
+  [functions.phonepe-status]
+    verify_jwt = false
