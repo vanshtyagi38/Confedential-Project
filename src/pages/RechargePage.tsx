@@ -180,7 +180,7 @@ const RechargePage = () => {
           },
         },
         prefill: {
-          email: profile?.email || session?.user?.email || "",
+          email: session?.user?.email || "",
         },
         theme: {
           color: "#f43f5e",
