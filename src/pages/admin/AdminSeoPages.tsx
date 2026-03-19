@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, ExternalLink, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Search, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminSeoPages = () => {
