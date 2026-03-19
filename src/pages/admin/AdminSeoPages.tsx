@@ -92,6 +92,7 @@ const AdminSeoPages = () => {
               <TableHead>Title / Slug</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Views</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
