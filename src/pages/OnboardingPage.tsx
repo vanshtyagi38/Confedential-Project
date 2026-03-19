@@ -547,10 +547,10 @@ const OnboardingPage = () => {
         </div>
 
         {/* Bottom content */}
-        <div className="relative z-10 px-6 pb-6 pt-3 space-y-4">
+        <div className="relative z-10 px-6 pb-6 pt-2 sm:pt-3 space-y-3 sm:space-y-4 shrink-0">
           {/* Rotating tagline */}
-          <div className="text-center space-y-1.5">
-            <h1 className="text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[68px] flex items-center justify-center">
+          <div className="text-center space-y-1">
+            <h1 className="text-[22px] sm:text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[56px] sm:min-h-[68px] flex items-center justify-center">
               <span className={`transition-all duration-300 ease-out ${taglineFade}`}>
                 {TAGLINES[currentTagline]}
               </span>
