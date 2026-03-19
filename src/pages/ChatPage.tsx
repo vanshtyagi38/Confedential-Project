@@ -287,7 +287,7 @@ const ChatPage = () => {
         .eq("user_id", conversationUserId)
         .eq("companion_slug", companion.id)
         .order("created_at", { ascending: true })
-        .limit(500);
+        .limit(100);
 
       if (data && data.length > 0) {
         const loaded: Message[] = data.map((m: any) => ({

@@ -483,7 +483,7 @@ const OnboardingPage = () => {
   /* ── WELCOME SCREEN ─────────────────────────────── */
   if (step === "welcome") {
     return (
-      <div className="mx-auto flex h-[100dvh] h-[100vh] w-full max-w-md flex-col bg-background overflow-hidden relative">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
         <PageSEO title="Join SingleTape | Sign Up Free" description="Sign up for SingleTape – India's most fun anonymous chat platform. Talk to amazing people safely." path="/onboarding" />
         {/* Ambient glow effects */}
 
@@ -492,8 +492,8 @@ const OnboardingPage = () => {
         <div className="pointer-events-none absolute bottom-40 -right-20 h-[200px] w-[200px] rounded-full bg-accent/10 blur-[80px]" />
 
         {/* Hero image area */}
-        <div className="relative flex-1 min-h-0 flex items-end justify-center px-6 pt-4 sm:pt-8 pb-2 overflow-hidden">
-          <div className="relative w-full max-w-[320px] max-h-full aspect-[3/4]">
+        <div className="relative flex-1 flex items-center justify-center px-6 pt-8 pb-2">
+          <div className="relative w-full max-w-[320px] aspect-[3/4]">
             {/* Main hero image with crossfade */}
             <div
               className={`absolute inset-0 rounded-[2rem] overflow-hidden shadow-elevated border-4 border-card transition-all duration-500 ease-out ${fadeClass}`}
@@ -547,10 +547,10 @@ const OnboardingPage = () => {
         </div>
 
         {/* Bottom content */}
-        <div className="relative z-10 px-6 pb-6 pt-2 sm:pt-3 space-y-3 sm:space-y-4 shrink-0">
+        <div className="relative z-10 px-6 pb-6 pt-3 space-y-4">
           {/* Rotating tagline */}
-          <div className="text-center space-y-1">
-            <h1 className="text-[22px] sm:text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[56px] sm:min-h-[68px] flex items-center justify-center">
+          <div className="text-center space-y-1.5">
+            <h1 className="text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[68px] flex items-center justify-center">
               <span className={`transition-all duration-300 ease-out ${taglineFade}`}>
                 {TAGLINES[currentTagline]}
               </span>
@@ -612,7 +612,7 @@ const OnboardingPage = () => {
   /* ── EMAIL SCREEN ───────────────────────────────── */
   if (step === "email") {
     return (
-      <div className="mx-auto flex h-[100dvh] h-[100vh] w-full max-w-md flex-col bg-background">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
         {/* Header */}
         <div className="flex items-center px-4 pt-4">
           <button
@@ -684,7 +684,7 @@ const OnboardingPage = () => {
 
   /* ── OTP SCREEN ─────────────────────────────────── */
     return (
-      <div className="mx-auto flex h-[100dvh] h-[100vh] w-full max-w-md flex-col bg-background">
+      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
 
         <div className="flex items-center px-4 pt-4">
         <button
