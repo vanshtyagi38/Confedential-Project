@@ -492,8 +492,8 @@ const OnboardingPage = () => {
         <div className="pointer-events-none absolute bottom-40 -right-20 h-[200px] w-[200px] rounded-full bg-accent/10 blur-[80px]" />
 
         {/* Hero image area */}
-        <div className="relative flex-1 min-h-0 flex items-end justify-center px-6 pt-8 pb-2">
-          <div className="relative w-full max-w-[320px] aspect-[3/4]">
+        <div className="relative flex-1 min-h-0 flex items-end justify-center px-6 pt-4 sm:pt-8 pb-2 overflow-hidden">
+          <div className="relative w-full max-w-[320px] max-h-full aspect-[3/4]">
             {/* Main hero image with crossfade */}
             <div
               className={`absolute inset-0 rounded-[2rem] overflow-hidden shadow-elevated border-4 border-card transition-all duration-500 ease-out ${fadeClass}`}
