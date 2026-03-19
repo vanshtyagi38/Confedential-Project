@@ -281,13 +281,15 @@ const ChatPage = () => {
   useEffect(() => {
     if (!companion || !session?.user || !conversationUserId) return;
     const load = async () => {
-      const { data } = await (supabase as any)
+      // Fetch latest 500 messages (descending), then reverse to ascending order
+      const { data: rawData } = await (supabase as any)
         .from("chat_messages")
         .select("*")
         .eq("user_id", conversationUserId)
         .eq("companion_slug", companion.id)
-        .order("created_at", { ascending: true })
-        .limit(100);
+        .order("created_at", { ascending: false })
+        .limit(500);
+      const data = rawData ? [...rawData].reverse() : null;
 
       if (data && data.length > 0) {
         const loaded: Message[] = data.map((m: any) => ({
@@ -635,7 +637,7 @@ const ChatPage = () => {
 
     try {
       await streamChat({
-        messages: newHistory.slice(-20),
+        messages: newHistory.slice(-40),
         companionId: companion.id,
         companionMeta: {
           name: companion.name,
