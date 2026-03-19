@@ -30,6 +30,9 @@ const SeoPage = () => {
 
       setPage(data);
 
+      // Track page view (fire and forget)
+      supabase.from("seo_page_views").insert({ slug }).then();
+
       // Fetch related pages
       if (data.related_slugs && data.related_slugs.length > 0) {
         const { data: related } = await supabase
