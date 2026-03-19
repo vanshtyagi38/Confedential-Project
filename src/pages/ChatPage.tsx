@@ -637,7 +637,7 @@ const ChatPage = () => {
 
     try {
       await streamChat({
-        messages: newHistory.slice(-20),
+        messages: newHistory.slice(-40),
         companionId: companion.id,
         companionMeta: {
           name: companion.name,
