@@ -578,6 +578,24 @@ export type Database = {
         }
         Relationships: []
       }
+      seo_page_views: {
+        Row: {
+          id: string
+          slug: string
+          viewed_at: string
+        }
+        Insert: {
+          id?: string
+          slug: string
+          viewed_at?: string
+        }
+        Update: {
+          id?: string
+          slug?: string
+          viewed_at?: string
+        }
+        Relationships: []
+      }
       seo_pages: {
         Row: {
           city: string | null

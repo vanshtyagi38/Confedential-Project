@@ -5,11 +5,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, Pencil, Trash2, ExternalLink, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, ExternalLink, Search, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const AdminSeoPages = () => {
   const [pages, setPages] = useState<any[]>([]);
+  const [viewCounts, setViewCounts] = useState<Record<string, number>>({});
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [typeFilter, setTypeFilter] = useState("all");
@@ -22,7 +23,24 @@ const AdminSeoPages = () => {
     if (typeFilter !== "all") query = query.eq("page_type", typeFilter);
     if (search) query = query.or(`slug.ilike.%${search}%,title.ilike.%${search}%,primary_keyword.ilike.%${search}%`);
     const { data } = await query;
-    if (data) setPages(data);
+    if (data) {
+      setPages(data);
+      // Fetch view counts for all slugs
+      const slugs = data.map((p: any) => p.slug);
+      if (slugs.length > 0) {
+        const { data: views } = await supabase
+          .from("seo_page_views")
+          .select("slug")
+          .in("slug", slugs);
+        if (views) {
+          const counts: Record<string, number> = {};
+          views.forEach((v: any) => {
+            counts[v.slug] = (counts[v.slug] || 0) + 1;
+          });
+          setViewCounts(counts);
+        }
+      }
+    }
   };
 
   useEffect(() => { fetchPages(); }, [statusFilter, typeFilter, search]);
@@ -74,13 +92,14 @@ const AdminSeoPages = () => {
               <TableHead>Title / Slug</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
+              <TableHead>Views</TableHead>
               <TableHead>Created</TableHead>
               <TableHead className="text-right">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {pages.length === 0 ? (
-              <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-8">No pages found</TableCell></TableRow>
+              <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-8">No pages found</TableCell></TableRow>
             ) : pages.map((p) => (
               <TableRow key={p.id}>
                 <TableCell>
@@ -94,6 +113,12 @@ const AdminSeoPages = () => {
                   <span className={`text-xs px-2 py-1 rounded-full ${p.status === "published" ? "bg-green-500/20 text-green-400" : "bg-yellow-500/20 text-yellow-400"}`}>
                     {p.status}
                   </span>
+                </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Eye className="h-3.5 w-3.5" />
+                    <span className="text-sm font-medium">{viewCounts[p.slug] || 0}</span>
+                  </div>
                 </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{new Date(p.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
