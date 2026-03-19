@@ -492,8 +492,8 @@ const OnboardingPage = () => {
         <div className="pointer-events-none absolute bottom-40 -right-20 h-[200px] w-[200px] rounded-full bg-accent/10 blur-[80px]" />
 
         {/* Hero image area */}
-        <div className="relative flex-1 min-h-0 flex items-end justify-center px-6 pt-8 pb-2">
-          <div className="relative w-full max-w-[320px] aspect-[3/4]">
+        <div className="relative flex-1 min-h-0 flex items-end justify-center px-6 pt-4 sm:pt-8 pb-2 overflow-hidden">
+          <div className="relative w-full max-w-[320px] max-h-full aspect-[3/4]">
             {/* Main hero image with crossfade */}
             <div
               className={`absolute inset-0 rounded-[2rem] overflow-hidden shadow-elevated border-4 border-card transition-all duration-500 ease-out ${fadeClass}`}
@@ -547,10 +547,10 @@ const OnboardingPage = () => {
         </div>
 
         {/* Bottom content */}
-        <div className="relative z-10 px-6 pb-6 pt-3 space-y-4">
+        <div className="relative z-10 px-6 pb-6 pt-2 sm:pt-3 space-y-3 sm:space-y-4 shrink-0">
           {/* Rotating tagline */}
-          <div className="text-center space-y-1.5">
-            <h1 className="text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[68px] flex items-center justify-center">
+          <div className="text-center space-y-1">
+            <h1 className="text-[22px] sm:text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[56px] sm:min-h-[68px] flex items-center justify-center">
               <span className={`transition-all duration-300 ease-out ${taglineFade}`}>
                 {TAGLINES[currentTagline]}
               </span>

@@ -120,7 +120,7 @@ const UserChatPage = () => {
         .select("*")
         .eq("room_id", roomId)
         .order("created_at", { ascending: false })
-        .limit(50);
+        .limit(500);
 
       if (msgs) {
         const loaded: Message[] = msgs.reverse().map((m: any) => ({
