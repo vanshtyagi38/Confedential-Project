@@ -114,6 +114,12 @@ const AdminSeoPages = () => {
                     {p.status}
                   </span>
                 </TableCell>
+                <TableCell>
+                  <div className="flex items-center gap-1 text-muted-foreground">
+                    <Eye className="h-3.5 w-3.5" />
+                    <span className="text-sm font-medium">{viewCounts[p.slug] || 0}</span>
+                  </div>
+                </TableCell>
                 <TableCell className="text-muted-foreground text-sm">{new Date(p.created_at).toLocaleDateString()}</TableCell>
                 <TableCell className="text-right">
                   <div className="flex gap-1 justify-end">
