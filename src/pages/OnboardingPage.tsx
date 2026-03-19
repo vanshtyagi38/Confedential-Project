@@ -483,7 +483,7 @@ const OnboardingPage = () => {
   /* ── WELCOME SCREEN ─────────────────────────────── */
   if (step === "welcome") {
     return (
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
+      <div className="mx-auto flex h-[100dvh] h-[100vh] w-full max-w-md flex-col bg-background overflow-hidden relative">
         <PageSEO title="Join SingleTape | Sign Up Free" description="Sign up for SingleTape – India's most fun anonymous chat platform. Talk to amazing people safely." path="/onboarding" />
         {/* Ambient glow effects */}
 
@@ -492,7 +492,7 @@ const OnboardingPage = () => {
         <div className="pointer-events-none absolute bottom-40 -right-20 h-[200px] w-[200px] rounded-full bg-accent/10 blur-[80px]" />
 
         {/* Hero image area */}
-        <div className="relative flex-1 flex items-center justify-center px-6 pt-8 pb-2">
+        <div className="relative flex-1 min-h-0 flex items-end justify-center px-6 pt-8 pb-2">
           <div className="relative w-full max-w-[320px] aspect-[3/4]">
             {/* Main hero image with crossfade */}
             <div
