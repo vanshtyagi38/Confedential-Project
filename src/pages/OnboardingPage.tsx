@@ -612,7 +612,7 @@ const OnboardingPage = () => {
   /* ── EMAIL SCREEN ───────────────────────────────── */
   if (step === "email") {
     return (
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
+      <div className="mx-auto flex h-[100dvh] h-[100vh] w-full max-w-md flex-col bg-background">
         {/* Header */}
         <div className="flex items-center px-4 pt-4">
           <button
