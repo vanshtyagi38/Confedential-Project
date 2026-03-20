@@ -93,7 +93,7 @@ const CompanionCard = ({ companion, index, compact, isOnline, lastSeen }: Compan
         </div>
 
         <button
-          onClick={() => navigate(`/chat/${companion.id}`)}
+          onClick={handleChat}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl gradient-primary py-2.5 text-sm font-semibold text-primary-foreground transition-all active:scale-[0.97] hover:brightness-110"
         >
           <MessageCircle className="h-4 w-4" />

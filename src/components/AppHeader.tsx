@@ -48,7 +48,7 @@ const AppHeader = () => {
           {/* Balance — single tap to recharge */}
           {profile && (
             <button
-              onClick={() => navigate("/recharge")}
+              onClick={() => requireAuth(() => navigate("/recharge"))}
               className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-transform active:scale-95"
             >
               <Zap className="h-3 w-3" />

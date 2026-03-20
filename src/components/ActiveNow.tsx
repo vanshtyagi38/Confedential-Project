@@ -135,7 +135,7 @@ const ActiveNow = ({ companions, presenceMap }: ActiveNowProps) => {
                 <button
                   onClick={() => {
                     setSelectedCompanion(null);
-                    navigate(`/chat/${selectedCompanion.slug}`);
+                    requireAuth(() => navigate(`/chat/${selectedCompanion.slug}`));
                   }}
                   className="w-full flex items-center justify-center gap-2 rounded-xl bg-primary text-primary-foreground py-3 text-sm font-bold shadow-[0_4px_16px_-4px_hsl(var(--primary)/0.4)] transition-all duration-200 hover:shadow-[0_6px_24px_-4px_hsl(var(--primary)/0.5)] active:scale-[0.97]"
                 >

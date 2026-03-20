@@ -57,7 +57,7 @@ const CompanionPopup = ({ companions }: { companions: Companion[] }) => {
 
   const handleReply = () => {
     setOpen(false);
-    navigate(`/chat/${companion.id}`);
+    requireAuth(() => navigate(`/chat/${companion.id}`));
   };
 
   return (
