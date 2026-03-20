@@ -9,12 +9,9 @@ import { toast } from "sonner";
 import hero1 from "@/assets/onboard-hero-1.png";
 import hero2 from "@/assets/onboard-hero-2.png";
 import hero3 from "@/assets/onboard-hero-3.png";
-import hero4 from "@/assets/onboard-hero-4.png";
-import hero5 from "@/assets/onboard-hero-5.webp";
-import hero6 from "@/assets/onboard-hero-6.avif";
 
 /* ── rotating content ─────────────────────────────── */
-const HERO_IMAGES = [hero1, hero2, hero3, hero4, hero5, hero6];
+const HERO_IMAGES = [hero1, hero2, hero3];
 
 const BADGE_TEXTS = [
   "Chat now?",
