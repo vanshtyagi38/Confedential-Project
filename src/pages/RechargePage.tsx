@@ -296,6 +296,18 @@ const RechargePage = () => {
 
   const pad = (n: number) => String(n).padStart(2, "0");
 
+  if (plansLoading || plans.length === 0 || !selectedPlan) {
+    return (
+      <div className="mx-auto min-h-screen w-full max-w-2xl bg-background flex items-center justify-center pb-20">
+        <div className="text-center space-y-3">
+          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading plans...</p>
+        </div>
+        <BottomNav />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-36">
       <PageSEO title="Recharge Minutes | SingleTape" description="Buy chat minutes on SingleTape. Affordable plans starting from ₹199. Get bonus minutes on every recharge." path="/recharge" />
