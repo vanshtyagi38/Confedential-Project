@@ -147,6 +147,7 @@ const Index = () => {
         })}</script>
       </Helmet>
       <AppHeader />
+      <AuthPromptBanner />
       <BalanceCard />
       
 
