@@ -148,7 +148,7 @@ const Index = () => {
       </Helmet>
       <AppHeader />
       <AuthPromptBanner />
-      <BalanceCard />
+      {isAuthenticated && <BalanceCard />}
       
 
       <div className="mx-4 mt-3 flex items-center justify-center gap-2 rounded-[16px] border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/8 to-primary/5 px-4 py-2.5 shadow-[0_1px_8px_-2px_hsl(var(--primary)/0.08)]">
