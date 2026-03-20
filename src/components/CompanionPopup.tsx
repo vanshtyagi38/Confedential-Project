@@ -4,6 +4,7 @@ import { MessageCircle, Lock, Shield } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Companion } from "@/data/companions";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 const popupMessagesFemale = [
   "Hey! 😊 Tumhari profile dekhi... interesting lagte ho. Chat karein?",
