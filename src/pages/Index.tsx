@@ -33,7 +33,8 @@ function shuffleArray<T>(arr: T[], seed: number): T[] {
 type PresenceMap = Record<string, { is_online: boolean; last_seen: string }>;
 
 const Index = () => {
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
+  const isAuthenticated = !!(session && profile);
   const { companions, loading } = useCompanions();
   const [filter, setFilter] = useState("All");
   const [activeUsers, setActiveUsers] = useState(28900);
@@ -148,7 +149,7 @@ const Index = () => {
       </Helmet>
       <AppHeader />
       <AuthPromptBanner />
-      <BalanceCard />
+      {isAuthenticated && <BalanceCard />}
       
 
       <div className="mx-4 mt-3 flex items-center justify-center gap-2 rounded-[16px] border border-primary/20 bg-gradient-to-r from-primary/5 via-primary/8 to-primary/5 px-4 py-2.5 shadow-[0_1px_8px_-2px_hsl(var(--primary)/0.08)]">
