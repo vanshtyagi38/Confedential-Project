@@ -51,6 +51,24 @@ const RechargePage = () => {
   const [accepted18, setAccepted18] = useState(false);
   const [urgencyCount, setUrgencyCount] = useState(0);
   const [countdown, setCountdown] = useState({ h: 2, m: 34, s: 12 });
+  const [razorpayEnabled, setRazorpayEnabled] = useState(true);
+  const [phonepeEnabled, setPhonepeEnabled] = useState(false);
+
+  // Load payment gateway settings
+  useEffect(() => {
+    const loadGatewaySettings = async () => {
+      const { data } = await (supabase as any)
+        .from("payment_gateway_settings")
+        .select("*")
+        .eq("id", "default")
+        .maybeSingle();
+      if (data) {
+        setRazorpayEnabled(data.razorpay_enabled);
+        setPhonepeEnabled(data.phonepe_enabled);
+      }
+    };
+    loadGatewaySettings();
+  }, []);
 
   const balance = Math.floor(profile?.balance_minutes || 0);
   const selectedPlan = plans.find(p => p.id === selected)!;
@@ -96,6 +114,12 @@ const RechargePage = () => {
 
   const handlePurchase = () => {
     if (!session?.user || !profile) return;
+    // If only one gateway enabled, skip dialog
+    const enabledCount = (razorpayEnabled ? 1 : 0) + (phonepeEnabled ? 1 : 0);
+    if (enabledCount === 1) {
+      if (razorpayEnabled) { handlePayWithRazorpay(); return; }
+      if (phonepeEnabled) { handlePayWithPhonePe(); return; }
+    }
     setShowPaymentDialog(true);
   };
 
@@ -408,33 +432,37 @@ const RechargePage = () => {
               <p className="text-xs text-muted-foreground mt-1">{selectedPlan.minutes + selectedPlan.bonus} minutes total</p>
             </div>
 
-            <button
-              onClick={handlePayWithRazorpay}
-              className="flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 transition-all active:scale-[0.97] hover:border-primary"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
-                <CreditCard className="h-6 w-6 text-blue-500" />
-              </div>
-              <div className="text-left flex-1">
-                <p className="text-sm font-bold text-foreground">Razorpay</p>
-                <p className="text-xs text-muted-foreground">UPI, Cards, Wallets, Net Banking</p>
-              </div>
-              <span className="text-xs font-semibold text-primary">Pay →</span>
-            </button>
+            {razorpayEnabled && (
+              <button
+                onClick={handlePayWithRazorpay}
+                className="flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 transition-all active:scale-[0.97] hover:border-primary"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-500/10">
+                  <CreditCard className="h-6 w-6 text-blue-500" />
+                </div>
+                <div className="text-left flex-1">
+                  <p className="text-sm font-bold text-foreground">Razorpay</p>
+                  <p className="text-xs text-muted-foreground">UPI, Cards, Wallets, Net Banking</p>
+                </div>
+                <span className="text-xs font-semibold text-primary">Pay →</span>
+              </button>
+            )}
 
-            <button
-              onClick={handlePayWithPhonePe}
-              className="flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 transition-all active:scale-[0.97] hover:border-primary"
-            >
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10">
-                <Smartphone className="h-6 w-6 text-purple-500" />
-              </div>
-              <div className="text-left flex-1">
-                <p className="text-sm font-bold text-foreground">PhonePe</p>
-                <p className="text-xs text-muted-foreground">UPI, PhonePe Wallet</p>
-              </div>
-              <span className="text-xs font-semibold text-primary">Pay →</span>
-            </button>
+            {phonepeEnabled && (
+              <button
+                onClick={handlePayWithPhonePe}
+                className="flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 transition-all active:scale-[0.97] hover:border-primary"
+              >
+                <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-purple-500/10">
+                  <Smartphone className="h-6 w-6 text-purple-500" />
+                </div>
+                <div className="text-left flex-1">
+                  <p className="text-sm font-bold text-foreground">PhonePe</p>
+                  <p className="text-xs text-muted-foreground">UPI, PhonePe Wallet</p>
+                </div>
+                <span className="text-xs font-semibold text-primary">Pay →</span>
+              </button>
+            )}
 
             <div className="flex items-center justify-center gap-1.5 pt-1">
               <ShieldCheck className="h-3 w-3 text-muted-foreground" />

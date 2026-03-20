@@ -494,6 +494,27 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_gateway_settings: {
+        Row: {
+          id: string
+          phonepe_enabled: boolean
+          razorpay_enabled: boolean
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          phonepe_enabled?: boolean
+          razorpay_enabled?: boolean
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          phonepe_enabled?: boolean
+          razorpay_enabled?: boolean
+          updated_at?: string
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth_key: string
