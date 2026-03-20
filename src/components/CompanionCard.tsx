@@ -1,5 +1,6 @@
 import { MapPin, Languages, MessageCircle, Circle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import type { Companion } from "@/data/companions";
 
 interface CompanionCardProps {
@@ -12,6 +13,11 @@ interface CompanionCardProps {
 
 const CompanionCard = ({ companion, index, compact, isOnline, lastSeen }: CompanionCardProps) => {
   const navigate = useNavigate();
+  const { requireAuth } = useAuthGuard();
+
+  const handleChat = () => {
+    requireAuth(() => navigate(`/chat/${companion.id}`));
+  };
 
   const formatLastSeen = (ts: string) => {
     const diff = Date.now() - new Date(ts).getTime();
