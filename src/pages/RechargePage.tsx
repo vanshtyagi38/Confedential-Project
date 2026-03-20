@@ -51,6 +51,24 @@ const RechargePage = () => {
   const [accepted18, setAccepted18] = useState(false);
   const [urgencyCount, setUrgencyCount] = useState(0);
   const [countdown, setCountdown] = useState({ h: 2, m: 34, s: 12 });
+  const [razorpayEnabled, setRazorpayEnabled] = useState(true);
+  const [phonepeEnabled, setPhonepeEnabled] = useState(false);
+
+  // Load payment gateway settings
+  useEffect(() => {
+    const loadGatewaySettings = async () => {
+      const { data } = await (supabase as any)
+        .from("payment_gateway_settings")
+        .select("*")
+        .eq("id", "default")
+        .maybeSingle();
+      if (data) {
+        setRazorpayEnabled(data.razorpay_enabled);
+        setPhonepeEnabled(data.phonepe_enabled);
+      }
+    };
+    loadGatewaySettings();
+  }, []);
 
   const balance = Math.floor(profile?.balance_minutes || 0);
   const selectedPlan = plans.find(p => p.id === selected)!;
