@@ -32,7 +32,7 @@ const CompanionCard = ({ companion, index, compact, isOnline, lastSeen }: Compan
   if (compact) {
     return (
       <div
-        onClick={() => navigate(`/chat/${companion.id}`)}
+        onClick={handleChat}
         className="animate-fade-in-up cursor-pointer overflow-hidden rounded-2xl bg-card shadow-card transition-all active:scale-95 hover:shadow-elevated"
         style={{ animationDelay: `${index * 60}ms` }}
       >
