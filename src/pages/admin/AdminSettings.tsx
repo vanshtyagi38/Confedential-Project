@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditCard, Smartphone } from "lucide-react";
+import RechargePackageManager from "@/components/admin/RechargePackageManager";
 
 const AdminSettings = () => {
   const [chatLimit, setChatLimit] = useState("50");
@@ -34,7 +35,6 @@ const AdminSettings = () => {
   };
 
   const handleToggleGateway = async (gateway: "razorpay" | "phonepe", newValue: boolean) => {
-    // Ensure at least one gateway stays enabled
     if (gateway === "razorpay" && !newValue && !phonepeEnabled) {
       toast.error("At least one payment gateway must be enabled");
       return;
@@ -144,6 +144,11 @@ const AdminSettings = () => {
             )}
           </CardContent>
         </Card>
+
+        {/* Recharge Packages - full width */}
+        <div className="lg:col-span-2">
+          <RechargePackageManager />
+        </div>
       </div>
 
       <Button onClick={handleSave} className="rounded-xl">Save Settings</Button>
