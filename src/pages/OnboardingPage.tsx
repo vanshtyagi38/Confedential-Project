@@ -492,8 +492,8 @@ const OnboardingPage = () => {
         <div className="pointer-events-none absolute bottom-40 -right-20 h-[200px] w-[200px] rounded-full bg-accent/10 blur-[80px]" />
 
         {/* Hero image area */}
-        <div className="relative flex-1 flex items-center justify-center px-6 pt-8 pb-2">
-          <div className="relative w-full max-w-[320px] aspect-[3/4]">
+        <div className="relative flex-1 flex items-center justify-center px-6 pt-4 pb-1 min-h-0">
+          <div className="relative w-full max-w-[280px] h-full max-h-[55vh] aspect-[3/4]">
             {/* Main hero image with crossfade */}
             <div
               className={`absolute inset-0 rounded-[2rem] overflow-hidden shadow-elevated border-4 border-card transition-all duration-500 ease-out ${fadeClass}`}
@@ -509,77 +509,77 @@ const OnboardingPage = () => {
             </div>
 
             {/* Floating badge - rotating text */}
-            <div className={`absolute -left-2 bottom-20 z-10 rounded-full gradient-primary px-4 py-2 shadow-elevated transition-all duration-500 ${fadeClass}`}>
-              <span className="text-sm font-bold text-primary-foreground whitespace-nowrap">
+            <div className={`absolute -left-2 bottom-16 z-10 rounded-full gradient-primary px-3 py-1.5 shadow-elevated transition-all duration-500 ${fadeClass}`}>
+              <span className="text-xs font-bold text-primary-foreground whitespace-nowrap">
                 {BADGE_TEXTS[currentBadge]}
               </span>
             </div>
 
             {/* Online indicator */}
-            <div className="absolute -right-1 top-6 z-10 flex items-center gap-1.5 rounded-full bg-card/90 backdrop-blur-sm px-3 py-1.5 shadow-elevated border border-border/50">
-              <span className="relative flex h-2.5 w-2.5">
+            <div className="absolute -right-1 top-4 z-10 flex items-center gap-1.5 rounded-full bg-card/90 backdrop-blur-sm px-2.5 py-1 shadow-elevated border border-border/50">
+              <span className="relative flex h-2 w-2">
                 <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
-                <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-green-500" />
+                <span className="relative inline-flex h-2 w-2 rounded-full bg-green-500" />
               </span>
-              <span className="text-xs font-bold text-foreground">{onlineCount.toLocaleString()}+ online</span>
+              <span className="text-[11px] font-bold text-foreground">{onlineCount.toLocaleString()}+ online</span>
             </div>
 
             {/* Floating small avatars */}
-            <div className="absolute -left-3 top-12 z-10 onboard-float-1">
-              <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-card shadow-elevated">
+            <div className="absolute -left-3 top-10 z-10 onboard-float-1">
+              <div className="h-10 w-10 rounded-full overflow-hidden border-2 border-card shadow-elevated">
                 <img src={HERO_IMAGES[(currentImage + 1) % HERO_IMAGES.length]} alt="" className="h-full w-full object-cover" />
               </div>
             </div>
-            <div className="absolute -right-3 bottom-40 z-10 onboard-float-2">
-              <div className="h-14 w-14 rounded-full overflow-hidden border-2 border-card shadow-elevated">
+            <div className="absolute -right-3 bottom-32 z-10 onboard-float-2">
+              <div className="h-12 w-12 rounded-full overflow-hidden border-2 border-card shadow-elevated">
                 <img src={HERO_IMAGES[(currentImage + 2) % HERO_IMAGES.length]} alt="" className="h-full w-full object-cover" />
               </div>
             </div>
 
             {/* Sparkle decorations */}
-            <div className="absolute top-2 right-8 z-10 onboard-float-3">
-              <Sparkles className="h-5 w-5 text-accent" />
+            <div className="absolute top-1 right-6 z-10 onboard-float-3">
+              <Sparkles className="h-4 w-4 text-accent" />
             </div>
-            <div className="absolute bottom-16 right-4 z-10 onboard-float-1">
-              <Heart className="h-4 w-4 text-primary fill-primary" />
+            <div className="absolute bottom-12 right-3 z-10 onboard-float-1">
+              <Heart className="h-3.5 w-3.5 text-primary fill-primary" />
             </div>
           </div>
         </div>
 
         {/* Bottom content */}
-        <div className="relative z-10 px-6 pb-6 pt-3 space-y-4">
+        <div className="relative z-10 px-6 pb-4 pt-2 space-y-2.5 shrink-0">
           {/* Rotating tagline */}
-          <div className="text-center space-y-1.5">
-            <h1 className="text-[26px] font-extrabold tracking-tight text-foreground leading-tight min-h-[68px] flex items-center justify-center">
+          <div className="text-center space-y-0.5">
+            <h1 className="text-[22px] font-extrabold tracking-tight text-foreground leading-tight min-h-[52px] flex items-center justify-center">
               <span className={`transition-all duration-300 ease-out ${taglineFade}`}>
                 {TAGLINES[currentTagline]}
               </span>
             </h1>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-xs text-muted-foreground">
               Join <span className="font-bold text-primary">{onlineCount.toLocaleString()}+</span> people chatting right now
             </p>
           </div>
 
           {/* Feature pills */}
-          <div className="flex items-center justify-center gap-4">
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
-              <Heart className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[11px] font-semibold text-foreground">Real Vibes</span>
+          <div className="flex items-center justify-center gap-3">
+            <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1">
+              <Heart className="h-3 w-3 text-primary" />
+              <span className="text-[10px] font-semibold text-foreground">Real Vibes</span>
             </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
-              <MessageCircle className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[11px] font-semibold text-foreground">Private Chats</span>
+            <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1">
+              <MessageCircle className="h-3 w-3 text-primary" />
+              <span className="text-[10px] font-semibold text-foreground">Private Chats</span>
             </div>
-            <div className="flex items-center gap-1.5 rounded-full bg-primary/10 px-3 py-1.5">
-              <Shield className="h-3.5 w-3.5 text-primary" />
-              <span className="text-[11px] font-semibold text-foreground">100% Safe</span>
+            <div className="flex items-center gap-1 rounded-full bg-primary/10 px-2.5 py-1">
+              <Shield className="h-3 w-3 text-primary" />
+              <span className="text-[10px] font-semibold text-foreground">100% Safe</span>
             </div>
           </div>
 
           {/* CTA Buttons */}
           <button
             onClick={() => setStep("email")}
-            className="group relative w-full overflow-hidden rounded-2xl gradient-primary py-4 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97]"
+            className="group relative w-full overflow-hidden rounded-2xl gradient-primary py-3.5 text-base font-bold text-primary-foreground shadow-elevated transition-transform active:scale-[0.97]"
           >
             <span className="relative z-10 flex items-center justify-center gap-2">
               <Flame className="h-5 w-5" />
@@ -590,7 +590,7 @@ const OnboardingPage = () => {
 
           <button
             onClick={triggerGoogle}
-            className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-border bg-card py-3.5 text-sm font-semibold text-foreground shadow-card transition-all hover:bg-secondary active:scale-[0.97]"
+            className="flex w-full items-center justify-center gap-3 rounded-2xl border-2 border-border bg-card py-3 text-sm font-semibold text-foreground shadow-card transition-all hover:bg-secondary active:scale-[0.97]"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24">
               <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -601,7 +601,7 @@ const OnboardingPage = () => {
             Continue with Google
           </button>
 
-          <p className="text-center text-[11px] text-muted-foreground">
+          <p className="text-center text-[10px] text-muted-foreground">
             By continuing you agree to our Terms & Privacy Policy
           </p>
         </div>
