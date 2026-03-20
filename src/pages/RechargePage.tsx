@@ -44,7 +44,7 @@ const loadRazorpayScript = (): Promise<boolean> => {
 const RechargePage = () => {
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
-  const [selected, setSelected] = useState("10day");
+  const [selected, setSelected] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("razorpay");
@@ -57,25 +57,46 @@ const RechargePage = () => {
   const [countdown, setCountdown] = useState({ h: 2, m: 34, s: 12 });
   const [razorpayEnabled, setRazorpayEnabled] = useState(true);
   const [phonepeEnabled, setPhonepeEnabled] = useState(false);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [plansLoading, setPlansLoading] = useState(true);
 
-  // Load payment gateway settings
+  // Load packages and gateway settings
   useEffect(() => {
-    const loadGatewaySettings = async () => {
-      const { data } = await (supabase as any)
-        .from("payment_gateway_settings")
-        .select("*")
-        .eq("id", "default")
-        .maybeSingle();
-      if (data) {
-        setRazorpayEnabled(data.razorpay_enabled);
-        setPhonepeEnabled(data.phonepe_enabled);
+    const loadData = async () => {
+      const [gatewayRes, packagesRes] = await Promise.all([
+        (supabase as any).from("payment_gateway_settings").select("*").eq("id", "default").maybeSingle(),
+        (supabase as any).from("recharge_packages").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
+      ]);
+      if (gatewayRes.data) {
+        setRazorpayEnabled(gatewayRes.data.razorpay_enabled);
+        setPhonepeEnabled(gatewayRes.data.phonepe_enabled);
       }
+      if (packagesRes.data) {
+        const mapped: Plan[] = packagesRes.data.map((p: any) => ({
+          id: p.plan_id,
+          minutes: p.minutes,
+          price: p.price,
+          bonus: p.bonus,
+          label: p.label,
+          perMin: p.per_min_text,
+          tagline: p.tagline,
+          features: p.features || [],
+          highlight: p.highlight,
+          isNight: p.is_night,
+        }));
+        setPlans(mapped);
+        if (mapped.length > 0) {
+          const best = mapped.find(p => p.highlight) || mapped[mapped.length - 1];
+          setSelected(best.id);
+        }
+      }
+      setPlansLoading(false);
     };
-    loadGatewaySettings();
+    loadData();
   }, []);
 
   const balance = Math.floor(profile?.balance_minutes || 0);
-  const selectedPlan = plans.find(p => p.id === selected)!;
+  const selectedPlan = plans.find(p => p.id === selected) || plans[0];
 
   // Check for PhonePe return status
   useEffect(() => {
