@@ -2,10 +2,12 @@ import { Shield, Zap } from "lucide-react";
 import logoIcon from "@/assets/logo-icon.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 const AppHeader = () => {
   const { profile } = useAuth();
   const navigate = useNavigate();
+  const { requireAuth } = useAuthGuard();
 
   return (
     <header className="sticky top-0 z-40 border-b border-border/50 bg-background/95 backdrop-blur-lg">
@@ -46,7 +48,7 @@ const AppHeader = () => {
           {/* Balance — single tap to recharge */}
           {profile && (
             <button
-              onClick={() => navigate("/recharge")}
+              onClick={() => requireAuth(() => navigate("/recharge"))}
               className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-transform active:scale-95"
             >
               <Zap className="h-3 w-3" />

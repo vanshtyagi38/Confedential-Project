@@ -1,12 +1,14 @@
 import { Clock, UserPlus, Heart, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useState, useEffect, useRef, useCallback } from "react";
 import InvitePopup from "@/components/InvitePopup";
 
 const BalanceCard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { requireAuth } = useAuthGuard();
   const balance = profile?.balance_minutes || 0;
   const [inviteOpen, setInviteOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -23,7 +25,7 @@ const BalanceCard = () => {
       cta: "Apply →",
       ctaClass: "bg-primary text-primary-foreground shadow-sm",
       gradientBg: "from-primary/8 via-card to-card",
-      onClick: () => navigate("/profile"),
+      onClick: () => requireAuth(() => navigate("/profile")),
     },
     {
       id: "recharge",
@@ -34,7 +36,7 @@ const BalanceCard = () => {
       cta: "Top Up →",
       ctaClass: "bg-accent text-white shadow-sm",
       gradientBg: "from-accent/8 via-card to-card",
-      onClick: () => navigate("/recharge"),
+      onClick: () => requireAuth(() => navigate("/recharge")),
     },
     {
       id: "invite",
@@ -56,7 +58,7 @@ const BalanceCard = () => {
       cta: "Grab →",
       ctaClass: "bg-accent text-white shadow-sm",
       gradientBg: "from-accent/8 via-card to-card",
-      onClick: () => navigate("/recharge"),
+      onClick: () => requireAuth(() => navigate("/recharge")),
     },
   ];
 

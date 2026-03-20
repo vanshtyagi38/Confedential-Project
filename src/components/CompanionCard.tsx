@@ -1,5 +1,6 @@
 import { MapPin, Languages, MessageCircle, Circle } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import type { Companion } from "@/data/companions";
 
 interface CompanionCardProps {
@@ -12,6 +13,11 @@ interface CompanionCardProps {
 
 const CompanionCard = ({ companion, index, compact, isOnline, lastSeen }: CompanionCardProps) => {
   const navigate = useNavigate();
+  const { requireAuth } = useAuthGuard();
+
+  const handleChat = () => {
+    requireAuth(() => navigate(`/chat/${companion.id}`));
+  };
 
   const formatLastSeen = (ts: string) => {
     const diff = Date.now() - new Date(ts).getTime();
@@ -26,7 +32,7 @@ const CompanionCard = ({ companion, index, compact, isOnline, lastSeen }: Compan
   if (compact) {
     return (
       <div
-        onClick={() => navigate(`/chat/${companion.id}`)}
+        onClick={handleChat}
         className="animate-fade-in-up cursor-pointer overflow-hidden rounded-2xl bg-card shadow-card transition-all active:scale-95 hover:shadow-elevated"
         style={{ animationDelay: `${index * 60}ms` }}
       >
@@ -87,7 +93,7 @@ const CompanionCard = ({ companion, index, compact, isOnline, lastSeen }: Compan
         </div>
 
         <button
-          onClick={() => navigate(`/chat/${companion.id}`)}
+          onClick={handleChat}
           className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl gradient-primary py-2.5 text-sm font-semibold text-primary-foreground transition-all active:scale-[0.97] hover:brightness-110"
         >
           <MessageCircle className="h-4 w-4" />

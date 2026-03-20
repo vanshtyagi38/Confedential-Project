@@ -4,6 +4,7 @@ import { MessageCircle, Lock, Shield } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import type { Companion } from "@/data/companions";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 const popupMessagesFemale = [
   "Hey! 😊 Tumhari profile dekhi... interesting lagte ho. Chat karein?",
@@ -30,6 +31,7 @@ const popupMessagesMale = [
 const CompanionPopup = ({ companions }: { companions: Companion[] }) => {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { requireAuth } = useAuthGuard();
   const [open, setOpen] = useState(false);
   const [companion, setCompanion] = useState<Companion | null>(null);
   const [message, setMessage] = useState("");
@@ -55,7 +57,7 @@ const CompanionPopup = ({ companions }: { companions: Companion[] }) => {
 
   const handleReply = () => {
     setOpen(false);
-    navigate(`/chat/${companion.id}`);
+    requireAuth(() => navigate(`/chat/${companion.id}`));
   };
 
   return (

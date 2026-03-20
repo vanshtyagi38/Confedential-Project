@@ -83,8 +83,8 @@ const App = () => (
             <Routes>
               <Route path="/onboarding" element={<OnboardingPage />} />
               <Route path="/auth/callback" element={<AuthCallbackPage />} />
-              <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
-              <Route path="/dashboard" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+              <Route path="/" element={<Index />} />
+              <Route path="/dashboard" element={<Index />} />
               <Route path="/chat/:id" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
               <Route path="/user-chat/:roomId" element={<ProtectedRoute><UserChatPage /></ProtectedRoute>} />
               <Route path="/recharge" element={<ProtectedRoute><RechargePage /></ProtectedRoute>} />
