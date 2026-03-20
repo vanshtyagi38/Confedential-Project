@@ -1,17 +1,19 @@
 import { Home, MessageCircle, Gift, Wallet, User } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 const navItems = [
-  { icon: Home, label: "Home", path: "/" },
-  { icon: MessageCircle, label: "Chats", path: "/chats" },
-  { icon: Gift, label: "Earn", path: "/earn" },
-  { icon: Wallet, label: "Recharge", path: "/recharge" },
-  { icon: User, label: "Profile", path: "/profile" },
+  { icon: Home, label: "Home", path: "/", public: true },
+  { icon: MessageCircle, label: "Chats", path: "/chats", public: false },
+  { icon: Gift, label: "Earn", path: "/earn", public: false },
+  { icon: Wallet, label: "Recharge", path: "/recharge", public: false },
+  { icon: User, label: "Profile", path: "/profile", public: false },
 ];
 
 const BottomNav = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { requireAuth } = useAuthGuard();
 
   // Hide on chat pages
   if (location.pathname.startsWith("/chat/")) return null;
