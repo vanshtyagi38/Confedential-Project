@@ -9,12 +9,9 @@ import { toast } from "sonner";
 import hero1 from "@/assets/onboard-hero-1.png";
 import hero2 from "@/assets/onboard-hero-2.png";
 import hero3 from "@/assets/onboard-hero-3.png";
-import hero4 from "@/assets/onboard-hero-4.png";
-import hero5 from "@/assets/onboard-hero-5.webp";
-import hero6 from "@/assets/onboard-hero-6.avif";
 
 /* ── rotating content ─────────────────────────────── */
-const HERO_IMAGES = [hero1, hero2, hero3, hero4, hero5, hero6];
+const HERO_IMAGES = [hero1, hero2, hero3];
 
 const BADGE_TEXTS = [
   "Chat now?",
@@ -486,7 +483,7 @@ const OnboardingPage = () => {
   /* ── WELCOME SCREEN ─────────────────────────────── */
   if (step === "welcome") {
     return (
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
+      <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden relative">
         <PageSEO title="Join SingleTape | Sign Up Free" description="Sign up for SingleTape – India's most fun anonymous chat platform. Talk to amazing people safely." path="/onboarding" />
         {/* Ambient glow effects */}
 
@@ -615,7 +612,7 @@ const OnboardingPage = () => {
   /* ── EMAIL SCREEN ───────────────────────────────── */
   if (step === "email") {
     return (
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
+      <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden">
         {/* Header */}
         <div className="flex items-center px-4 pt-4">
           <button
@@ -687,7 +684,7 @@ const OnboardingPage = () => {
 
   /* ── OTP SCREEN ─────────────────────────────────── */
     return (
-      <div className="mx-auto flex min-h-[100dvh] w-full max-w-md flex-col bg-background">
+      <div className="mx-auto flex h-[100dvh] w-full max-w-md flex-col bg-background overflow-hidden">
 
         <div className="flex items-center px-4 pt-4">
         <button
