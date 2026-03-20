@@ -1,7 +1,7 @@
 import { useState, useMemo } from "react";
-
 import { useNavigate } from "react-router-dom";
 import { Flame, MapPin, MessageCircle, Circle } from "lucide-react";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { Companion } from "@/data/companions";
 import {
   Dialog,
