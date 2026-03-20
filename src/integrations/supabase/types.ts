@@ -542,6 +542,60 @@ export type Database = {
         }
         Relationships: []
       }
+      recharge_packages: {
+        Row: {
+          bonus: number
+          created_at: string
+          features: string[]
+          highlight: boolean
+          id: string
+          is_active: boolean
+          is_night: boolean
+          label: string
+          minutes: number
+          per_min_text: string
+          plan_id: string
+          price: number
+          sort_order: number
+          tagline: string
+          updated_at: string
+        }
+        Insert: {
+          bonus?: number
+          created_at?: string
+          features?: string[]
+          highlight?: boolean
+          id?: string
+          is_active?: boolean
+          is_night?: boolean
+          label: string
+          minutes: number
+          per_min_text?: string
+          plan_id: string
+          price: number
+          sort_order?: number
+          tagline?: string
+          updated_at?: string
+        }
+        Update: {
+          bonus?: number
+          created_at?: string
+          features?: string[]
+          highlight?: boolean
+          id?: string
+          is_active?: boolean
+          is_night?: boolean
+          label?: string
+          minutes?: number
+          per_min_text?: string
+          plan_id?: string
+          price?: number
+          sort_order?: number
+          tagline?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           created_at: string
