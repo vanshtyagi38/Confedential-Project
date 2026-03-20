@@ -60,17 +60,8 @@ const SeoPage = () => {
   if (notFound) return <NotFound />;
 
   const faqs = (page.faq_json as { question: string; answer: string }[]) || [];
-  const faqSchema = faqs.length > 0 ? {
-    "@context": "https://schema.org",
-    "@type": "FAQPage",
-    mainEntity: faqs.map((f) => ({
-      "@type": "Question",
-      name: f.question,
-      acceptedAnswer: { "@type": "Answer", text: f.answer },
-    })),
-  } : null;
 
-  const webPageSchema = {
+  const jsonLd: Record<string, any> = {
     "@context": "https://schema.org",
     "@type": "WebPage",
     name: page.title,
@@ -82,6 +73,14 @@ const SeoPage = () => {
       url: "https://singletape.in",
     },
   };
+
+  if (faqs.length > 0) {
+    jsonLd.mainEntity = faqs.map((f) => ({
+      "@type": "Question",
+      name: f.question,
+      acceptedAnswer: { "@type": "Answer", text: f.answer },
+    }));
+  }
 
   return (
     <>
