@@ -31,6 +31,7 @@ const popupMessagesMale = [
 const CompanionPopup = ({ companions }: { companions: Companion[] }) => {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { requireAuth } = useAuthGuard();
   const [open, setOpen] = useState(false);
   const [companion, setCompanion] = useState<Companion | null>(null);
   const [message, setMessage] = useState("");
