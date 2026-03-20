@@ -114,6 +114,12 @@ const RechargePage = () => {
 
   const handlePurchase = () => {
     if (!session?.user || !profile) return;
+    // If only one gateway enabled, skip dialog
+    const enabledCount = (razorpayEnabled ? 1 : 0) + (phonepeEnabled ? 1 : 0);
+    if (enabledCount === 1) {
+      if (razorpayEnabled) { handlePayWithRazorpay(); return; }
+      if (phonepeEnabled) { handlePayWithPhonePe(); return; }
+    }
     setShowPaymentDialog(true);
   };
 
