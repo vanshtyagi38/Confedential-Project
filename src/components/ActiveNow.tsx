@@ -18,6 +18,7 @@ interface ActiveNowProps {
 
 const ActiveNow = ({ companions, presenceMap }: ActiveNowProps) => {
   const navigate = useNavigate();
+  const { requireAuth } = useAuthGuard();
   const [selectedCompanion, setSelectedCompanion] = useState<Companion | null>(null);
 
   // Stable seed to avoid re-randomization on every render
