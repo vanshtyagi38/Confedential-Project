@@ -1,12 +1,14 @@
 import { Clock, UserPlus, Heart, Gift } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useState, useEffect, useRef, useCallback } from "react";
 import InvitePopup from "@/components/InvitePopup";
 
 const BalanceCard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const { requireAuth } = useAuthGuard();
   const balance = profile?.balance_minutes || 0;
   const [inviteOpen, setInviteOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
