@@ -33,7 +33,8 @@ function shuffleArray<T>(arr: T[], seed: number): T[] {
 type PresenceMap = Record<string, { is_online: boolean; last_seen: string }>;
 
 const Index = () => {
-  const { profile } = useAuth();
+  const { session, profile } = useAuth();
+  const isAuthenticated = !!(session && profile);
   const { companions, loading } = useCompanions();
   const [filter, setFilter] = useState("All");
   const [activeUsers, setActiveUsers] = useState(28900);
