@@ -36,7 +36,7 @@ const BalanceCard = () => {
       cta: "Top Up →",
       ctaClass: "bg-accent text-white shadow-sm",
       gradientBg: "from-accent/8 via-card to-card",
-      onClick: () => navigate("/recharge"),
+      onClick: () => requireAuth(() => navigate("/recharge")),
     },
     {
       id: "invite",
