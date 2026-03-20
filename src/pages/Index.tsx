@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import PageSEO from "@/components/PageSEO";
+import { Helmet } from "react-helmet-async";
 import { Heart, Sparkles, Users, Circle, Loader2 } from "lucide-react";
 import AppHeader from "@/components/AppHeader";
 import BalanceCard from "@/components/BalanceCard";
@@ -132,6 +133,18 @@ const Index = () => {
   return (
     <div className="mx-auto min-h-screen w-full max-w-2xl bg-background pb-24">
       <PageSEO title="SingleTape – Chat with Crush | Anonymous Chat App" description="India's most fun private chat platform. Talk to amazing people, stay anonymous, stay safe." path="/" />
+      <Helmet>
+        <script type="application/ld+json">{JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "FAQPage",
+          mainEntity: [
+            { "@type": "Question", name: "What is SingleTape?", acceptedAnswer: { "@type": "Answer", text: "SingleTape is India's most fun private chat platform where you can talk to amazing people, stay anonymous, and stay safe." } },
+            { "@type": "Question", name: "Is SingleTape free to use?", acceptedAnswer: { "@type": "Answer", text: "Yes! You get free minutes when you sign up. You can earn more minutes through referrals, daily streaks, and spin rewards." } },
+            { "@type": "Question", name: "Is my identity safe on SingleTape?", acceptedAnswer: { "@type": "Answer", text: "Absolutely. Your real identity is never shared. You chat anonymously and only share what you choose to." } },
+            { "@type": "Question", name: "How do I earn free minutes?", acceptedAnswer: { "@type": "Answer", text: "Refer friends to earn 5 free minutes per referral. Maintain daily streaks and spin the reward wheel for bonus minutes." } }
+          ]
+        })}</script>
+      </Helmet>
       <AppHeader />
       <BalanceCard />
       
