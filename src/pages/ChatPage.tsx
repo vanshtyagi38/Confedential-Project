@@ -176,7 +176,10 @@ const ChatPage = () => {
   const chatActiveRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
   const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleFollowUpRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleFollowUpSentRef = useRef(false);
   const IDLE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes of inactivity stops billing
+  const IDLE_FOLLOWUP_MS = 2 * 60 * 1000; // 2 minutes idle → companion sends follow-up
   const streakUpdatedRef = useRef(false);
   const [showInstallPopup, setShowInstallPopup] = useState(false);
   const installPromptShownRef = useRef(false);
