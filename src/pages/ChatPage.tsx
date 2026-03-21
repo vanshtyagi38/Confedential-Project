@@ -351,66 +351,52 @@ const ChatPage = () => {
     }, IDLE_TIMEOUT_MS);
   }, [isOwnerMode, stopTimer]);
 
+  // Deduct 1 minute from DB atomically using server-side function
+  const deductOneMinute = useCallback(async () => {
+    if (!session?.user?.id || !companion) return;
+    try {
+      const { data, error } = await (supabase as any).rpc("deduct_chat_minute", {
+        p_user_id: session.user.id,
+        p_companion_slug: companion.id,
+      });
+      if (error) {
+        console.error("Deduction error:", error);
+        return;
+      }
+      const newBalance = typeof data === "number" ? data : 0;
+      setDisplayBalance(newBalance);
+      if (newBalance <= 0) {
+        setOutOfBalance(true);
+        stopTimer();
+      }
+    } catch (err) {
+      console.error("Deduction failed:", err);
+    }
+  }, [session?.user?.id, companion, stopTimer]);
+
   const startTimer = useCallback(() => {
     if (isOwnerMode) return;
-    resetIdleTimeout(); // Reset idle on every activity
-    if (timerRef.current) return; // Already running
+    resetIdleTimeout();
+    if (timerRef.current) return;
     chatActiveRef.current = true;
     timerRef.current = setInterval(() => {
-      // Check if still active (not idle)
       if (Date.now() - lastActivityRef.current > IDLE_TIMEOUT_MS) {
         stopTimer();
         return;
       }
-      minutesUsedRef.current += 1;
-      setDisplayBalance((prev) => {
-        const next = Math.max(0, prev - 1);
-        if (next <= 0) {
-          setOutOfBalance(true);
-          stopTimer(); // Stop billing when balance hits 0
-        }
-        return next;
-      });
+      // Deduct directly from DB every minute
+      deductOneMinute();
     }, 60000);
-  }, [isOwnerMode, resetIdleTimeout, stopTimer]);
-
-  // Save used minutes to DB — uses minutesUsedRef (actual minutes consumed)
-  const saveUsedMinutes = useCallback(async () => {
-    if (minutesUsedRef.current <= 0 || !session?.user?.id) return;
-    const used = minutesUsedRef.current;
-    minutesUsedRef.current = 0; // Reset to prevent double-saving
-    // Atomically deduct: fetch current balance, subtract used, save
-    const { data: currentProfile } = await (supabase as any)
-      .from("user_profiles")
-      .select("balance_minutes")
-      .eq("user_id", session.user.id)
-      .maybeSingle();
-    if (currentProfile) {
-      const newBalance = Math.max(0, currentProfile.balance_minutes - used);
-      await (supabase as any)
-        .from("user_profiles")
-        .update({ balance_minutes: newBalance })
-        .eq("user_id", session.user.id);
-    }
-  }, [session?.user?.id]);
+  }, [isOwnerMode, resetIdleTimeout, stopTimer, deductOneMinute]);
 
   useEffect(() => {
     if (isOwnerMode) return;
-    const handleUnload = () => {
-      // Use sendBeacon for reliable save on tab close
-      const used = minutesUsedRef.current;
-      if (used > 0 && session?.user?.id) {
-        saveUsedMinutes();
-      }
-    };
-    window.addEventListener("beforeunload", handleUnload);
     return () => {
-      window.removeEventListener("beforeunload", handleUnload);
       stopTimer();
       if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
-      saveUsedMinutes().then(() => refreshProfile());
+      refreshProfile();
     };
-  }, [session?.user?.id, isOwnerMode, stopTimer, saveUsedMinutes, refreshProfile]);
+  }, [session?.user?.id, isOwnerMode, stopTimer, refreshProfile]);
 
   const saveMessage = async (companionSlug: string, role: string, content: string, userId?: string, imageUrl?: string) => {
     const uid = userId || session?.user?.id;
