@@ -172,7 +172,7 @@ const ChatPage = () => {
   const abortRef = useRef<AbortController | null>(null);
   const aiLockRef = useRef(false); // Prevents duplicate AI generation
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const minutesUsedRef = useRef(0);
+  
   const chatActiveRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
   const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
