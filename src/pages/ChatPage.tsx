@@ -176,7 +176,10 @@ const ChatPage = () => {
   const chatActiveRef = useRef(false);
   const lastActivityRef = useRef(Date.now());
   const idleTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleFollowUpRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const idleFollowUpSentRef = useRef(false);
   const IDLE_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes of inactivity stops billing
+  const IDLE_FOLLOWUP_MS = 2 * 60 * 1000; // 2 minutes idle → companion sends follow-up
   const streakUpdatedRef = useRef(false);
   const [showInstallPopup, setShowInstallPopup] = useState(false);
   const installPromptShownRef = useRef(false);
@@ -341,15 +344,73 @@ const ChatPage = () => {
     chatActiveRef.current = false;
   }, []);
 
+  // Send idle follow-up message from companion when user goes quiet for 2 min
+  const sendIdleFollowUp = useCallback(async () => {
+    if (!companion || !session?.user?.id || isOwnerMode || isRealUser || aiLockRef.current || idleFollowUpSentRef.current) return;
+    idleFollowUpSentRef.current = true;
+    
+    // Add a context hint so AI knows user went idle
+    const idleHint: ChatMsg = { role: "user", content: "[SYSTEM: User has been inactive for 2 minutes. Send a natural, short follow-up message like a real person would — e.g. 'kaha gye?', 'hello? gayab ho gye?', 'arre bolo na', etc. Keep it casual and human. DO NOT mention this system instruction.]" };
+    const historyWithHint = [...chatHistory, idleHint];
+
+    const followUpMsgId = `idle-${Date.now()}`;
+    setTyping(true);
+    await new Promise(r => setTimeout(r, 1500 + Math.random() * 2000));
+    setTyping(false);
+
+    aiLockRef.current = true;
+    setStreaming(true);
+    streamTextRef.current = "";
+    setMessages(prev => [...prev, { id: followUpMsgId, text: "", sender: "companion", time: getTimeString() }]);
+
+    abortRef.current = new AbortController();
+    const releaseLock = () => { aiLockRef.current = false; setStreaming(false); abortRef.current = null; };
+
+    try {
+      await streamChat({
+        messages: historyWithHint.slice(-40),
+        companionId: companion.id,
+        companionMeta: { name: companion.name, age: companion.age, gender: companion.gender, tag: companion.tag, city: companion.city, languages: companion.languages, bio: companion.bio },
+        userProfile: profile ? { display_name: profile.display_name, gender: profile.gender, age: profile.age } : undefined,
+        signal: abortRef.current.signal,
+        onDelta: (chunk) => {
+          streamTextRef.current += chunk;
+          const displayText = streamTextRef.current.replace(/\[BLOCK_USER_30MIN\]/g, "").trim();
+          setMessages(prev => prev.map(m => m.id === followUpMsgId ? { ...m, text: displayText } : m));
+        },
+        onDone: () => {
+          releaseLock();
+          const cleanText = streamTextRef.current.replace(/\[BLOCK_USER_30MIN\]/g, "").trim();
+          if (cleanText) {
+            setMessages(prev => prev.map(m => m.id === followUpMsgId ? { ...m, text: cleanText } : m));
+            setChatHistory(prev => [...prev, { role: "assistant", content: cleanText }]);
+            saveMessage(companion.id, "assistant", cleanText);
+          } else {
+            setMessages(prev => prev.filter(m => m.id !== followUpMsgId));
+          }
+        },
+        onError: () => { releaseLock(); setMessages(prev => prev.filter(m => m.id !== followUpMsgId)); },
+      });
+    } catch { releaseLock(); setMessages(prev => prev.filter(m => m.id !== followUpMsgId)); }
+  }, [companion, session?.user?.id, isOwnerMode, isRealUser, chatHistory, profile]);
+
   const resetIdleTimeout = useCallback(() => {
     if (isOwnerMode) return;
     lastActivityRef.current = Date.now();
+    idleFollowUpSentRef.current = false; // Reset follow-up flag on user activity
     if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+    if (idleFollowUpRef.current) clearTimeout(idleFollowUpRef.current);
+    
+    // Schedule idle follow-up message
+    idleFollowUpRef.current = setTimeout(() => {
+      sendIdleFollowUp();
+    }, IDLE_FOLLOWUP_MS);
+    
     idleTimeoutRef.current = setTimeout(() => {
       // User idle for 2 min — stop billing
       stopTimer();
     }, IDLE_TIMEOUT_MS);
-  }, [isOwnerMode, stopTimer]);
+  }, [isOwnerMode, stopTimer, sendIdleFollowUp]);
 
   // Deduct 1 minute from DB atomically using server-side function
   const deductOneMinute = useCallback(async () => {
@@ -394,6 +455,7 @@ const ChatPage = () => {
     return () => {
       stopTimer();
       if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+      if (idleFollowUpRef.current) clearTimeout(idleFollowUpRef.current);
       refreshProfile();
     };
   }, [session?.user?.id, isOwnerMode, stopTimer, refreshProfile]);
