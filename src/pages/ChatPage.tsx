@@ -455,6 +455,7 @@ const ChatPage = () => {
     return () => {
       stopTimer();
       if (idleTimeoutRef.current) clearTimeout(idleTimeoutRef.current);
+      if (idleFollowUpRef.current) clearTimeout(idleFollowUpRef.current);
       refreshProfile();
     };
   }, [session?.user?.id, isOwnerMode, stopTimer, refreshProfile]);
