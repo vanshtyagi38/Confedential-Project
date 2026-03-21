@@ -1062,6 +1062,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      deduct_chat_minute: {
+        Args: { p_companion_slug: string; p_user_id: string }
+        Returns: number
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
