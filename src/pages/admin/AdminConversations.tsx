@@ -1,13 +1,14 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Search, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, Eye, ChevronLeft, ChevronRight, Bot, Users } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 type Conversation = {
   key: string;
@@ -17,11 +18,32 @@ type Conversation = {
   totalMessages: number;
   firstMessage: string;
   lastMessage: string;
+  type: "companion" | "user";
+  otherUserName?: string;
 };
 
-type Message = { role: string; content: string; created_at: string };
+type Message = { role: string; content: string; created_at: string; sender_id?: string };
 
 const PAGE_SIZE = 15;
+
+// Fetch all rows from a table, paginating past the 1000-row default limit
+async function fetchAllRows(table: string, select: string, orderCol: string) {
+  const rows: any[] = [];
+  let from = 0;
+  const batchSize = 1000;
+  while (true) {
+    const { data, error } = await (supabase as any)
+      .from(table)
+      .select(select)
+      .order(orderCol, { ascending: true })
+      .range(from, from + batchSize - 1);
+    if (error || !data || data.length === 0) break;
+    rows.push(...data);
+    if (data.length < batchSize) break;
+    from += batchSize;
+  }
+  return rows;
+}
 
 const AdminConversations = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -29,61 +51,131 @@ const AdminConversations = () => {
   const [page, setPage] = useState(0);
   const [viewConvo, setViewConvo] = useState<Conversation | null>(null);
   const [messages, setMessages] = useState<Message[]>([]);
+  const [tab, setTab] = useState("all");
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const load = async () => {
-      const [{ data: msgs }, { data: profiles }] = await Promise.all([
-        (supabase as any).from("chat_messages").select("*").order("created_at", { ascending: true }),
-        (supabase as any).from("user_profiles").select("user_id, display_name"),
+      setLoading(true);
+
+      // Fetch all data in parallel
+      const [companionMsgs, profiles, userRooms, userMsgs] = await Promise.all([
+        fetchAllRows("chat_messages", "*", "created_at"),
+        (supabase as any).from("user_profiles").select("user_id, display_name").then((r: any) => r.data || []),
+        (supabase as any).from("user_chat_rooms").select("*").then((r: any) => r.data || []),
+        fetchAllRows("user_chat_messages", "*", "created_at"),
       ]);
 
       const nameMap: Record<string, string> = {};
-      (profiles || []).forEach((p: any) => { nameMap[p.user_id] = p.display_name || "Unknown"; });
+      profiles.forEach((p: any) => { nameMap[p.user_id] = p.display_name || "Unknown"; });
 
-      const grouped: Record<string, any[]> = {};
-      (msgs || []).forEach((m: any) => {
-        const key = `${m.user_id}__${m.companion_slug}`;
-        if (!grouped[key]) grouped[key] = [];
-        grouped[key].push(m);
+      const convos: Conversation[] = [];
+
+      // 1. Companion chats
+      const companionGrouped: Record<string, any[]> = {};
+      companionMsgs.forEach((m: any) => {
+        const key = `companion__${m.user_id}__${m.companion_slug}`;
+        if (!companionGrouped[key]) companionGrouped[key] = [];
+        companionGrouped[key].push(m);
       });
 
-      const convos: Conversation[] = Object.entries(grouped).map(([key, items]) => ({
-        key,
-        userId: items[0].user_id,
-        userName: nameMap[items[0].user_id] || "Unknown",
-        companion: items[0].companion_slug,
-        totalMessages: items.length,
-        firstMessage: items[0].created_at,
-        lastMessage: items[items.length - 1].created_at,
-      }));
+      Object.entries(companionGrouped).forEach(([key, items]) => {
+        convos.push({
+          key,
+          userId: items[0].user_id,
+          userName: nameMap[items[0].user_id] || "Unknown",
+          companion: items[0].companion_slug,
+          totalMessages: items.length,
+          firstMessage: items[0].created_at,
+          lastMessage: items[items.length - 1].created_at,
+          type: "companion",
+        });
+      });
+
+      // 2. User-to-user chats
+      const userMsgsByRoom: Record<string, any[]> = {};
+      userMsgs.forEach((m: any) => {
+        if (!userMsgsByRoom[m.room_id]) userMsgsByRoom[m.room_id] = [];
+        userMsgsByRoom[m.room_id].push(m);
+      });
+
+      const roomMap: Record<string, any> = {};
+      userRooms.forEach((r: any) => { roomMap[r.id] = r; });
+
+      Object.entries(userMsgsByRoom).forEach(([roomId, items]) => {
+        const room = roomMap[roomId];
+        if (!room) return;
+        convos.push({
+          key: `user__${roomId}`,
+          userId: room.user_a_id,
+          userName: nameMap[room.user_a_id] || "Unknown",
+          companion: nameMap[room.user_b_id] || "Unknown",
+          otherUserName: nameMap[room.user_b_id] || "Unknown",
+          totalMessages: items.length,
+          firstMessage: items[0].created_at,
+          lastMessage: items[items.length - 1].created_at,
+          type: "user",
+        });
+      });
 
       convos.sort((a, b) => new Date(b.lastMessage).getTime() - new Date(a.lastMessage).getTime());
       setConversations(convos);
+      setLoading(false);
     };
     load();
   }, []);
 
-  const filtered = search
-    ? conversations.filter(c => c.userName.toLowerCase().includes(search.toLowerCase()) || c.companion.includes(search.toLowerCase()) || c.key.includes(search))
-    : conversations;
+  const filtered = conversations.filter(c => {
+    const matchesTab = tab === "all" || c.type === tab;
+    const matchesSearch = !search || 
+      c.userName.toLowerCase().includes(search.toLowerCase()) || 
+      c.companion.toLowerCase().includes(search.toLowerCase());
+    return matchesTab && matchesSearch;
+  });
 
   const paged = filtered.slice(page * PAGE_SIZE, (page + 1) * PAGE_SIZE);
   const totalPages = Math.ceil(filtered.length / PAGE_SIZE);
 
   const viewMessages = async (convo: Conversation) => {
     setViewConvo(convo);
-    const { data } = await (supabase as any)
-      .from("chat_messages")
-      .select("role, content, created_at")
-      .eq("user_id", convo.userId)
-      .eq("companion_slug", convo.companion)
-      .order("created_at", { ascending: true });
-    setMessages(data || []);
+    if (convo.type === "companion") {
+      const { data } = await (supabase as any)
+        .from("chat_messages")
+        .select("role, content, created_at")
+        .eq("user_id", convo.userId)
+        .eq("companion_slug", convo.companion)
+        .order("created_at", { ascending: true });
+      setMessages(data || []);
+    } else {
+      const roomId = convo.key.replace("user__", "");
+      const { data } = await (supabase as any)
+        .from("user_chat_messages")
+        .select("sender_id, content, created_at")
+        .eq("room_id", roomId)
+        .order("created_at", { ascending: true });
+      setMessages((data || []).map((m: any) => ({
+        role: m.sender_id === convo.userId ? "user" : "assistant",
+        content: m.content,
+        created_at: m.created_at,
+        sender_id: m.sender_id,
+      })));
+    }
   };
+
+  const companionCount = conversations.filter(c => c.type === "companion").length;
+  const userCount = conversations.filter(c => c.type === "user").length;
 
   return (
     <div className="space-y-6">
       <h1 className="text-3xl font-bold text-foreground">Conversations</h1>
+
+      <Tabs value={tab} onValueChange={v => { setTab(v); setPage(0); }}>
+        <TabsList>
+          <TabsTrigger value="all">All ({conversations.length})</TabsTrigger>
+          <TabsTrigger value="companion" className="gap-1.5"><Bot className="h-3.5 w-3.5" />Companion ({companionCount})</TabsTrigger>
+          <TabsTrigger value="user" className="gap-1.5"><Users className="h-3.5 w-3.5" />User-to-User ({userCount})</TabsTrigger>
+        </TabsList>
+      </Tabs>
 
       <div className="relative max-w-md">
         <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
@@ -95,8 +187,9 @@ const AdminConversations = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>Type</TableHead>
                 <TableHead>User</TableHead>
-                <TableHead>Companion</TableHead>
+                <TableHead>With</TableHead>
                 <TableHead>Messages</TableHead>
                 <TableHead>Started</TableHead>
                 <TableHead>Last Active</TableHead>
@@ -104,10 +197,20 @@ const AdminConversations = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {paged.map(c => (
+              {loading ? (
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">Loading...</TableCell></TableRow>
+              ) : paged.map(c => (
                 <TableRow key={c.key}>
+                  <TableCell>
+                    <Badge variant={c.type === "companion" ? "secondary" : "outline"} className="gap-1">
+                      {c.type === "companion" ? <Bot className="h-3 w-3" /> : <Users className="h-3 w-3" />}
+                      {c.type === "companion" ? "AI" : "P2P"}
+                    </Badge>
+                  </TableCell>
                   <TableCell className="font-medium">{c.userName}</TableCell>
-                  <TableCell><Badge variant="secondary">{c.companion}</Badge></TableCell>
+                  <TableCell>
+                    <Badge variant="secondary">{c.companion}</Badge>
+                  </TableCell>
                   <TableCell>{c.totalMessages}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{new Date(c.firstMessage).toLocaleDateString()}</TableCell>
                   <TableCell className="text-xs text-muted-foreground">{new Date(c.lastMessage).toLocaleDateString()}</TableCell>
@@ -116,8 +219,8 @@ const AdminConversations = () => {
                   </TableCell>
                 </TableRow>
               ))}
-              {paged.length === 0 && (
-                <TableRow><TableCell colSpan={6} className="text-center py-8 text-muted-foreground">No conversations</TableCell></TableRow>
+              {!loading && paged.length === 0 && (
+                <TableRow><TableCell colSpan={7} className="text-center py-8 text-muted-foreground">No conversations</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
@@ -138,7 +241,10 @@ const AdminConversations = () => {
       <Dialog open={!!viewConvo} onOpenChange={() => setViewConvo(null)}>
         <DialogContent className="max-w-lg max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>{viewConvo?.userName} × {viewConvo?.companion}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {viewConvo?.type === "companion" ? <Bot className="h-4 w-4" /> : <Users className="h-4 w-4" />}
+              {viewConvo?.userName} × {viewConvo?.companion}
+            </DialogTitle>
           </DialogHeader>
           <ScrollArea className="h-[60vh]">
             <div className="space-y-3 p-1">
