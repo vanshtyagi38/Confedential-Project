@@ -504,12 +504,22 @@ const ChatPage = () => {
     const trimmed = text.trim();
     if (!trimmed && !pendingImage) return;
 
-    // Only check balance for normal users (not companion owners)
-    if (!isOwnerMode && outOfBalance) {
-      toast.error("Out of chat minutes! Recharge to continue.", {
-        action: { label: "Recharge", onClick: () => navigate("/recharge") },
-      });
-      return;
+    // Server-side balance verification before allowing message
+    if (!isOwnerMode) {
+      const { data: freshProfile } = await (supabase as any)
+        .from("user_profiles")
+        .select("balance_minutes")
+        .eq("user_id", session?.user?.id)
+        .maybeSingle();
+      const freshBalance = freshProfile?.balance_minutes ?? 0;
+      setDisplayBalance(freshBalance);
+      if (freshBalance <= 0) {
+        setOutOfBalance(true);
+        toast.error("Out of chat minutes! Recharge to continue.", {
+          action: { label: "Recharge", onClick: () => navigate("/recharge") },
+        });
+        return;
+      }
     }
 
     setInput("");
