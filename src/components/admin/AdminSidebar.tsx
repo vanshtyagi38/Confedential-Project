@@ -19,6 +19,7 @@ const links = [
   { to: "/admin/wishlist", icon: UserPlus, label: "Wishlist" },
   { to: "/admin/api-analytics", icon: Gauge, label: "API Analytics" },
   { to: "/admin/ga4", icon: LineChart, label: "Google Analytics" },
+  { to: "/admin/reels", icon: Film, label: "Reels" },
 ];
 
 const seoSubLinks = [
