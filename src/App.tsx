@@ -42,6 +42,7 @@ import AdminSeoBulk from "./pages/admin/AdminSeoBulk";
 import AdminSeoTemplates from "./pages/admin/AdminSeoTemplates";
 import SeoPage from "./pages/SeoPage";
 import SupportPage from "./pages/SupportPage";
+import ReelsPage from "./pages/ReelsPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
