@@ -1,0 +1,4 @@
+UPDATE reels SET video_url = '/500+ AI INFLUENCERS REEL BUNDLE by deehastore (1).mp4', thumbnail_url = NULL WHERE id = 'b3bbd24f-7a07-40b7-8b87-543f90ee2bc8';
+UPDATE reels SET video_url = '/500+ AI INFLUENCERS REEL BUNDLE by deehastore (176).mp4', thumbnail_url = NULL WHERE id = '9b369931-bb96-4080-a7c7-a9d4fde5d261';
+UPDATE reels SET video_url = '/500+ AI INFLUENCERS REEL BUNDLE by deehastore (334).mp4', thumbnail_url = NULL WHERE id = 'f926685c-6583-42e2-a9f7-69c348774dd4';
+UPDATE reels SET video_url = '/500+ AI INFLUENCERS REEL BUNDLE by deehastore (347).mp4', thumbnail_url = NULL WHERE id = 'f750d046-6f6d-4865-bd0a-a1af90ad15fb';
