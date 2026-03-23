@@ -91,6 +91,7 @@ const App = () => (
               <Route path="/recharge" element={<ProtectedRoute><RechargePage /></ProtectedRoute>} />
               <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
               <Route path="/earn" element={<ProtectedRoute><EarnPage /></ProtectedRoute>} />
+              <Route path="/reels" element={<ReelsPage />} />
               <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
 

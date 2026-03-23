@@ -12,6 +12,7 @@ import CompanionPopup from "@/components/CompanionPopup";
 import { useCompanions } from "@/hooks/useCompanions";
 import Footer from "@/components/Footer";
 import EngagementSections from "@/components/EngagementSections";
+import ReelsSection from "@/components/ReelsSection";
 import InstallAppBanner from "@/components/InstallAppBanner";
 import ActiveNow from "@/components/ActiveNow";
 import ActiveUsers from "@/components/ActiveUsers";
