@@ -36,6 +36,7 @@ import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminApiAnalytics from "./pages/admin/AdminApiAnalytics";
 import AdminGA4Analytics from "./pages/admin/AdminGA4Analytics";
 import AdminSeoOverview from "./pages/admin/AdminSeoOverview";
+import AdminReels from "./pages/admin/AdminReels";
 import AdminSeoPages from "./pages/admin/AdminSeoPages";
 import AdminSeoPageEditor from "./pages/admin/AdminSeoPageEditor";
 import AdminSeoBulk from "./pages/admin/AdminSeoBulk";
