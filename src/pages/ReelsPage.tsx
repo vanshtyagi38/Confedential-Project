@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState, useCallback } from "react";
-import { useReels, getGDriveEmbedUrl } from "@/hooks/useReels";
-import { ArrowLeft, Heart, Share2, Volume2, VolumeX } from "lucide-react";
+import { useReels, getGDriveDirectUrl, extractGDriveFileId } from "@/hooks/useReels";
+import { ArrowLeft, Heart, Share2, Volume2, VolumeX, Play } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 
@@ -11,8 +11,37 @@ const ReelItem = ({
   reel: any;
   isActive: boolean;
 }) => {
-  const embedUrl = getGDriveEmbedUrl(reel.video_url);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const [liked, setLiked] = useState(false);
+  const [muted, setMuted] = useState(true);
+  const [playing, setPlaying] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+
+  const fileId = extractGDriveFileId(reel.video_url);
+  const videoSrc = getGDriveDirectUrl(reel.video_url);
+
+  // Auto-play/pause based on active state
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (isActive) {
+      video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+    } else {
+      video.pause();
+      setPlaying(false);
+    }
+  }, [isActive]);
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play().then(() => setPlaying(true));
+    } else {
+      video.pause();
+      setPlaying(false);
+    }
+  };
 
   const handleShare = async () => {
     if (navigator.share) {
@@ -20,18 +49,45 @@ const ReelItem = ({
     }
   };
 
+  // Fallback to iframe if video tag fails
+  const embedUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : reel.video_url;
+
   return (
     <div className="relative h-[100dvh] w-full snap-start snap-always bg-black">
-      {/* Video iframe - only render when active or adjacent */}
-      {isActive ? (
-        <iframe
-          src={embedUrl}
-          className="absolute inset-0 h-full w-full"
-          allow="autoplay; encrypted-media"
-          allowFullScreen
-          loading="lazy"
-          style={{ border: "none" }}
-        />
+      {isActive || Math.abs(0) <= 1 ? (
+        videoError ? (
+          <iframe
+            src={embedUrl}
+            className="absolute inset-0 h-full w-full"
+            allow="autoplay; encrypted-media"
+            allowFullScreen
+            style={{ border: "none" }}
+          />
+        ) : (
+          <>
+            <video
+              ref={videoRef}
+              src={videoSrc}
+              className="absolute inset-0 h-full w-full object-contain"
+              loop
+              muted={muted}
+              playsInline
+              preload={isActive ? "auto" : "metadata"}
+              onClick={togglePlay}
+              onError={() => setVideoError(true)}
+            />
+            {!playing && isActive && (
+              <button
+                onClick={togglePlay}
+                className="absolute inset-0 z-10 flex items-center justify-center"
+              >
+                <div className="rounded-full bg-black/40 p-4">
+                  <Play className="h-10 w-10 fill-white text-white" />
+                </div>
+              </button>
+            )}
+          </>
+        )
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-black">
           <Loader2 className="h-8 w-8 animate-spin text-white/40" />
@@ -40,6 +96,16 @@ const ReelItem = ({
 
       {/* Right side actions */}
       <div className="absolute bottom-24 right-3 z-10 flex flex-col items-center gap-5">
+        <button
+          onClick={() => setMuted(!muted)}
+          className="flex flex-col items-center gap-1"
+        >
+          {muted ? (
+            <VolumeX className="h-6 w-6 text-white" />
+          ) : (
+            <Volume2 className="h-6 w-6 text-white" />
+          )}
+        </button>
         <button
           onClick={() => setLiked(!liked)}
           className="flex flex-col items-center gap-1"
