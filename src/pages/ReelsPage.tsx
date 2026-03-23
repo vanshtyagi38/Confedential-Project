@@ -1,12 +1,22 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useReels, type Reel } from "@/hooks/useReels";
-import { ArrowLeft, MessageCircle, Lock, Crown } from "lucide-react";
+import { ArrowLeft, Crown, Lock, MessageCircle, Volume2, VolumeX } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 
-const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
+const ReelItem = ({
+  reel,
+  isActive,
+  isMuted,
+  onUnmute,
+}: {
+  reel: Reel;
+  isActive: boolean;
+  isMuted: boolean;
+  onUnmute: () => void;
+}) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
   const [playing, setPlaying] = useState(false);
@@ -15,17 +25,27 @@ const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
     const video = videoRef.current;
     if (!video) return;
     if (isActive) {
-      video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      video.muted = isMuted;
+      video.play().then(() => setPlaying(true)).catch(() => {
+        // Browser blocked unmuted autoplay — retry muted
+        video.muted = true;
+        video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+      });
     } else {
       video.pause();
       video.currentTime = 0;
       setPlaying(false);
     }
-  }, [isActive]);
+  }, [isActive, isMuted]);
 
-  const togglePlay = () => {
+  const handleTap = () => {
     const video = videoRef.current;
     if (!video) return;
+    if (video.muted) {
+      video.muted = false;
+      onUnmute();
+      return;
+    }
     if (video.paused) {
       video.play().then(() => setPlaying(true));
     } else {
@@ -41,13 +61,26 @@ const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
         src={reel.video_url}
         className="h-full w-full object-cover"
         loop
-        muted={false}
         playsInline
         preload={isActive ? "auto" : "metadata"}
-        onClick={togglePlay}
+        onClick={handleTap}
       />
 
-      {/* Companion avatar - right side */}
+      {/* Tap to unmute hint */}
+      {isActive && isMuted && (
+        <button
+          onClick={() => {
+            const v = videoRef.current;
+            if (v) { v.muted = false; onUnmute(); }
+          }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 rounded-full bg-black/60 p-4 backdrop-blur-sm animate-pulse"
+        >
+          <VolumeX className="h-8 w-8 text-white" />
+          <span className="mt-1 block text-[10px] text-white/80">Tap to unmute</span>
+        </button>
+      )}
+
+      {/* Companion avatar — right side */}
       {reel.companion && (
         <div className="absolute bottom-36 right-3 z-10">
           <button
@@ -56,13 +89,15 @@ const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
           >
             <Avatar className="h-10 w-10 ring-2 ring-primary">
               <AvatarImage src={reel.companion.image_url || ""} alt={reel.companion.name} />
-              <AvatarFallback>{reel.companion.name[0]}</AvatarFallback>
+              <AvatarFallback className="bg-primary/20 text-primary text-xs">
+                {reel.companion.name[0]}
+              </AvatarFallback>
             </Avatar>
           </button>
         </div>
       )}
 
-      {/* Bottom: companion info + chat CTA */}
+      {/* Bottom info + CTA */}
       <div className="absolute bottom-6 left-4 right-16 z-10">
         {reel.companion && (
           <button
@@ -71,9 +106,11 @@ const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
           >
             <Avatar className="h-6 w-6">
               <AvatarImage src={reel.companion.image_url || ""} />
-              <AvatarFallback>{reel.companion.name[0]}</AvatarFallback>
+              <AvatarFallback className="text-[10px]">{reel.companion.name[0]}</AvatarFallback>
             </Avatar>
-            <span className="text-xs font-semibold text-white">{reel.companion.name}, {reel.companion.age}</span>
+            <span className="text-xs font-semibold text-white">
+              {reel.companion.name}, {reel.companion.age}
+            </span>
             <span className="text-[10px] text-white/70">{reel.companion.city}</span>
           </button>
         )}
@@ -94,7 +131,6 @@ const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
   );
 };
 
-/** Paywall slide shown after free reels */
 const RechargeSlide = () => {
   const navigate = useNavigate();
   return (
@@ -140,6 +176,7 @@ const ReelsPage = () => {
   const startIndex = parseInt(searchParams.get("start") || "0", 10);
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(startIndex);
+  const [isMuted, setIsMuted] = useState(true); // start muted for autoplay
 
   const FREE_REEL_LIMIT = 4;
 
@@ -163,7 +200,9 @@ const ReelsPage = () => {
       },
       { root: containerRef.current, threshold: 0.6 }
     );
-    Array.from(containerRef.current.children).forEach((child) => observer.observe(child));
+    Array.from(containerRef.current.children).forEach((child) =>
+      observer.observe(child)
+    );
     return () => observer.disconnect();
   }, [reels]);
 
@@ -194,7 +233,12 @@ const ReelsPage = () => {
       >
         {freeReels.map((reel, i) => (
           <div key={reel.id} data-index={i}>
-            <ReelItem reel={reel} isActive={i === activeIndex} />
+            <ReelItem
+              reel={reel}
+              isActive={i === activeIndex}
+              isMuted={isMuted}
+              onUnmute={() => setIsMuted(false)}
+            />
           </div>
         ))}
         {showPaywall && (
