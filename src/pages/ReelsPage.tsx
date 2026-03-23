@@ -1,6 +1,6 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useReels, type Reel } from "@/hooks/useReels";
-import { ArrowLeft, Crown, Lock, MessageCircle, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, MessageCircle, Crown, X, VolumeX } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -11,32 +11,40 @@ const ReelItem = ({
   isActive,
   isMuted,
   onUnmute,
+  isLastFree,
+  onShowPaywall,
 }: {
   reel: Reel;
   isActive: boolean;
   isMuted: boolean;
   onUnmute: () => void;
+  isLastFree: boolean;
+  onShowPaywall: () => void;
 }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
-  const [playing, setPlaying] = useState(false);
+  const [showPoster, setShowPoster] = useState(true);
 
   useEffect(() => {
     const video = videoRef.current;
     if (!video) return;
     if (isActive) {
       video.muted = isMuted;
-      video.play().then(() => setPlaying(true)).catch(() => {
-        // Browser blocked unmuted autoplay — retry muted
+      video.play().then(() => setShowPoster(false)).catch(() => {
         video.muted = true;
-        video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
+        video.play().then(() => setShowPoster(false)).catch(() => {});
       });
+      // Show paywall popup when last free reel ends
+      if (isLastFree) {
+        const handleEnded = () => onShowPaywall();
+        video.addEventListener("ended", handleEnded);
+        return () => video.removeEventListener("ended", handleEnded);
+      }
     } else {
       video.pause();
       video.currentTime = 0;
-      setPlaying(false);
     }
-  }, [isActive, isMuted]);
+  }, [isActive, isMuted, isLastFree, onShowPaywall]);
 
   const handleTap = () => {
     const video = videoRef.current;
@@ -46,27 +54,37 @@ const ReelItem = ({
       onUnmute();
       return;
     }
-    if (video.paused) {
-      video.play().then(() => setPlaying(true));
-    } else {
-      video.pause();
-      setPlaying(false);
-    }
+    if (video.paused) video.play();
+    else video.pause();
   };
+
+  // Use companion image as poster/thumbnail
+  const posterUrl = reel.thumbnail_url || reel.companion?.image_url || "";
 
   return (
     <div className="relative h-[100dvh] w-full snap-start snap-always bg-black flex items-center justify-center">
+      {/* Poster/thumbnail while loading */}
+      {showPoster && posterUrl && (
+        <img
+          src={posterUrl}
+          alt=""
+          className="absolute inset-0 h-full w-full object-cover z-[1]"
+        />
+      )}
+
       <video
         ref={videoRef}
         src={reel.video_url}
         className="h-full w-full object-cover"
         loop
         playsInline
+        poster={posterUrl}
         preload={isActive ? "auto" : "metadata"}
         onClick={handleTap}
+        onCanPlay={() => { if (isActive) setShowPoster(false); }}
       />
 
-      {/* Tap to unmute hint */}
+      {/* Tap to unmute */}
       {isActive && isMuted && (
         <button
           onClick={() => {
@@ -80,50 +98,54 @@ const ReelItem = ({
         </button>
       )}
 
-      {/* Companion avatar — right side */}
+      {/* RIGHT SIDE — Profile avatar (Instagram-style, bottom-right) */}
       {reel.companion && (
-        <div className="absolute bottom-36 right-3 z-10">
+        <div className="absolute right-3 bottom-32 z-10 flex flex-col items-center gap-3">
           <button
             onClick={() => navigate(`/chat/${reel.companion_slug}`)}
-            className="flex flex-col items-center gap-1"
+            className="relative"
           >
-            <Avatar className="h-10 w-10 ring-2 ring-primary">
+            <Avatar className="h-12 w-12 ring-2 ring-primary shadow-lg">
               <AvatarImage src={reel.companion.image_url || ""} alt={reel.companion.name} />
-              <AvatarFallback className="bg-primary/20 text-primary text-xs">
+              <AvatarFallback className="bg-primary/20 text-primary text-sm font-bold">
                 {reel.companion.name[0]}
               </AvatarFallback>
             </Avatar>
+            <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-primary px-1.5 py-0.5 text-[8px] font-bold text-primary-foreground shadow">
+              +
+            </span>
+          </button>
+          <button
+            onClick={() => navigate(`/chat/${reel.companion_slug}`)}
+            className="rounded-full bg-primary/20 p-2.5 backdrop-blur-sm"
+          >
+            <MessageCircle className="h-5 w-5 text-primary" />
           </button>
         </div>
       )}
 
-      {/* Bottom info + CTA */}
-      <div className="absolute bottom-6 left-4 right-16 z-10">
+      {/* BOTTOM — Name bar + Chat CTA */}
+      <div className="absolute bottom-4 left-3 right-20 z-10">
         {reel.companion && (
-          <button
-            onClick={() => navigate(`/chat/${reel.companion_slug}`)}
-            className="mb-2 flex items-center gap-2 rounded-full bg-black/40 px-3 py-1.5 backdrop-blur-sm"
-          >
-            <Avatar className="h-6 w-6">
-              <AvatarImage src={reel.companion.image_url || ""} />
-              <AvatarFallback className="text-[10px]">{reel.companion.name[0]}</AvatarFallback>
-            </Avatar>
-            <span className="text-xs font-semibold text-white">
-              {reel.companion.name}, {reel.companion.age}
+          <div className="mb-2 flex items-center gap-2">
+            <span className="text-sm font-bold text-white drop-shadow-lg">
+              @{reel.companion.name.toLowerCase().replace(/\s/g, "")}
             </span>
-            <span className="text-[10px] text-white/70">{reel.companion.city}</span>
-          </button>
+            <span className="text-xs text-white/60">
+              {reel.companion.age} · {reel.companion.city}
+            </span>
+          </div>
         )}
         {reel.caption && (
-          <p className="text-sm font-medium text-white drop-shadow-lg">{reel.caption}</p>
+          <p className="mb-2 text-sm text-white/90 drop-shadow-lg line-clamp-2">{reel.caption}</p>
         )}
         {reel.companion && (
           <Button
             size="sm"
             onClick={() => navigate(`/chat/${reel.companion_slug}`)}
-            className="mt-2 gap-1.5 rounded-full bg-primary text-primary-foreground shadow-lg"
+            className="gap-1.5 rounded-full bg-primary text-primary-foreground shadow-lg text-xs"
           >
-            <MessageCircle className="h-4 w-4" /> Chat with {reel.companion.name} 💬
+            <MessageCircle className="h-3.5 w-3.5" /> Chat with {reel.companion.name} 💬
           </Button>
         )}
       </div>
@@ -131,39 +153,50 @@ const ReelItem = ({
   );
 };
 
-const RechargeSlide = () => {
+/** Small popup overlay instead of full-page paywall */
+const RechargePopup = ({ onClose }: { onClose: () => void }) => {
   const navigate = useNavigate();
   return (
-    <div className="relative flex h-[100dvh] w-full snap-start snap-always items-center justify-center bg-gradient-to-b from-black via-black/95 to-black">
-      <div className="flex flex-col items-center gap-5 px-6 text-center">
-        <div className="rounded-full bg-primary/20 p-4">
-          <Crown className="h-12 w-12 text-primary" />
-        </div>
-        <div className="flex items-center gap-2">
-          <Lock className="h-5 w-5 text-white/60" />
-          <h2 className="text-xl font-bold text-white">Unlock Hot Reels 🔥</h2>
-        </div>
-        <p className="max-w-xs text-sm text-white/70">
-          Get access to 500+ exclusive reels and unlimited chat with your favorite companions
-        </p>
-        <div className="mt-2 rounded-2xl border border-primary/30 bg-primary/10 p-5 backdrop-blur-sm">
-          <p className="text-3xl font-extrabold text-primary">₹999</p>
-          <p className="mt-1 text-sm font-medium text-white/80">10 Days Unlimited Access</p>
-          <ul className="mt-3 space-y-1.5 text-left text-xs text-white/60">
-            <li>✅ 500+ exclusive hot reels</li>
-            <li>✅ Unlimited chat minutes</li>
-            <li>✅ Priority matching</li>
-            <li>✅ No ads</li>
-          </ul>
-        </div>
-        <Button
-          size="lg"
-          onClick={() => navigate("/recharge")}
-          className="mt-2 w-full max-w-xs gap-2 rounded-full bg-primary text-primary-foreground text-base font-bold shadow-xl"
+    <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm">
+      <div className="relative mx-3 mb-6 w-full max-w-sm animate-in slide-in-from-bottom-4 rounded-2xl border border-primary/30 bg-black/90 p-5 backdrop-blur-xl">
+        <button
+          onClick={onClose}
+          className="absolute right-3 top-3 rounded-full bg-white/10 p-1"
         >
-          <Crown className="h-5 w-5" /> Get 10-Day Pass — ₹999
+          <X className="h-4 w-4 text-white/60" />
+        </button>
+
+        <div className="flex items-center gap-3 mb-3">
+          <div className="rounded-full bg-primary/20 p-2.5">
+            <Crown className="h-6 w-6 text-primary" />
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-white">Unlock Hot Reels 🔥</h3>
+            <p className="text-xs text-white/60">On your first recharge</p>
+          </div>
+        </div>
+
+        <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 mb-3">
+          <div className="flex items-baseline justify-between">
+            <div>
+              <p className="text-2xl font-extrabold text-primary">₹999</p>
+              <p className="text-xs text-white/70">10 Days Unlimited Access</p>
+            </div>
+            <div className="text-right text-[10px] text-white/50 space-y-0.5">
+              <p>✅ 500+ hot reels</p>
+              <p>✅ Unlimited chat</p>
+              <p>✅ Priority matching</p>
+            </div>
+          </div>
+        </div>
+
+        <Button
+          onClick={() => navigate("/recharge")}
+          className="w-full gap-2 rounded-full bg-primary text-primary-foreground font-bold shadow-xl"
+        >
+          <Crown className="h-4 w-4" /> Recharge ₹999 — Unlock All
         </Button>
-        <p className="text-[10px] text-white/40">One-time payment · No auto-renewal</p>
+        <p className="mt-2 text-center text-[9px] text-white/30">One-time · No auto-renewal</p>
       </div>
     </div>
   );
@@ -176,7 +209,8 @@ const ReelsPage = () => {
   const startIndex = parseInt(searchParams.get("start") || "0", 10);
   const containerRef = useRef<HTMLDivElement>(null);
   const [activeIndex, setActiveIndex] = useState(startIndex);
-  const [isMuted, setIsMuted] = useState(true); // start muted for autoplay
+  const [isMuted, setIsMuted] = useState(true);
+  const [showPaywall, setShowPaywall] = useState(false);
 
   const FREE_REEL_LIMIT = 4;
 
@@ -215,10 +249,10 @@ const ReelsPage = () => {
   }
 
   const freeReels = reels.slice(0, FREE_REEL_LIMIT);
-  const showPaywall = reels.length >= FREE_REEL_LIMIT;
 
   return (
     <div className="relative h-[100dvh] w-full bg-black">
+      {/* Back button */}
       <button
         onClick={() => navigate(-1)}
         className="fixed left-4 top-4 z-50 rounded-full bg-black/50 p-2 backdrop-blur-sm"
@@ -238,15 +272,15 @@ const ReelsPage = () => {
               isActive={i === activeIndex}
               isMuted={isMuted}
               onUnmute={() => setIsMuted(false)}
+              isLastFree={i === FREE_REEL_LIMIT - 1}
+              onShowPaywall={() => setShowPaywall(true)}
             />
           </div>
         ))}
-        {showPaywall && (
-          <div data-index={FREE_REEL_LIMIT}>
-            <RechargeSlide />
-          </div>
-        )}
       </div>
+
+      {/* Paywall popup */}
+      {showPaywall && <RechargePopup onClose={() => setShowPaywall(false)} />}
     </div>
   );
 };
