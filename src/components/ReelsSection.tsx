@@ -1,4 +1,4 @@
-import { useReels, getGDriveThumbnailUrl, extractGDriveFileId } from "@/hooks/useReels";
+import { useReels, getGDriveThumbnailUrl } from "@/hooks/useReels";
 import { Play, Heart, Film } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -53,10 +53,13 @@ const ReelsSection = () => {
                   <Play className="h-4 w-4 fill-primary text-primary" />
                 </div>
               </div>
-              {/* Caption + likes */}
+              {/* Companion name + caption */}
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
+                {reel.companion && (
+                  <p className="truncate text-[10px] font-bold text-white">{reel.companion.name}</p>
+                )}
                 {reel.caption && (
-                  <p className="truncate text-[10px] font-medium text-white">{reel.caption}</p>
+                  <p className="truncate text-[9px] text-white/80">{reel.caption}</p>
                 )}
                 {reel.likes_count > 0 && (
                   <div className="mt-0.5 flex items-center gap-1">
