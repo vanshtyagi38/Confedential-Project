@@ -32,6 +32,8 @@ export const getGDriveEmbedUrl = (url: string): string => {
 };
 
 export const getGDriveDirectUrl = (url: string): string => {
+  // If it's a local file (starts with /), return as-is
+  if (url.startsWith('/')) return url;
   const fileId = extractGDriveFileId(url);
   if (fileId) return `https://drive.google.com/uc?export=download&id=${fileId}`;
   return url;

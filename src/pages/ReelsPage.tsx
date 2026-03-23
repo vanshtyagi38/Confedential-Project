@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import { useReels, getGDriveDirectUrl, extractGDriveFileId, type Reel } from "@/hooks/useReels";
-import { ArrowLeft, Heart, Share2, Volume2, VolumeX, Play, MessageCircle, Lock, Crown } from "lucide-react";
+import { useReels, type Reel } from "@/hooks/useReels";
+import { ArrowLeft, MessageCircle, Lock, Crown } from "lucide-react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -9,13 +9,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
   const videoRef = useRef<HTMLVideoElement>(null);
   const navigate = useNavigate();
-  const [liked, setLiked] = useState(false);
-  const [muted, setMuted] = useState(true);
   const [playing, setPlaying] = useState(false);
-  const [videoError, setVideoError] = useState(false);
-
-  const fileId = extractGDriveFileId(reel.video_url);
-  const videoSrc = getGDriveDirectUrl(reel.video_url);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -24,6 +18,7 @@ const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
       video.play().then(() => setPlaying(true)).catch(() => setPlaying(false));
     } else {
       video.pause();
+      video.currentTime = 0;
       setPlaying(false);
     }
   }, [isActive]);
@@ -39,57 +34,22 @@ const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
     }
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      await navigator.share({ title: reel.caption || "Check this reel!", url: window.location.href });
-    }
-  };
-
-  const embedUrl = fileId ? `https://drive.google.com/file/d/${fileId}/preview` : reel.video_url;
-
   return (
-    <div className="relative h-[100dvh] w-full snap-start snap-always bg-black">
-      {isActive || true ? (
-        videoError ? (
-          <iframe
-            src={embedUrl}
-            className="absolute inset-0 h-full w-full"
-            allow="autoplay; encrypted-media"
-            allowFullScreen
-            style={{ border: "none" }}
-          />
-        ) : (
-          <>
-            <video
-              ref={videoRef}
-              src={videoSrc}
-              className="absolute inset-0 h-full w-full object-contain"
-              loop
-              muted={muted}
-              playsInline
-              preload={isActive ? "auto" : "metadata"}
-              onClick={togglePlay}
-              onError={() => setVideoError(true)}
-            />
-            {!playing && isActive && (
-              <button onClick={togglePlay} className="absolute inset-0 z-10 flex items-center justify-center">
-                <div className="rounded-full bg-black/40 p-4">
-                  <Play className="h-10 w-10 fill-white text-white" />
-                </div>
-              </button>
-            )}
-          </>
-        )
-      ) : (
-        <div className="flex h-full w-full items-center justify-center bg-black">
-          <Loader2 className="h-8 w-8 animate-spin text-white/40" />
-        </div>
-      )}
+    <div className="relative h-[100dvh] w-full snap-start snap-always bg-black flex items-center justify-center">
+      <video
+        ref={videoRef}
+        src={reel.video_url}
+        className="h-full w-full object-cover"
+        loop
+        muted={false}
+        playsInline
+        preload={isActive ? "auto" : "metadata"}
+        onClick={togglePlay}
+      />
 
-      {/* Right side actions */}
-      <div className="absolute bottom-32 right-3 z-10 flex flex-col items-center gap-5">
-        {/* Companion avatar */}
-        {reel.companion && (
+      {/* Companion avatar - right side */}
+      {reel.companion && (
+        <div className="absolute bottom-36 right-3 z-10">
           <button
             onClick={() => navigate(`/chat/${reel.companion_slug}`)}
             className="flex flex-col items-center gap-1"
@@ -99,19 +59,8 @@ const ReelItem = ({ reel, isActive }: { reel: Reel; isActive: boolean }) => {
               <AvatarFallback>{reel.companion.name[0]}</AvatarFallback>
             </Avatar>
           </button>
-        )}
-        <button onClick={() => setMuted(!muted)} className="flex flex-col items-center gap-1">
-          {muted ? <VolumeX className="h-6 w-6 text-white" /> : <Volume2 className="h-6 w-6 text-white" />}
-        </button>
-        <button onClick={() => setLiked(!liked)} className="flex flex-col items-center gap-1">
-          <Heart className={`h-7 w-7 transition-all ${liked ? "fill-red-500 text-red-500 scale-110" : "text-white"}`} />
-          <span className="text-[10px] font-medium text-white">{reel.likes_count + (liked ? 1 : 0)}</span>
-        </button>
-        <button onClick={handleShare} className="flex flex-col items-center gap-1">
-          <Share2 className="h-6 w-6 text-white" />
-          <span className="text-[10px] font-medium text-white">Share</span>
-        </button>
-      </div>
+        </div>
+      )}
 
       {/* Bottom: companion info + chat CTA */}
       <div className="absolute bottom-6 left-4 right-16 z-10">
