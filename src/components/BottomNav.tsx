@@ -1,12 +1,12 @@
-import { Home, MessageCircle, Gift, Wallet, User } from "lucide-react";
+import { Home, MessageCircle, Gift, Wallet, User, Film } from "lucide-react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 
 const navItems = [
   { icon: Home, label: "Home", path: "/", public: true },
+  { icon: Film, label: "Reels", path: "/reels", public: true },
   { icon: MessageCircle, label: "Chats", path: "/chats", public: false },
   { icon: Gift, label: "Earn", path: "/earn", public: false },
-  { icon: Wallet, label: "Recharge", path: "/recharge", public: false },
   { icon: User, label: "Profile", path: "/profile", public: false },
 ];
 

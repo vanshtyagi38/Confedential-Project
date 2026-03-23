@@ -3,7 +3,7 @@ import { useState } from "react";
 import {
   LayoutDashboard, Users, MessageSquare, CreditCard,
   BarChart3, Settings, Shield, LogOut, Activity, Heart, HelpCircle, UserPlus, Bell, ShieldCheck, Gauge, LineChart, Globe,
-  ChevronDown, FileText, Zap, Layout
+  ChevronDown, FileText, Zap, Layout, Film
 } from "lucide-react";
 
 const links = [
@@ -19,6 +19,7 @@ const links = [
   { to: "/admin/wishlist", icon: UserPlus, label: "Wishlist" },
   { to: "/admin/api-analytics", icon: Gauge, label: "API Analytics" },
   { to: "/admin/ga4", icon: LineChart, label: "Google Analytics" },
+  { to: "/admin/reels", icon: Film, label: "Reels" },
 ];
 
 const seoSubLinks = [

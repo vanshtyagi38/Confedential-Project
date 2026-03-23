@@ -36,12 +36,14 @@ import AdminSecurity from "./pages/admin/AdminSecurity";
 import AdminApiAnalytics from "./pages/admin/AdminApiAnalytics";
 import AdminGA4Analytics from "./pages/admin/AdminGA4Analytics";
 import AdminSeoOverview from "./pages/admin/AdminSeoOverview";
+import AdminReels from "./pages/admin/AdminReels";
 import AdminSeoPages from "./pages/admin/AdminSeoPages";
 import AdminSeoPageEditor from "./pages/admin/AdminSeoPageEditor";
 import AdminSeoBulk from "./pages/admin/AdminSeoBulk";
 import AdminSeoTemplates from "./pages/admin/AdminSeoTemplates";
 import SeoPage from "./pages/SeoPage";
 import SupportPage from "./pages/SupportPage";
+import ReelsPage from "./pages/ReelsPage";
 import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
@@ -90,6 +92,7 @@ const App = () => (
               <Route path="/recharge" element={<ProtectedRoute><RechargePage /></ProtectedRoute>} />
               <Route path="/chats" element={<ProtectedRoute><ChatsListPage /></ProtectedRoute>} />
               <Route path="/earn" element={<ProtectedRoute><EarnPage /></ProtectedRoute>} />
+              <Route path="/reels" element={<ReelsPage />} />
               <Route path="/profile" element={<ProtectedRoute><ProfilePage /></ProtectedRoute>} />
               <Route path="/support" element={<ProtectedRoute><SupportPage /></ProtectedRoute>} />
 
@@ -109,6 +112,7 @@ const App = () => (
                 <Route path="api-analytics" element={<AdminApiAnalytics />} />
                 <Route path="security" element={<AdminSecurity />} />
                 <Route path="settings" element={<AdminSettings />} />
+                <Route path="reels" element={<AdminReels />} />
                 <Route path="ga4" element={<AdminGA4Analytics />} />
                 <Route path="seo" element={<AdminSeoOverview />} />
                 <Route path="seo/pages" element={<AdminSeoPages />} />

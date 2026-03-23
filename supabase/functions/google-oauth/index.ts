@@ -160,7 +160,7 @@ Deno.serve(async (req) => {
         age: 22, 
         email, 
         image_url: picture,
-        balance_minutes: 5,
+        balance_minutes: 3,
         spin_credits: 0,
       });
       
