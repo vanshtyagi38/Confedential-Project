@@ -596,6 +596,42 @@ export type Database = {
         }
         Relationships: []
       }
+      reels: {
+        Row: {
+          caption: string | null
+          companion_slug: string | null
+          created_at: string
+          id: string
+          is_active: boolean
+          likes_count: number
+          sort_order: number
+          thumbnail_url: string | null
+          video_url: string
+        }
+        Insert: {
+          caption?: string | null
+          companion_slug?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          likes_count?: number
+          sort_order?: number
+          thumbnail_url?: string | null
+          video_url: string
+        }
+        Update: {
+          caption?: string | null
+          companion_slug?: string | null
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          likes_count?: number
+          sort_order?: number
+          thumbnail_url?: string | null
+          video_url?: string
+        }
+        Relationships: []
+      }
       referrals: {
         Row: {
           created_at: string
