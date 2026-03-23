@@ -25,6 +25,18 @@ export const getGDriveEmbedUrl = (url: string): string => {
   return url;
 };
 
+export const getGDriveStreamUrl = (url: string): string => {
+  const fileId = extractGDriveFileId(url);
+  if (fileId) return `https://www.googleapis.com/drive/v3/files/${fileId}?alt=media&key=AIzaSyDummy`;
+  return url;
+};
+
+export const getGDriveDirectUrl = (url: string): string => {
+  const fileId = extractGDriveFileId(url);
+  if (fileId) return `https://drive.google.com/uc?export=download&id=${fileId}`;
+  return url;
+};
+
 export const getGDriveThumbnailUrl = (url: string): string => {
   const fileId = extractGDriveFileId(url);
   if (fileId) return `https://drive.google.com/thumbnail?id=${fileId}&sz=w400`;
