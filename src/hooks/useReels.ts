@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { imageKeyMap } from "@/data/companions";
 
 export type Reel = {
   id: string;
@@ -32,7 +33,6 @@ export const getGDriveEmbedUrl = (url: string): string => {
 };
 
 export const getGDriveDirectUrl = (url: string): string => {
-  // If it's a local file (starts with /), return as-is
   if (url.startsWith('/')) return url;
   const fileId = extractGDriveFileId(url);
   if (fileId) return `https://drive.google.com/uc?export=download&id=${fileId}`;
@@ -51,7 +51,6 @@ export const useReels = () => {
 
   useEffect(() => {
     const load = async () => {
-      // Fetch reels
       const { data: reelsData } = await (supabase as any)
         .from("reels")
         .select("*")
@@ -60,7 +59,6 @@ export const useReels = () => {
 
       if (!reelsData) { setReels([]); setLoading(false); return; }
 
-      // Fetch companion data for reels that have companion_slug
       const slugs = reelsData
         .map((r: any) => r.companion_slug)
         .filter(Boolean);
@@ -69,10 +67,16 @@ export const useReels = () => {
       if (slugs.length > 0) {
         const { data: companions } = await (supabase as any)
           .from("companions")
-          .select("slug, name, image_url, age, city")
+          .select("slug, name, image_url, image_key, age, city")
           .in("slug", slugs);
         if (companions) {
-          companions.forEach((c: any) => { companionMap[c.slug] = c; });
+          companions.forEach((c: any) => {
+            // Resolve image: use image_key mapped to local asset, fallback to image_url
+            const resolvedImage = c.image_key && imageKeyMap[c.image_key]
+              ? imageKeyMap[c.image_key]
+              : c.image_url;
+            companionMap[c.slug] = { ...c, image_url: resolvedImage };
+          });
         }
       }
 
