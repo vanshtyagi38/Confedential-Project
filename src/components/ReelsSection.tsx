@@ -26,7 +26,7 @@ const ReelsSection = () => {
 
       <div className="mt-3 flex gap-3 overflow-x-auto pb-2 no-scrollbar snap-x snap-mandatory">
         {reels.slice(0, 10).map((reel, i) => {
-          const thumbnail = reel.thumbnail_url || getGDriveThumbnailUrl(reel.video_url);
+          const thumbnail = reel.thumbnail_url || reel.companion?.image_url || getGDriveThumbnailUrl(reel.video_url);
           return (
             <button
               key={reel.id}
