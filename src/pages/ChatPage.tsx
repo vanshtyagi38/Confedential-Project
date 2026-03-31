@@ -164,6 +164,7 @@ const ChatPage = () => {
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
   const [outOfBalance, setOutOfBalance] = useState(false);
+  const [showRechargePopup, setShowRechargePopup] = useState(false);
   const [displayBalance, setDisplayBalance] = useState(profile?.balance_minutes || 0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -333,7 +334,7 @@ const ChatPage = () => {
   useEffect(() => {
     if (isOwnerMode) return; // Owners don't pay balance
     setDisplayBalance(profile?.balance_minutes || 0);
-    if ((profile?.balance_minutes || 0) <= 0) setOutOfBalance(true);
+    if ((profile?.balance_minutes || 0) <= 0) { setOutOfBalance(true); setShowRechargePopup(true); }
   }, [profile?.balance_minutes, isOwnerMode]);
 
   const stopTimer = useCallback(() => {
@@ -428,6 +429,7 @@ const ChatPage = () => {
       setDisplayBalance(newBalance);
       if (newBalance <= 0) {
         setOutOfBalance(true);
+        setShowRechargePopup(true);
         stopTimer();
       }
     } catch (err) {
@@ -577,6 +579,7 @@ const ChatPage = () => {
       setDisplayBalance(freshBalance);
       if (freshBalance <= 0) {
         setOutOfBalance(true);
+        setShowRechargePopup(true);
         toast.error("Out of chat minutes! Recharge to continue.", {
           action: { label: "Recharge", onClick: () => navigate("/recharge") },
         });
@@ -1083,6 +1086,40 @@ const ChatPage = () => {
           <div className="flex gap-2 mt-2">
             <button onClick={() => setDeleteChatOpen(false)} className="flex-1 rounded-xl border border-border py-2.5 text-sm font-medium">Cancel</button>
             <button onClick={handleDeleteEntireChat} className="flex-1 rounded-xl bg-destructive py-2.5 text-sm font-bold text-destructive-foreground">Delete</button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Recharge Popup */}
+      <Dialog open={showRechargePopup} onOpenChange={setShowRechargePopup}>
+        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden">
+          <div className="gradient-primary p-6 text-center">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
+              <Zap className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <h3 className="text-xl font-bold text-primary-foreground">Minutes Khatam! 😢</h3>
+            <p className="mt-1 text-sm text-primary-foreground/80">
+              Recharge now to continue chatting with {companion?.name}
+            </p>
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center">
+              <p className="text-xs text-muted-foreground">Best Value Pack</p>
+              <p className="mt-1 text-2xl font-bold text-primary">₹999</p>
+              <p className="text-sm text-muted-foreground">10 Days Unlimited Chat</p>
+            </div>
+            <button
+              onClick={() => { setShowRechargePopup(false); navigate("/recharge"); }}
+              className="w-full rounded-xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground transition-transform active:scale-95"
+            >
+              Recharge Now 🚀
+            </button>
+            <button
+              onClick={() => setShowRechargePopup(false)}
+              className="w-full text-xs text-muted-foreground"
+            >
+              Maybe Later
+            </button>
           </div>
         </DialogContent>
       </Dialog>
