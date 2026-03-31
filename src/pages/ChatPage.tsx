@@ -334,7 +334,7 @@ const ChatPage = () => {
   useEffect(() => {
     if (isOwnerMode) return; // Owners don't pay balance
     setDisplayBalance(profile?.balance_minutes || 0);
-    if ((profile?.balance_minutes || 0) <= 0) setOutOfBalance(true);
+    if ((profile?.balance_minutes || 0) <= 0) { setOutOfBalance(true); setShowRechargePopup(true); }
   }, [profile?.balance_minutes, isOwnerMode]);
 
   const stopTimer = useCallback(() => {
