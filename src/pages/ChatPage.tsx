@@ -164,6 +164,7 @@ const ChatPage = () => {
   const [pendingImagePreview, setPendingImagePreview] = useState<string | null>(null);
   const [online, setOnline] = useState(true);
   const [outOfBalance, setOutOfBalance] = useState(false);
+  const [showRechargePopup, setShowRechargePopup] = useState(false);
   const [displayBalance, setDisplayBalance] = useState(profile?.balance_minutes || 0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
