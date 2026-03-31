@@ -1090,6 +1090,40 @@ const ChatPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Recharge Popup */}
+      <Dialog open={showRechargePopup} onOpenChange={setShowRechargePopup}>
+        <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden">
+          <div className="gradient-primary p-6 text-center">
+            <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
+              <Zap className="h-8 w-8 text-primary-foreground" />
+            </div>
+            <h3 className="text-xl font-bold text-primary-foreground">Minutes Khatam! 😢</h3>
+            <p className="mt-1 text-sm text-primary-foreground/80">
+              Recharge now to continue chatting with {companion?.name}
+            </p>
+          </div>
+          <div className="p-5 space-y-4">
+            <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center">
+              <p className="text-xs text-muted-foreground">Best Value Pack</p>
+              <p className="mt-1 text-2xl font-bold text-primary">₹999</p>
+              <p className="text-sm text-muted-foreground">10 Days Unlimited Chat</p>
+            </div>
+            <button
+              onClick={() => { setShowRechargePopup(false); navigate("/recharge"); }}
+              className="w-full rounded-xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground transition-transform active:scale-95"
+            >
+              Recharge Now 🚀
+            </button>
+            <button
+              onClick={() => setShowRechargePopup(false)}
+              className="w-full text-xs text-muted-foreground"
+            >
+              Maybe Later
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
       {/* Input */}
       <div className="border-t bg-card px-3 py-3 pb-[calc(0.75rem+env(safe-area-inset-bottom))]">
         <div className="flex items-center gap-2">
