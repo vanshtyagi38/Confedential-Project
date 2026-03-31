@@ -579,6 +579,7 @@ const ChatPage = () => {
       setDisplayBalance(freshBalance);
       if (freshBalance <= 0) {
         setOutOfBalance(true);
+        setShowRechargePopup(true);
         toast.error("Out of chat minutes! Recharge to continue.", {
           action: { label: "Recharge", onClick: () => navigate("/recharge") },
         });
