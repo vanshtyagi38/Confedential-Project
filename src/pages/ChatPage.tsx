@@ -429,6 +429,7 @@ const ChatPage = () => {
       setDisplayBalance(newBalance);
       if (newBalance <= 0) {
         setOutOfBalance(true);
+        setShowRechargePopup(true);
         stopTimer();
       }
     } catch (err) {
