@@ -1102,6 +1102,10 @@ export type Database = {
         Args: { p_companion_slug: string; p_user_id: string }
         Returns: number
       }
+      deduct_chat_time: {
+        Args: { p_amount?: number; p_companion_slug: string; p_user_id: string }
+        Returns: number
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
