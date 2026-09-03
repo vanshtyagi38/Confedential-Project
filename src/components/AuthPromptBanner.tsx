@@ -17,7 +17,7 @@ const AuthPromptBanner = () => {
             Join SingleTape for free
           </p>
           <p className="text-[11px] text-muted-foreground">
-            Get 5 free minutes to chat now
+            Get 30 seconds free chat now
           </p>
         </div>
       </div>
