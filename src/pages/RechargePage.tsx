@@ -433,7 +433,7 @@ const RechargePage = () => {
       <div className="mx-4 mt-3 flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-3">
         <Gift className="h-4 w-4 text-accent" />
         <p className="text-xs text-muted-foreground">
-          First time? You got <span className="font-bold text-accent">5 FREE minutes</span> already! Recharge to keep going 💕
+          First time? You got <span className="font-bold text-accent">30 seconds FREE</span> already! Recharge to keep going 💕
         </p>
       </div>
 

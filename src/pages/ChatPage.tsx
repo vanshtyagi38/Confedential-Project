@@ -417,9 +417,10 @@ const ChatPage = () => {
   const deductOneMinute = useCallback(async () => {
     if (!session?.user?.id || !companion) return;
     try {
-      const { data, error } = await (supabase as any).rpc("deduct_chat_minute", {
+      const { data, error } = await (supabase as any).rpc("deduct_chat_time", {
         p_user_id: session.user.id,
         p_companion_slug: companion.id,
+        p_amount: 0.5,
       });
       if (error) {
         console.error("Deduction error:", error);
@@ -449,7 +450,7 @@ const ChatPage = () => {
       }
       // Deduct directly from DB every minute
       deductOneMinute();
-    }, 60000);
+    }, 30000);
   }, [isOwnerMode, resetIdleTimeout, stopTimer, deductOneMinute]);
 
   useEffect(() => {
@@ -850,7 +851,7 @@ const ChatPage = () => {
           <div className="flex items-center gap-1.5 rounded-full bg-secondary px-3 py-1.5 text-xs font-bold">
             <Clock className="h-3 w-3 text-accent" />
             <span className={displayBalance <= 2 ? "text-destructive" : "text-foreground"}>
-              {Math.floor(displayBalance)}m
+              {displayBalance < 1 ? `${Math.round(displayBalance * 60)}s` : `${Math.floor(displayBalance)}m`}
             </span>
           </div>
         )}
