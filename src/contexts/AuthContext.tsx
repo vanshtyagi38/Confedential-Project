@@ -128,7 +128,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { error } = await (supabase as any).from("user_profiles").insert({
       user_id: userId,
       ...data,
-      balance_minutes: 3,
+      balance_minutes: 0.5,
       referral_code: referralCode,
       spin_credits: 0,
     });
