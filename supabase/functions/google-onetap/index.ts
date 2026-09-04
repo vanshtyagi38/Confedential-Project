@@ -107,7 +107,15 @@ Deno.serve(async (req) => {
       isNew = true;
 
       const { error: profileError } = await supabaseAdmin.from("user_profiles").insert({
-        user_id: userId, display_name: name, gender: "male", preferred_gender: "female", age: 22, email, image_url: picture,
+        user_id: userId,
+        display_name: name,
+        gender: "male",
+        preferred_gender: "female",
+        age: 22,
+        email,
+        image_url: picture,
+        balance_minutes: 0.5,
+        spin_credits: 0,
       });
       if (profileError) console.error("Profile creation error:", profileError);
     }
