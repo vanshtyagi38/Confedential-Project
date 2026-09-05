@@ -10,7 +10,7 @@ import { updateStreak } from "@/lib/streakEngine";
 import InstallAppPopup from "@/components/InstallAppPopup";
 import { useRealtimeChat, useTypingIndicator } from "@/hooks/useRealtimeChat";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
@@ -85,6 +85,26 @@ async function streamChat({
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let textBuffer = "";
+  let streamFinished = false;
+
+  const processSseLine = (rawLine: string) => {
+    let line = rawLine;
+    if (line.endsWith("\r")) line = line.slice(0, -1);
+    if (line.startsWith(":") || line.trim() === "" || !line.startsWith("data: ")) return;
+    const jsonStr = line.slice(6).trim();
+    if (jsonStr === "[DONE]") {
+      streamFinished = true;
+      return;
+    }
+    try {
+      const parsed = JSON.parse(jsonStr);
+      const content = parsed.choices?.[0]?.delta?.content as string | undefined;
+      if (content) onDelta(content);
+    } catch {
+      // SSE events are line-delimited; keep incomplete data in the buffer.
+      textBuffer = line + "\n" + textBuffer;
+    }
+  };
 
   while (true) {
     const { done, value } = await reader.read();
@@ -93,37 +113,17 @@ async function streamChat({
 
     let newlineIndex: number;
     while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
-      let line = textBuffer.slice(0, newlineIndex);
+      const line = textBuffer.slice(0, newlineIndex);
       textBuffer = textBuffer.slice(newlineIndex + 1);
-      if (line.endsWith("\r")) line = line.slice(0, -1);
-      if (line.startsWith(":") || line.trim() === "") continue;
-      if (!line.startsWith("data: ")) continue;
-      const jsonStr = line.slice(6).trim();
-      if (jsonStr === "[DONE]") break;
-      try {
-        const parsed = JSON.parse(jsonStr);
-        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-        if (content) onDelta(content);
-      } catch {
-        textBuffer = line + "\n" + textBuffer;
-        break;
-      }
+      processSseLine(line);
+      if (streamFinished) break;
     }
+    if (streamFinished) break;
   }
 
+  textBuffer += decoder.decode();
   if (textBuffer.trim()) {
-    for (let raw of textBuffer.split("\n")) {
-      if (!raw) continue;
-      if (raw.endsWith("\r")) raw = raw.slice(0, -1);
-      if (!raw.startsWith("data: ")) continue;
-      const jsonStr = raw.slice(6).trim();
-      if (jsonStr === "[DONE]") continue;
-      try {
-        const parsed = JSON.parse(jsonStr);
-        const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-        if (content) onDelta(content);
-      } catch { /* ignore */ }
-    }
+    for (const raw of textBuffer.split("\n")) processSseLine(raw);
   }
   onDone();
 }
@@ -1045,6 +1045,7 @@ const ChatPage = () => {
               <AlertTriangle className="h-5 w-5 text-destructive" />
               Report {companion.name}
             </DialogTitle>
+            <DialogDescription>Tell us what went wrong so we can review this profile.</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">Tell us what's wrong. We'll review your report and take action.</p>
@@ -1082,6 +1083,7 @@ const ChatPage = () => {
         <DialogContent className="max-w-sm rounded-3xl">
           <DialogHeader>
             <DialogTitle className="text-destructive">Delete Entire Chat</DialogTitle>
+            <DialogDescription>This permanently removes your messages with {companion.name}.</DialogDescription>
           </DialogHeader>
           <p className="text-sm text-muted-foreground">This will delete all messages with {companion.name}. This cannot be undone.</p>
           <div className="flex gap-2 mt-2">
@@ -1094,6 +1096,8 @@ const ChatPage = () => {
       {/* Recharge Popup */}
       <Dialog open={showRechargePopup} onOpenChange={setShowRechargePopup}>
         <DialogContent className="max-w-sm rounded-3xl p-0 overflow-hidden">
+          <DialogTitle className="sr-only">Recharge to continue chatting</DialogTitle>
+          <DialogDescription className="sr-only">Your chat minutes are empty. Recharge to continue chatting with {companion?.name}.</DialogDescription>
           <div className="gradient-primary p-6 text-center">
             <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-white/20">
               <Zap className="h-8 w-8 text-primary-foreground" />
