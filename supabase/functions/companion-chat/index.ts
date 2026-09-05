@@ -439,7 +439,7 @@ ${commonInstructions}`;
         ],
         stream: true,
         temperature: 0.95,
-        max_tokens: 220,
+         max_tokens: 320,
       }),
     });
 
