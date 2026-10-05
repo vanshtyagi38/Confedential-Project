@@ -6,6 +6,7 @@ import { Companion } from "@/data/companions";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogTitle,
 } from "@/components/ui/dialog";
 
@@ -89,6 +90,9 @@ const ActiveNow = ({ companions, presenceMap }: ActiveNowProps) => {
       <Dialog open={!!selectedCompanion} onOpenChange={() => setSelectedCompanion(null)}>
         <DialogContent className="w-[340px] max-w-[92vw] rounded-[20px] p-0 overflow-hidden border-border/40 shadow-[0_8px_40px_-8px_hsl(var(--primary)/0.2)]">
           <DialogTitle className="sr-only">{selectedCompanion?.name}</DialogTitle>
+          <DialogDescription className="sr-only">
+            View {selectedCompanion?.name}'s profile and start a chat.
+          </DialogDescription>
           {selectedCompanion && (
             <>
               {/* Hero image */}
