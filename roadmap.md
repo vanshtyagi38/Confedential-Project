@@ -1,4 +1,4 @@
 - [x] Prevent companion replies from appearing truncated and ensure complete streamed responses
 - [x] Make the first few AI replies warmer, more curious, and engagement-focused
 - [x] Keep new-user starter balance at exactly 30 seconds and verify depletion popup
-- [x] Verify AI and real-user companion chat flows in a fresh browser session
+- [ ] Verify AI and real-user companion chat flows in a fresh browser session
