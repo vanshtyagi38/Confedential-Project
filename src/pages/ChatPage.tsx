@@ -38,6 +38,16 @@ const getTimeString = () =>
   new Date().toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit" });
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/companion-chat`;
+const INTERNAL_REPLY_PATTERNS = [
+  /^\s*(?:think(?:ing)?|analysis|reasoning|internal monologue|chain of thought)\b/i,
+  /\b(?:my response needs to|my focus should be|i need to make sure|this is still in the realm of|the user(?:'s| is) asking|i should respond by|response strategy|moderation analysis)\b/i,
+  /(?:^|\n)\s*\d+[.)]\s+\*\*/m,
+];
+const SAFE_RETRY_REPLY = "Ek sec, mera message sahi se nahi gaya—phir se bolo?";
+
+function isInternalCompanionReply(text: string): boolean {
+  return INTERNAL_REPLY_PATTERNS.some((pattern) => pattern.test(text));
+}
 
 // Human-like typing delay: ~40-60 WPM = ~1-1.5 sec per word
 // Average response ~6-7 words → ~6-10 seconds total thinking + typing
@@ -85,6 +95,7 @@ async function streamChat({
   const reader = resp.body.getReader();
   const decoder = new TextDecoder();
   let textBuffer = "";
+  let completionText = "";
   let streamFinished = false;
 
   const processSseLine = (rawLine: string) => {
@@ -99,7 +110,7 @@ async function streamChat({
     try {
       const parsed = JSON.parse(jsonStr);
       const content = parsed.choices?.[0]?.delta?.content as string | undefined;
-      if (content) onDelta(content);
+      if (content) completionText += content;
     } catch {
       // SSE events are line-delimited; keep incomplete data in the buffer.
       textBuffer = line + "\n" + textBuffer;
@@ -124,6 +135,11 @@ async function streamChat({
   textBuffer += decoder.decode();
   if (textBuffer.trim()) {
     for (const raw of textBuffer.split("\n")) processSseLine(raw);
+  }
+  const finalText = completionText.trim();
+  if (finalText) {
+    if (finalText === "[BLOCK_USER_30MIN]") onDelta(finalText);
+    else onDelta(isInternalCompanionReply(finalText) ? SAFE_RETRY_REPLY : completionText);
   }
   onDone();
 }
@@ -293,7 +309,11 @@ const ChatPage = () => {
         .eq("companion_slug", companion.id)
         .order("created_at", { ascending: false })
         .limit(500);
-      const data = rawData ? [...rawData].reverse() : null;
+      const data = rawData
+        ? [...rawData].reverse().filter((m: any) =>
+          m.role !== "assistant" || !isInternalCompanionReply(String(m.content || ""))
+        )
+        : null;
 
       if (data && data.length > 0) {
         const loaded: Message[] = data.map((m: any) => ({
@@ -720,7 +740,7 @@ const ChatPage = () => {
           streamTextRef.current += chunk;
           const currentText = streamTextRef.current;
           // Intercept block tag during streaming — don't show it
-          if (currentText.includes("[BLOCK_USER_30MIN]")) {
+          if (currentText.trim() === "[BLOCK_USER_30MIN]") {
             // Abort the stream immediately
             abortRef.current?.abort();
             releaseLock();
@@ -754,7 +774,7 @@ const ChatPage = () => {
           const finalText = streamTextRef.current.trim();
           
           // Double-check block tag in final text
-          if (finalText.includes("[BLOCK_USER_30MIN]")) {
+          if (finalText === "[BLOCK_USER_30MIN]") {
             const until = Date.now() + 30 * 60 * 1000;
             const key = `block_${session?.user?.id}_${companion.id}`;
             localStorage.setItem(key, until.toString());
