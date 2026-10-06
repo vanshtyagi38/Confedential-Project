@@ -2,3 +2,4 @@
 - [x] Make the first few AI replies warmer, more curious, and engagement-focused
 - [x] Keep new-user starter balance at exactly 30 seconds and verify depletion popup
 - [x] Verify AI and real-user companion chat flows in a fresh browser session
+- [ ] Prevent private companion planning text from reaching or reloading in user chats
