@@ -19,6 +19,7 @@ import ActiveUsers from "@/components/ActiveUsers";
 import { supabase } from "@/integrations/supabase/client";
 import GoogleOneTap from "@/components/GoogleOneTap";
 import AuthPromptBanner from "@/components/AuthPromptBanner";
+import RechargeOffer from "@/components/RechargeOffer";
 
 function shuffleArray<T>(arr: T[], seed: number): T[] {
   const shuffled = [...arr];
@@ -150,6 +151,7 @@ const Index = () => {
       </Helmet>
       <AppHeader />
       <AuthPromptBanner />
+      <RechargeOffer />
       {isAuthenticated && <BalanceCard />}
       
 

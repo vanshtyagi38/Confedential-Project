@@ -3,3 +3,6 @@
 - [x] Keep new-user starter balance at exactly 30 seconds and verify depletion popup
 - [x] Verify AI and real-user companion chat flows in a fresh browser session
 - [x] Prevent private companion planning text from reaching or reloading in user chats
+- [x] Put real recharge offers near the top of discovery with clear signup and recharge actions
+- [x] Replace misleading recharge pressure with accurate prices, balances, and benefits
+- [x] Verify the guest signup action and signed-in offer selection through the matching payment button; no payment submitted

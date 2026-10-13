@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import PageSEO from "@/components/PageSEO";
-import { ArrowLeft, Zap, Clock, CheckCircle2, ShieldCheck, Moon, Flame, Users, Gift, Timer, Sparkles, CreditCard, Smartphone } from "lucide-react";
+import { ArrowLeft, Zap, Clock, CheckCircle2, ShieldCheck, Gift, CreditCard, Smartphone } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
@@ -53,8 +54,6 @@ const RechargePage = () => {
   const [setupPreference, setSetupPreference] = useState("");
   const [setupAge, setSetupAge] = useState(22);
   const [accepted18, setAccepted18] = useState(false);
-  const [urgencyCount, setUrgencyCount] = useState(0);
-  const [countdown, setCountdown] = useState({ h: 2, m: 34, s: 12 });
   const [razorpayEnabled, setRazorpayEnabled] = useState(true);
   const [phonepeEnabled, setPhonepeEnabled] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -86,7 +85,8 @@ const RechargePage = () => {
         }));
         setPlans(mapped);
         if (mapped.length > 0) {
-          const best = mapped.find(p => p.highlight) || mapped[mapped.length - 1];
+          const requested = new URLSearchParams(window.location.search).get("plan");
+          const best = mapped.find(p => p.id === requested) || mapped.find(p => !p.isNight) || mapped[0];
           setSelected(best.id);
         }
       }
@@ -95,7 +95,7 @@ const RechargePage = () => {
     loadData();
   }, []);
 
-  const balance = Math.floor(profile?.balance_minutes || 0);
+  const balance = profile?.balance_minutes || 0;
   const selectedPlan = plans.find(p => p.id === selected) || plans[0];
 
   // Check for PhonePe return status
@@ -110,31 +110,6 @@ const RechargePage = () => {
       toast.error("Payment failed. Please try again.");
       window.history.replaceState({}, "", "/recharge");
     }
-  }, []);
-
-  // Urgency: people buying now
-  useEffect(() => {
-    const tick = () => {
-      setUrgencyCount(Math.floor(Math.random() * 8) + 3);
-      timeout = window.setTimeout(tick, (Math.random() * 3 + 2) * 1000);
-    };
-    let timeout = window.setTimeout(tick, 1000);
-    return () => clearTimeout(timeout);
-  }, []);
-
-  // Countdown timer
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setCountdown(prev => {
-        let { h, m, s } = prev;
-        s--;
-        if (s < 0) { s = 59; m--; }
-        if (m < 0) { m = 59; h--; }
-        if (h < 0) { h = 23; m = 59; s = 59; }
-        return { h, m, s };
-      });
-    }, 1000);
-    return () => clearInterval(interval);
   }, []);
 
   const handlePurchase = () => {
@@ -294,8 +269,6 @@ const RechargePage = () => {
     handlePurchase();
   };
 
-  const pad = (n: number) => String(n).padStart(2, "0");
-
   if (plansLoading || plans.length === 0 || !selectedPlan) {
     return (
       <div className="mx-auto min-h-screen w-full max-w-2xl bg-background flex items-center justify-center pb-20">
@@ -319,56 +292,27 @@ const RechargePage = () => {
         <h1 className="text-lg font-bold tracking-tight">Recharge Minutes</h1>
       </div>
 
-      {/* Urgency Banner */}
-      <div className="mx-4 mt-2 flex items-center gap-2 rounded-xl bg-destructive/10 border border-destructive/20 px-4 py-2.5 animate-pulse">
-        <Flame className="h-4 w-4 text-destructive shrink-0" />
-        <p className="text-xs font-bold text-destructive">
-          🔥 {urgencyCount} people just recharged in the last minute!
-        </p>
-      </div>
-
-      {/* Balance + Countdown */}
+      {/* Current balance */}
       <div className="mx-4 mt-3 flex gap-3">
         <div className="flex-1 flex items-center gap-3 rounded-2xl bg-card border border-border px-4 py-3">
           <Clock className="h-5 w-5 text-accent shrink-0" />
           <div>
             <p className="text-[10px] text-muted-foreground">Balance</p>
-            <p className="text-xl font-extrabold">{balance} <span className="text-xs font-medium text-muted-foreground">min</span></p>
+            <p className="text-xl font-extrabold">{balance < 1 ? Math.round(balance * 60) : Number(balance.toFixed(1))} <span className="text-xs font-medium text-muted-foreground">{balance < 1 ? "sec" : "min"}</span></p>
           </div>
-          {balance < 10 && <span className="ml-auto rounded-full bg-destructive/10 px-2.5 py-1 text-[10px] font-bold text-destructive">Low!</span>}
-        </div>
-        <div className="flex items-center gap-2 rounded-2xl bg-primary/5 border border-primary/20 px-4 py-3">
-          <Timer className="h-4 w-4 text-primary shrink-0" />
-          <div>
-            <p className="text-[10px] text-muted-foreground">Offer ends in</p>
-            <p className="text-lg font-extrabold text-primary tabular-nums">{pad(countdown.h)}:{pad(countdown.m)}:{pad(countdown.s)}</p>
-          </div>
+          {balance <= 0 && <span className="ml-auto text-xs font-semibold text-primary">Recharge to chat</span>}
         </div>
       </div>
 
       {/* Emotional hook */}
-      <p className="px-5 mt-4 mb-1 text-sm font-bold text-foreground">She's waiting... don't let her go 💔</p>
-      <p className="px-5 mb-4 text-xs text-muted-foreground">Good conversations take time. Choose a plan and keep the connection alive.</p>
-
-      {/* Night Mode Banner */}
-      <div className="mx-4 mb-4 rounded-2xl bg-gradient-to-r from-indigo-900 to-purple-900 p-4 relative overflow-hidden">
-        <div className="absolute top-2 right-3"><Sparkles className="h-5 w-5 text-purple-300/40" /></div>
-        <div className="flex items-center gap-2 mb-1">
-          <Moon className="h-4 w-4 text-yellow-300" />
-          <span className="text-sm font-bold text-white">Night Unlimited Mode</span>
-        </div>
-        <p className="text-white/90 text-sm font-bold">₹499 — Unlimited Chat 12 AM till 5 AM</p>
-        <p className="text-purple-200 text-xs mt-1">Talk to anyone, as much as you want. No limits tonight! 🌙</p>
-        <button onClick={() => setSelected("night")} className={`mt-3 rounded-xl px-5 py-2 text-xs font-bold transition-all ${selected === "night" ? "bg-white text-purple-900" : "bg-pink-500 text-white"}`}>
-          {selected === "night" ? "✓ Selected" : "Activate Now ✨"}
-        </button>
-      </div>
+      <p className="px-5 mt-4 mb-1 text-sm font-bold text-foreground">More time for conversations you enjoy</p>
+      <p className="px-5 mb-4 text-xs text-muted-foreground">Compare prices and included minutes. Your selected total is shown before payment.</p>
 
       {/* Plans */}
       <div className="px-4 space-y-3">
         {/* Small plans */}
         <div className="grid grid-cols-3 gap-2">
-          {plans.filter(p => !p.highlight).map((plan) => (
+          {plans.filter(p => !p.highlight || p.isNight).map((plan) => (
             <button key={plan.id} onClick={() => setSelected(plan.id)}
               className={`relative rounded-2xl border-2 p-3 text-left transition-all active:scale-[0.97] ${selected === plan.id ? "border-primary bg-primary/5" : "border-border bg-card"}`}>
               <p className="text-[10px] font-semibold text-muted-foreground">{plan.label}</p>
@@ -421,37 +365,29 @@ const RechargePage = () => {
         ))}
       </div>
 
-      {/* Social proof */}
-      <div className="mx-4 mt-4 flex items-center gap-2 rounded-xl bg-card border border-border px-4 py-3">
-        <Users className="h-4 w-4 text-primary" />
-        <p className="text-xs text-muted-foreground">
-          <span className="font-bold text-foreground">2,847 users</span> recharged today · Most popular: <span className="font-bold text-primary">₹999 plan</span>
-        </p>
-      </div>
-
       {/* Gift nudge */}
       <div className="mx-4 mt-3 flex items-center gap-2 rounded-xl bg-accent/10 border border-accent/20 px-4 py-3">
         <Gift className="h-4 w-4 text-accent" />
         <p className="text-xs text-muted-foreground">
-          First time? You got <span className="font-bold text-accent">30 seconds FREE</span> already! Recharge to keep going 💕
+          New accounts get <span className="font-bold text-accent">30 seconds free</span>. Recharge adds the minutes in your selected plan.
         </p>
       </div>
 
       {/* Sticky CTA */}
       <div className="fixed bottom-16 left-1/2 -translate-x-1/2 w-full max-w-lg px-4 z-20">
         <div className="rounded-3xl bg-card/90 backdrop-blur-lg border border-border p-3 shadow-elevated">
-          <button onClick={handlePurchase} disabled={loading}
-            className="flex w-full items-center justify-center gap-2 rounded-2xl gradient-primary py-4 text-sm font-bold text-primary-foreground transition-transform active:scale-95 disabled:opacity-60">
+          <Button onClick={handlePurchase} disabled={loading || (!razorpayEnabled && !phonepeEnabled)}
+            className="flex h-auto w-full items-center justify-center gap-2 whitespace-normal rounded-2xl gradient-primary py-4 text-sm font-bold text-primary-foreground transition-transform active:scale-95 disabled:opacity-60">
             {loading ? <span className="h-4 w-4 rounded-full border-2 border-primary-foreground border-t-transparent animate-spin" /> : (
               <>
                 <Zap className="h-4 w-4" />
                 Pay ₹{selectedPlan.price} · Get {selectedPlan.minutes + selectedPlan.bonus} min
               </>
             )}
-          </button>
+          </Button>
           <div className="mt-2 flex items-center justify-center gap-1.5">
             <ShieldCheck className="h-3 w-3 text-muted-foreground" />
-            <p className="text-[10px] text-muted-foreground">Secure payment · Instant activation · 100% safe</p>
+            <p className="text-[10px] text-muted-foreground">{razorpayEnabled || phonepeEnabled ? "Minutes added after payment verification" : "Payments are currently unavailable"}</p>
           </div>
         </div>
       </div>
