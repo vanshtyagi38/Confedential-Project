@@ -330,9 +330,17 @@ const RechargePage = () => {
         </div>
       )}
 
-      {/* Emotional hook */}
-      <p className="px-5 mt-4 mb-1 text-sm font-bold text-foreground">More time for conversations you enjoy</p>
-      <p className="px-5 mb-4 text-xs text-muted-foreground">Compare prices and included minutes. Your selected total is shown before payment.</p>
+      {/* Balance-backed recharge urgency */}
+      <section aria-labelledby="recharge-reminder-title" className="mt-4 border-y border-primary/20 bg-primary/5 px-5 py-4">
+        <div className="flex items-center gap-2 text-primary">
+          <Clock className="h-4 w-4" />
+          <p className="text-xs font-semibold">{balance <= 0 ? "Your chat time has run out" : balance < 10 ? "Your chat time is running low" : "Keep your conversations going"}</p>
+        </div>
+        <h2 id="recharge-reminder-title" className="mt-2 text-lg font-bold text-foreground">{balance <= 0 ? "Recharge now. Pick up your conversation." : balance < 10 ? "Don't let your next chat end early." : "More time for the connection you enjoy."}</h2>
+        <p className="mt-1 text-xs text-muted-foreground">{balance > 0 && balance < 10 ? `Only ${balance < 1 ? `${Math.round(balance * 60)} seconds` : `${Number(balance.toFixed(1))} minutes`} left. ` : ""}Choose a plan below. Minutes are added after verified payment.</p>
+        {selectedPlan.bonus > 0 && <p className="mt-2 text-xs font-semibold text-primary">Your selected plan includes {selectedPlan.bonus} bonus minutes · {selectedPlan.minutes + selectedPlan.bonus} minutes for ₹{selectedPlan.price}</p>}
+      </section>
+      <p className="px-5 mt-4 mb-3 text-xs text-muted-foreground">Compare prices and included minutes. Your selected total is shown before payment.</p>
 
       {/* Plans */}
       <div className="px-4 space-y-3">

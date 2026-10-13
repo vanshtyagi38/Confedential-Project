@@ -10,3 +10,5 @@
 - [x] Deploy provider verification and atomic, idempotent minute credits; isolated credit/rollback tests passed
 - [x] Test authenticated live checkout, unpaid-status recovery, invalid confirmation rejection, and credit retry safety without charging real money
 - [ ] Confirm a completed live payment reads back credited minutes; requires an actual paid checkout (no money charged during verification)
+- [x] Add navbar recharge and dismissible home offers below 10 minutes
+- [x] Restore honest recharge urgency; authenticated navbar navigation and mobile layout verified, eight threshold/dismissal tests passed
