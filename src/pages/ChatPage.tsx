@@ -740,7 +740,7 @@ const ChatPage = () => {
           streamTextRef.current += chunk;
           const currentText = streamTextRef.current;
           // Intercept block tag during streaming — don't show it
-          if (currentText.trim() === "[BLOCK_USER_30MIN]") {
+          if (currentText.includes("[BLOCK_USER_30MIN]")) {
             // Abort the stream immediately
             abortRef.current?.abort();
             releaseLock();
@@ -774,7 +774,7 @@ const ChatPage = () => {
           const finalText = streamTextRef.current.trim();
           
           // Double-check block tag in final text
-          if (finalText === "[BLOCK_USER_30MIN]") {
+          if (finalText.includes("[BLOCK_USER_30MIN]")) {
             const until = Date.now() + 30 * 60 * 1000;
             const key = `block_${session?.user?.id}_${companion.id}`;
             localStorage.setItem(key, until.toString());

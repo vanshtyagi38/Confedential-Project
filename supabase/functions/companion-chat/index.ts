@@ -7,6 +7,74 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-api-version, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+function isInternalCompanionReply(text: string): boolean {
+  return [
+    /^\s*(?:think(?:ing)?|analysis|reasoning|internal monologue|chain of thought)(?:\s*[:—-]|\s*\n)/i,
+    /\b(?:my response needs to|my focus should be|i need to make sure|this is still in the realm of|response strategy|moderation analysis)\b/i,
+    /(?:^|\n)\s*\d+[.)]\s+\*\*/m,
+    /<\/?think(?:ing)?\b[^>]*>/i,
+  ].some((pattern) => pattern.test(text));
+}
+
+function sanitizeModelStream(upstream: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
+  const encoder = new TextEncoder();
+  return new ReadableStream({
+    async start(controller) {
+      const reader = upstream.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let responseText = "";
+
+      const consumeLine = (rawLine: string) => {
+        const line = rawLine.endsWith("\r") ? rawLine.slice(0, -1) : rawLine;
+        if (!line.startsWith("data: ")) return;
+        const payload = line.slice(6).trim();
+        if (!payload || payload === "[DONE]") return;
+        try {
+          const event = JSON.parse(payload);
+          const delta = event?.choices?.[0]?.delta;
+          // Never forward provider reasoning, tool calls, model metadata, or other fields.
+          if (typeof delta?.content === "string") responseText += delta.content;
+        } catch {
+          // Ignore malformed provider events; never expose raw upstream payloads.
+        }
+      };
+
+      try {
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+          buffer += decoder.decode(value, { stream: true });
+          const lines = buffer.split("\n");
+          buffer = lines.pop() ?? "";
+          for (const line of lines) consumeLine(line);
+        }
+        buffer += decoder.decode();
+        if (buffer.trim()) consumeLine(buffer);
+
+        const trimmed = responseText.trim();
+        const safeText = trimmed.includes("[BLOCK_USER_30MIN]")
+          ? "[BLOCK_USER_30MIN]"
+          : isInternalCompanionReply(trimmed)
+            ? "Ek sec, mera message sahi se nahi gaya—phir se bolo?"
+            : responseText;
+        if (safeText) {
+          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: safeText } }] })}\n\n`));
+        }
+        controller.enqueue(encoder.encode("data: [DONE]\n\n"));
+        controller.close();
+      } catch (error) {
+        controller.error(error);
+      } finally {
+        reader.releaseLock();
+      }
+    },
+    cancel(reason) {
+      void upstream.cancel(reason);
+    },
+  });
+}
+
 async function logRequest(functionName: string, method: string, statusCode: number, responseTimeMs: number, apiVersion: string, errorMessage?: string, ip?: string) {
   try {
     const supabaseAdmin = createClient(
@@ -448,6 +516,7 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
         temperature: 0.95,
          max_tokens: 320,
       }),
+      signal: req.signal,
     });
 
     if (!response.ok) {
@@ -468,7 +537,14 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
     const elapsed = Date.now() - start;
     logRequest("companion-chat", req.method, 200, elapsed, apiVersion, undefined, ip || undefined);
 
-    return new Response(response.body, {
+    if (!response.body) {
+      return new Response(JSON.stringify({ error: "Empty AI response" }), {
+        status: 502,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    return new Response(sanitizeModelStream(response.body), {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
