@@ -3,6 +3,7 @@ import logoIcon from "@/assets/logo-icon.png";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
+import { Button } from "@/components/ui/button";
 
 const AppHeader = () => {
   const { profile } = useAuth();
@@ -38,7 +39,7 @@ const AppHeader = () => {
         {/* Right actions */}
         <div className="flex items-center gap-2">
           {/* Safe badge */}
-          <div className="flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1">
+          <div className="hidden min-[400px]:flex items-center gap-1.5 rounded-full border border-border bg-secondary px-2.5 py-1">
             <Shield className="h-3 w-3 text-muted-foreground" />
             <span className="text-[10px] font-semibold text-muted-foreground">
               Safe
@@ -47,14 +48,19 @@ const AppHeader = () => {
 
           {/* Balance — single tap to recharge */}
           {profile && (
-            <button
+            <Button
+              variant="secondary"
+              aria-label="Chat balance; open recharge"
               onClick={() => requireAuth(() => navigate("/recharge"))}
-              className="flex items-center gap-1.5 rounded-full bg-primary px-3 py-1.5 text-xs font-bold text-primary-foreground shadow-sm transition-transform active:scale-95"
+              className="h-8 gap-1 rounded-full px-2 text-xs font-bold"
             >
               <Zap className="h-3 w-3" />
-              <span>{profile.balance_minutes}m</span>
-            </button>
+              <span>{profile.balance_minutes < 1 ? `${Math.round(profile.balance_minutes * 60)}s` : `${Number(profile.balance_minutes.toFixed(1))}m`}</span>
+            </Button>
           )}
+          <Button size="sm" className="h-8 rounded-full px-3 text-xs" onClick={() => requireAuth(() => navigate("/recharge"))}>
+            Recharge
+          </Button>
         </div>
 
       </div>
