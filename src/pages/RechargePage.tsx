@@ -1,4 +1,5 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { loadRazorpayScript, paymentErrorMessage } from "@/lib/rechargePayment";
 import PageSEO from "@/components/PageSEO";
 import { ArrowLeft, Zap, Clock, CheckCircle2, ShieldCheck, Gift, CreditCard, Smartphone } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -26,22 +27,6 @@ interface Plan {
 
 type PaymentMethod = "razorpay" | "phonepe";
 
-// Load Razorpay script dynamically
-const loadRazorpayScript = (): Promise<boolean> => {
-  return new Promise((resolve) => {
-    if (document.getElementById("razorpay-script")) {
-      resolve(true);
-      return;
-    }
-    const script = document.createElement("script");
-    script.id = "razorpay-script";
-    script.src = "https://checkout.razorpay.com/v1/checkout.js";
-    script.onload = () => resolve(true);
-    script.onerror = () => resolve(false);
-    document.body.appendChild(script);
-  });
-};
-
 const RechargePage = () => {
   const navigate = useNavigate();
   const { session, profile, refreshProfile } = useAuth();
@@ -54,7 +39,11 @@ const RechargePage = () => {
   const [setupPreference, setSetupPreference] = useState("");
   const [setupAge, setSetupAge] = useState(22);
   const [accepted18, setAccepted18] = useState(false);
-  const [razorpayEnabled, setRazorpayEnabled] = useState(true);
+  const [razorpayEnabled, setRazorpayEnabled] = useState(false);
+  const [loadError, setLoadError] = useState(false);
+  const [pendingPayment, setPendingPayment] = useState<{ provider: PaymentMethod; orderId: string } | null>(() => {
+    try { return JSON.parse(sessionStorage.getItem("pending-recharge") || "null"); } catch { return null; }
+  });
   const [phonepeEnabled, setPhonepeEnabled] = useState(false);
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
@@ -66,6 +55,7 @@ const RechargePage = () => {
         (supabase as any).from("payment_gateway_settings").select("*").eq("id", "default").maybeSingle(),
         (supabase as any).from("recharge_packages").select("*").eq("is_active", true).order("sort_order", { ascending: true }),
       ]);
+      if (gatewayRes.error || packagesRes.error) setLoadError(true);
       if (gatewayRes.data) {
         setRazorpayEnabled(gatewayRes.data.razorpay_enabled);
         setPhonepeEnabled(gatewayRes.data.phonepe_enabled);
@@ -98,32 +88,66 @@ const RechargePage = () => {
   const balance = profile?.balance_minutes || 0;
   const selectedPlan = plans.find(p => p.id === selected) || plans[0];
 
-  // Check for PhonePe return status
+  const rememberPayment = (payment: { provider: PaymentMethod; orderId: string }) => {
+    sessionStorage.setItem("pending-recharge", JSON.stringify(payment));
+    setPendingPayment(payment);
+  };
+  const clearPendingPayment = () => {
+    sessionStorage.removeItem("pending-recharge");
+    setPendingPayment(null);
+  };
+  const checkPayment = useCallback(async (provider: PaymentMethod, orderId: string) => {
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke(`${provider}-status`, { body: { orderId } });
+      if (error) throw new Error(await paymentErrorMessage(error, "Unable to check payment. Please try again."));
+      if (data?.success) {
+        sessionStorage.removeItem("pending-recharge");
+        setPendingPayment(null);
+        await refreshProfile();
+        toast.success(`Recharge verified: ${data.minutes_added} minutes credited`);
+        window.history.replaceState({}, "", "/recharge");
+      } else if (data?.state === "FAILED") {
+        clearPendingPayment();
+        toast.error("Payment failed. No minutes were credited.");
+      } else {
+        toast.info("Payment is not completed yet. Check again after paying.");
+      }
+    } catch (error) { toast.error(error instanceof Error ? error.message : "Unable to check payment"); }
+    finally { setLoading(false); }
+  }, [refreshProfile]);
+
   useEffect(() => {
+    if (!session?.user) return;
     const params = new URLSearchParams(window.location.search);
-    const status = params.get("status");
-    if (status === "success") {
-      toast.success("Payment successful! Balance updated 🎉");
-      refreshProfile();
-      window.history.replaceState({}, "", "/recharge");
-    } else if (status === "failure") {
-      toast.error("Payment failed. Please try again.");
+    const orderId = params.get("orderId");
+    if (params.get("provider") === "phonepe" && orderId) {
+      rememberPayment({ provider: "phonepe", orderId });
+      void checkPayment("phonepe", orderId);
+    } else if (params.has("status")) {
+      toast.info("Check payment status to confirm your recharge.");
       window.history.replaceState({}, "", "/recharge");
     }
-  }, []);
+    // Run once after sign-in, not on profile balance refreshes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [session?.user.id]);
 
   const handlePurchase = () => {
-    if (!session?.user || !profile) return;
+    if (loading) return;
+    if (!session?.user || !profile) { toast.error("Please sign in to recharge"); return; }
+    if (!selectedPlan) return;
     // If only one gateway enabled, skip dialog
     const enabledCount = (razorpayEnabled ? 1 : 0) + (phonepeEnabled ? 1 : 0);
     if (enabledCount === 1) {
       if (razorpayEnabled) { handlePayWithRazorpay(); return; }
       if (phonepeEnabled) { handlePayWithPhonePe(); return; }
     }
+    if (enabledCount === 0) { toast.error("Payments are currently unavailable"); return; }
     setShowPaymentDialog(true);
   };
 
   const handlePayWithRazorpay = async () => {
+    if (!selectedPlan || loading) return;
     setShowPaymentDialog(false);
     setLoading(true);
 
@@ -141,20 +165,18 @@ const RechargePage = () => {
         {
           body: {
             planId: selectedPlan.id,
-            minutes: selectedPlan.minutes,
-            bonus: selectedPlan.bonus,
-            price: selectedPlan.price,
           },
         }
       );
 
       if (orderError || !orderData?.order_id) {
         console.error("Order creation failed:", orderError, orderData);
-        toast.error("Failed to create payment order. Please try again.");
+        toast.error(await paymentErrorMessage(orderError, "Failed to create payment order. Please try again."));
         setLoading(false);
         return;
       }
 
+      rememberPayment({ provider: "razorpay", orderId: orderData.order_id });
       // Open Razorpay checkout
       const options = {
         key: orderData.key_id,
@@ -173,34 +195,31 @@ const RechargePage = () => {
                   razorpay_order_id: response.razorpay_order_id,
                   razorpay_payment_id: response.razorpay_payment_id,
                   razorpay_signature: response.razorpay_signature,
-                  planId: selectedPlan.id,
-                  minutes: selectedPlan.minutes,
-                  bonus: selectedPlan.bonus,
-                  price: selectedPlan.price,
                 },
               }
             );
 
             if (verifyError || !verifyData?.success) {
-              toast.error("Payment verification failed. Contact support.");
+              toast.error(await paymentErrorMessage(verifyError, "Payment could not be verified yet. Use Check payment status."));
               setLoading(false);
               return;
             }
 
+            clearPendingPayment();
             await refreshProfile();
-            toast.success(`Added ${selectedPlan.minutes + selectedPlan.bonus} minutes to your balance 🎉`);
+            toast.success(`Added ${verifyData.minutes_added} minutes to your balance 🎉`);
             setLoading(false);
-            navigate(-1);
+            navigate("/recharge");
           } catch (err) {
             console.error("Verification error:", err);
-            toast.error("Payment verification failed. Contact support.");
+            toast.error("Payment could not be verified yet. Use Check payment status.");
             setLoading(false);
           }
         },
         modal: {
           ondismiss: () => {
             setLoading(false);
-            toast.error("Payment cancelled");
+            toast.info("Checkout closed. You can check payment status if money was deducted.");
           },
         },
         prefill: {
@@ -226,6 +245,7 @@ const RechargePage = () => {
   };
 
   const handlePayWithPhonePe = async () => {
+    if (!selectedPlan || loading) return;
     setShowPaymentDialog(false);
     setLoading(true);
 
@@ -233,20 +253,18 @@ const RechargePage = () => {
       const { data, error } = await supabase.functions.invoke("phonepe-initiate", {
         body: {
           planId: selectedPlan.id,
-          minutes: selectedPlan.minutes,
-          bonus: selectedPlan.bonus,
-          price: selectedPlan.price,
-          redirectUrl: `${window.location.origin}/recharge?status=success`,
+          redirectUrl: `${window.location.origin}/recharge`,
         },
       });
 
       if (error || !data?.redirectUrl) {
         console.error("PhonePe initiation failed:", error, data);
-        toast.error("Failed to initiate PhonePe payment. Please try again.");
+        toast.error(await paymentErrorMessage(error, "Failed to initiate PhonePe payment. Please try again."));
         setLoading(false);
         return;
       }
 
+      rememberPayment({ provider: "phonepe", orderId: data.orderId });
       // Redirect to PhonePe payment page
       window.location.href = data.redirectUrl;
     } catch (err) {
@@ -273,8 +291,9 @@ const RechargePage = () => {
     return (
       <div className="mx-auto min-h-screen w-full max-w-2xl bg-background flex items-center justify-center pb-20">
         <div className="text-center space-y-3">
-          <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />
-          <p className="text-sm text-muted-foreground">Loading plans...</p>
+          {plansLoading && <div className="h-8 w-8 rounded-full border-2 border-primary border-t-transparent animate-spin mx-auto" />}
+          <p className="text-sm text-muted-foreground">{plansLoading ? "Loading plans..." : loadError ? "Could not load recharge plans" : "No active recharge plans available"}</p>
+          {!plansLoading && <Button variant="outline" onClick={() => window.location.reload()}>Try again</Button>}
         </div>
         <BottomNav />
       </div>
@@ -303,6 +322,13 @@ const RechargePage = () => {
           {balance <= 0 && <span className="ml-auto text-xs font-semibold text-primary">Recharge to chat</span>}
         </div>
       </div>
+
+      {pendingPayment && (
+        <div className="mx-4 mt-3 border border-primary/20 rounded-xl p-3">
+          <p className="text-sm text-foreground">Have you completed your payment?</p>
+          <Button variant="outline" className="mt-2 w-full" disabled={loading} onClick={() => checkPayment(pendingPayment.provider, pendingPayment.orderId)}>Check payment status</Button>
+        </div>
+      )}
 
       {/* Emotional hook */}
       <p className="px-5 mt-4 mb-1 text-sm font-bold text-foreground">More time for conversations you enjoy</p>
@@ -407,6 +433,7 @@ const RechargePage = () => {
 
             {razorpayEnabled && (
               <button
+                disabled={loading}
                 onClick={handlePayWithRazorpay}
                 className="flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 transition-all active:scale-[0.97] hover:border-primary"
               >
@@ -423,6 +450,7 @@ const RechargePage = () => {
 
             {phonepeEnabled && (
               <button
+                disabled={loading}
                 onClick={handlePayWithPhonePe}
                 className="flex w-full items-center gap-4 rounded-2xl border-2 border-border bg-card p-4 transition-all active:scale-[0.97] hover:border-primary"
               >

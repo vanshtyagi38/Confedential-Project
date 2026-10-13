@@ -5,6 +5,10 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { useFeaturedRecharge } from "@/hooks/useRechargePackages";
+import { useAuth } from "@/contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
 const ReelItem = ({
   reel,
@@ -76,7 +80,7 @@ const ReelItem = ({
         ref={videoRef}
         src={reel.video_url}
         className="h-full w-full object-cover"
-        loop
+        loop={!isLastFree}
         playsInline
         poster={posterUrl}
         preload={isActive ? "auto" : "metadata"}
@@ -156,6 +160,7 @@ const ReelItem = ({
 /** Small popup overlay instead of full-page paywall */
 const RechargePopup = ({ onClose }: { onClose: () => void }) => {
   const navigate = useNavigate();
+  const { plan } = useFeaturedRecharge();
   return (
     <div className="fixed inset-0 z-[100] flex items-end justify-center bg-black/60 backdrop-blur-sm">
       <div className="relative mx-3 mb-6 w-full max-w-sm animate-in slide-in-from-bottom-4 rounded-2xl border border-primary/30 bg-black/90 p-5 backdrop-blur-xl">
@@ -179,22 +184,21 @@ const RechargePopup = ({ onClose }: { onClose: () => void }) => {
         <div className="rounded-xl bg-primary/10 border border-primary/20 p-3 mb-3">
           <div className="flex items-baseline justify-between">
             <div>
-              <p className="text-2xl font-extrabold text-primary">₹999</p>
-              <p className="text-xs text-white/70">10 Days Unlimited Access</p>
+              <p className="text-2xl font-extrabold text-primary">{plan ? `₹${plan.price}` : "Recharge"}</p>
+              <p className="text-xs text-muted-foreground">{plan?.label || "Choose an available plan"}</p>
             </div>
             <div className="text-right text-[10px] text-white/50 space-y-0.5">
-              <p>✅ 500+ hot reels</p>
-              <p>✅ Unlimited chat</p>
-              <p>✅ Priority matching</p>
+              <p>Reels access after recharge</p>
+              {plan && <p>{plan.minutes + plan.bonus} chat minutes</p>}
             </div>
           </div>
         </div>
 
         <Button
-          onClick={() => navigate("/recharge")}
+          onClick={() => navigate(plan ? `/recharge?plan=${encodeURIComponent(plan.plan_id)}` : "/recharge")}
           className="w-full gap-2 rounded-full bg-primary text-primary-foreground font-bold shadow-xl"
         >
-          <Crown className="h-4 w-4" /> Recharge ₹999 — Unlock All
+          <Crown className="h-4 w-4" /> {plan ? `Recharge ₹${plan.price} — Unlock Reels` : "Choose Recharge"}
         </Button>
         <p className="mt-2 text-center text-[9px] text-white/30">One-time · No auto-renewal</p>
       </div>
@@ -204,6 +208,16 @@ const RechargePopup = ({ onClose }: { onClose: () => void }) => {
 
 const ReelsPage = () => {
   const { reels, loading } = useReels();
+  const { session } = useAuth();
+  const { data: hasRecharged = false } = useQuery({
+    queryKey: ["reels-recharge-access", session?.user.id],
+    enabled: Boolean(session?.user.id),
+    queryFn: async () => {
+      const { data, error } = await supabase.from("recharge_orders").select("id").eq("user_id", session?.user.id ?? "").eq("status", "credited").limit(1);
+      if (error) throw error;
+      return Boolean(data?.length);
+    },
+  });
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const startIndex = parseInt(searchParams.get("start") || "0", 10);
@@ -248,7 +262,7 @@ const ReelsPage = () => {
     );
   }
 
-  const freeReels = reels.slice(0, FREE_REEL_LIMIT);
+  const freeReels = hasRecharged ? reels : reels.slice(0, FREE_REEL_LIMIT);
 
   return (
     <div className="relative h-[100dvh] w-full bg-black">
@@ -272,7 +286,7 @@ const ReelsPage = () => {
               isActive={i === activeIndex}
               isMuted={isMuted}
               onUnmute={() => setIsMuted(false)}
-              isLastFree={i === FREE_REEL_LIMIT - 1}
+              isLastFree={!hasRecharged && i === FREE_REEL_LIMIT - 1}
               onShowPaywall={() => setShowPaywall(true)}
             />
           </div>
@@ -280,7 +294,7 @@ const ReelsPage = () => {
       </div>
 
       {/* Paywall popup */}
-      {showPaywall && <RechargePopup onClose={() => setShowPaywall(false)} />}
+      {showPaywall && !hasRecharged && <RechargePopup onClose={() => setShowPaywall(false)} />}
     </div>
   );
 };

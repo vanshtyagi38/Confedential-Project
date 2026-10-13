@@ -16,6 +16,8 @@ import SpinWheel, { SEGMENTS, segAngles } from "@/components/SpinWheel";
 import InvitePopup from "@/components/InvitePopup";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useRechargePackages } from "@/hooks/useRechargePackages";
+import { Button } from "@/components/ui/button";
 
 const PRIVACY_POLICY = `Privacy Policy
 
@@ -351,11 +353,8 @@ const Footer = () => {
       .slice(0, 6);
   }, [companions, profile]);
 
-  const rechargeOffers = [
-    { label: "30 min", price: "₹199", original: "₹299", tag: "STARTER" },
-    { label: "60 min", price: "₹249", original: "₹399", tag: "POPULAR 🔥" },
-    { label: "3 Hours", price: "₹499", original: "₹799", tag: "BEST VALUE" },
-  ];
+  const { data: activePackages = [] } = useRechargePackages();
+  const rechargeOffers = activePackages.filter(p => !p.is_night).slice(0, 3);
 
   const handlePolicyClick = (type: PolicyType) => {
     const newCount = clickCounts[type] + 1;
@@ -462,16 +461,15 @@ const Footer = () => {
         <h3 className="text-sm font-bold px-1 mb-2">⚡ Quick Recharge Offers</h3>
         <div className="grid grid-cols-3 gap-2">
           {rechargeOffers.map((offer) => (
-            <button
-              key={offer.label}
-              onClick={() => navigate("/recharge")}
-              className="rounded-2xl border border-border bg-card p-3 text-center transition-all active:scale-95 hover:border-primary/30"
+            <Button variant="outline"
+              key={offer.plan_id}
+              onClick={() => navigate(`/recharge?plan=${encodeURIComponent(offer.plan_id)}`)}
+              className="h-auto min-w-0 flex-col whitespace-normal rounded-2xl border border-border bg-card p-3 text-center transition-all active:scale-95 hover:border-primary/30"
             >
-              <span className="block text-[9px] font-bold text-primary">{offer.tag}</span>
               <span className="block text-sm font-extrabold mt-1">{offer.label}</span>
-              <span className="block text-xs font-bold text-primary mt-0.5">{offer.price}</span>
-              <span className="block text-[10px] text-muted-foreground line-through">{offer.original}</span>
-            </button>
+              <span className="block text-xs font-bold text-primary mt-0.5">₹{offer.price}</span>
+              <span className="block text-[10px] text-muted-foreground">{offer.minutes + offer.bonus} min</span>
+            </Button>
           ))}
         </div>
       </div>

@@ -4,12 +4,14 @@ import { useAuth } from "@/contexts/AuthContext";
 import { useAuthGuard } from "@/hooks/useAuthGuard";
 import { useState, useEffect, useRef, useCallback } from "react";
 import InvitePopup from "@/components/InvitePopup";
+import { useFeaturedRecharge } from "@/hooks/useRechargePackages";
 
 const BalanceCard = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { requireAuth } = useAuthGuard();
   const balance = profile?.balance_minutes || 0;
+  const { plan: offerPlan } = useFeaturedRecharge();
   const [inviteOpen, setInviteOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -54,11 +56,11 @@ const BalanceCard = () => {
       icon: <Gift className="h-6 w-6 text-accent" />,
       iconBg: "bg-gradient-to-br from-accent/15 to-accent/5",
       title: "Recharge Offer",
-      subtitle: "Compare prices & included minutes",
+      subtitle: offerPlan ? `₹${offerPlan.price} · ${offerPlan.minutes + offerPlan.bonus} minutes` : "Compare prices & included minutes",
       cta: "Grab →",
       ctaClass: "bg-accent text-white shadow-sm",
       gradientBg: "from-accent/8 via-card to-card",
-      onClick: () => requireAuth(() => navigate("/recharge")),
+      onClick: () => requireAuth(() => navigate(offerPlan ? `/recharge?plan=${encodeURIComponent(offerPlan.plan_id)}` : "/recharge")),
     },
   ];
 

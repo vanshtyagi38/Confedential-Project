@@ -8,6 +8,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
 import { updateStreak } from "@/lib/streakEngine";
 import InstallAppPopup from "@/components/InstallAppPopup";
+import { Button } from "@/components/ui/button";
+import { useFeaturedRecharge } from "@/hooks/useRechargePackages";
 import { useRealtimeChat, useTypingIndicator } from "@/hooks/useRealtimeChat";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
@@ -181,6 +183,7 @@ const ChatPage = () => {
   const [online, setOnline] = useState(true);
   const [outOfBalance, setOutOfBalance] = useState(false);
   const [showRechargePopup, setShowRechargePopup] = useState(false);
+  const { plan: rechargePlan } = useFeaturedRecharge();
   const [displayBalance, setDisplayBalance] = useState(profile?.balance_minutes || 0);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -1129,22 +1132,22 @@ const ChatPage = () => {
           </div>
           <div className="p-5 space-y-4">
             <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-center">
-              <p className="text-xs text-muted-foreground">Best Value Pack</p>
-              <p className="mt-1 text-2xl font-bold text-primary">₹999</p>
-              <p className="text-sm text-muted-foreground">10 Days Unlimited Chat</p>
+              <p className="text-xs text-muted-foreground">{rechargePlan?.label || "Choose your recharge"}</p>
+              {rechargePlan && <p className="mt-1 text-2xl font-bold text-primary">₹{rechargePlan.price}</p>}
+              <p className="text-sm text-muted-foreground">{rechargePlan ? `${rechargePlan.minutes + rechargePlan.bonus} chat minutes` : "See available chat-minute packages"}</p>
             </div>
-            <button
-              onClick={() => { setShowRechargePopup(false); navigate("/recharge"); }}
+            <Button
+              onClick={() => { setShowRechargePopup(false); navigate(rechargePlan ? `/recharge?plan=${encodeURIComponent(rechargePlan.plan_id)}` : "/recharge"); }}
               className="w-full rounded-xl gradient-primary py-3.5 text-sm font-bold text-primary-foreground transition-transform active:scale-95"
             >
               Recharge Now 🚀
-            </button>
-            <button
+            </Button>
+            <Button variant="ghost"
               onClick={() => setShowRechargePopup(false)}
               className="w-full text-xs text-muted-foreground"
             >
               Maybe Later
-            </button>
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
