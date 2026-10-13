@@ -6,6 +6,7 @@
 - [x] Put real recharge offers near the top of discovery with clear signup and recharge actions
 - [x] Replace misleading recharge pressure with accurate prices, balances, and benefits
 - [x] Verify the guest signup action and signed-in offer selection through the matching payment button; no payment submitted
-- [ ] Connect all recharge popups to their active package and existing payment checkout
-- [ ] Verify gateway payments and credit package minutes atomically without duplicate credits
-- [ ] Test authenticated checkout, payment rejection, and credit retry safety without charging real money
+- [x] Connect recharge popups to active packages and existing live Razorpay checkout
+- [x] Deploy provider verification and atomic, idempotent minute credits; isolated credit/rollback tests passed
+- [x] Test authenticated live checkout, unpaid-status recovery, invalid confirmation rejection, and credit retry safety without charging real money
+- [ ] Confirm a completed live payment reads back credited minutes; requires an actual paid checkout (no money charged during verification)
