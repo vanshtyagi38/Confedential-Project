@@ -80,7 +80,7 @@ const ReelItem = ({
         ref={videoRef}
         src={reel.video_url}
         className="h-full w-full object-cover"
-        loop
+        loop={!isLastFree}
         playsInline
         poster={posterUrl}
         preload={isActive ? "auto" : "metadata"}
