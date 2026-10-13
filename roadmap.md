@@ -12,3 +12,5 @@
 - [ ] Confirm a completed live payment reads back credited minutes; requires an actual paid checkout (no money charged during verification)
 - [x] Add navbar recharge and dismissible home offers below 10 minutes
 - [x] Restore honest recharge urgency; authenticated navbar navigation and mobile layout verified, eight threshold/dismissal tests passed
+- [ ] Research and publish 30 distinct relationship and online-conversation articles with truthful platform disclosures
+- [ ] Update article discovery and sitemaps, verify all new pages, and publish the site

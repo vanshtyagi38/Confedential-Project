@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { Helmet } from "react-helmet-async";
 import { supabase } from "@/integrations/supabase/client";
 import NotFound from "./NotFound";
+import logoIcon from "@/assets/logo-icon.png";
+import { Button } from "@/components/ui/button";
 
 const SeoPage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -13,6 +15,9 @@ const SeoPage = () => {
 
   useEffect(() => {
     const fetchPage = async () => {
+      setLoading(true);
+      setNotFound(false);
+      setRelatedPages([]);
       if (!slug) { setNotFound(true); setLoading(false); return; }
 
       const { data, error } = await supabase
@@ -66,11 +71,11 @@ const SeoPage = () => {
     "@type": "WebPage",
     name: page.title,
     description: page.meta_description,
-    url: `https://singletape.in/${page.slug}`,
+    url: `https://singletape.lovable.app/${page.slug}`,
     publisher: {
       "@type": "Organization",
       name: "SingleTape",
-      url: "https://singletape.in",
+      url: "https://singletape.lovable.app",
     },
   };
 
@@ -88,12 +93,11 @@ const SeoPage = () => {
         <title>{page.title}</title>
         <meta name="description" content={page.meta_description} />
         <meta name="keywords" content={`${page.primary_keyword}, ${page.secondary_keywords || "anonymous chat, private chat India"}`} />
-        <link rel="canonical" href={`https://singletape.in/${page.slug}`} />
+        <link rel="canonical" href={`https://singletape.lovable.app/${page.slug}`} />
         <meta property="og:title" content={page.title} />
         <meta property="og:description" content={page.meta_description} />
-        <meta property="og:url" content={`https://singletape.in/${page.slug}`} />
+        <meta property="og:url" content={`https://singletape.lovable.app/${page.slug}`} />
         <meta property="og:type" content="website" />
-        <meta property="og:image" content="https://singletape.in/og-image.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content={page.title} />
         <meta name="twitter:description" content={page.meta_description} />
@@ -104,13 +108,8 @@ const SeoPage = () => {
         {/* Minimal Header */}
         <header className="border-b border-border bg-card">
           <div className="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
-            <Link to="/" className="text-xl font-bold text-primary">SingleTape</Link>
-            <Link
-              to="/onboarding"
-              className="bg-primary text-primary-foreground px-6 py-2 rounded-full text-sm font-semibold hover:bg-primary/90 transition-colors"
-            >
-              Start Chatting
-            </Link>
+            <Link to="/" className="flex items-center gap-2 text-xl font-bold text-primary"><img src={logoIcon} className="h-10 w-10 rounded-xl" alt="" />SingleTape</Link>
+            <Button asChild size="sm"><Link to="/onboarding">Start Chatting</Link></Button>
           </div>
         </header>
 
@@ -119,21 +118,17 @@ const SeoPage = () => {
           <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-4">{page.title}</h1>
 
           {/* CTA Banner */}
-          <div className="bg-primary/10 border border-primary/20 rounded-2xl p-6 mb-8 text-center">
+          <div className="border-y border-primary/20 bg-primary/5 py-5 mb-8">
             <p className="text-lg font-semibold text-foreground mb-2">
-              🔥 Join thousands of users chatting anonymously right now!
+              Conversation ideas for real life. Fictional AI chat on SingleTape.
             </p>
-            <Link
-              to="/onboarding"
-              className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold text-lg hover:bg-primary/90 transition-colors"
-            >
-              Start Chatting Now →
-            </Link>
+            <p className="text-sm text-muted-foreground mb-3">18+ only. SingleTape includes fictional AI companions; it is not a dating or matchmaking agency and does not arrange real-world dates.</p>
+            <Button asChild><Link to="/onboarding">Try 30 seconds of chat</Link></Button>
           </div>
 
           {/* Article Content */}
           <article
-            className="prose prose-invert max-w-none mb-12
+            className="prose max-w-none mb-12 break-words
               [&_h2]:text-2xl [&_h2]:font-bold [&_h2]:text-foreground [&_h2]:mt-8 [&_h2]:mb-4
               [&_h3]:text-xl [&_h3]:font-semibold [&_h3]:text-foreground [&_h3]:mt-6 [&_h3]:mb-3
               [&_p]:text-muted-foreground [&_p]:leading-relaxed [&_p]:mb-4
@@ -159,15 +154,10 @@ const SeoPage = () => {
           )}
 
           {/* Bottom CTA */}
-          <div className="bg-primary/10 border border-primary/20 rounded-2xl p-8 text-center mb-12">
+          <div className="border-y border-primary/20 bg-primary/5 py-8 mb-12">
             <h2 className="text-2xl font-bold text-foreground mb-3">Ready to Chat?</h2>
-            <p className="text-muted-foreground mb-4">Join SingleTape now — it's free, anonymous, and fun!</p>
-            <Link
-              to="/onboarding"
-              className="inline-block bg-primary text-primary-foreground px-8 py-3 rounded-full font-bold text-lg hover:bg-primary/90 transition-colors"
-            >
-              Start Chatting Free →
-            </Link>
+            <p className="text-muted-foreground mb-4">New accounts get 30 seconds of free chat. Continuing requires a recharge. AI companionship is not a substitute for a real relationship or professional support.</p>
+            <Button asChild><Link to="/onboarding">Start my 30-second trial</Link></Button>
           </div>
 
           {/* Related Pages (Internal Linking) */}

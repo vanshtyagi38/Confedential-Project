@@ -42,7 +42,7 @@ const FooterBlogGrid = () => {
               onClick={() => navigate(`/${page.slug}`)}
               className="flex-shrink-0 rounded-xl border border-border bg-card px-3 py-2.5 text-left transition-all active:scale-95 hover:border-primary/30 max-w-[160px]"
             >
-              <p className="text-[11px] font-bold text-foreground truncate">{page.title}</p>
+              <p className="text-[11px] font-bold text-foreground line-clamp-3 whitespace-normal">{page.title}</p>
               {page.city && (
                 <p className="text-[9px] text-muted-foreground mt-0.5 truncate">📍 {page.city}</p>
               )}
