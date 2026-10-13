@@ -542,6 +542,48 @@ export type Database = {
         }
         Relationships: []
       }
+      recharge_orders: {
+        Row: {
+          amount_paise: number
+          created_at: string
+          credited_at: string | null
+          id: string
+          minutes: number
+          plan_id: string
+          provider: string
+          provider_order_id: string
+          provider_payment_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount_paise: number
+          created_at?: string
+          credited_at?: string | null
+          id?: string
+          minutes: number
+          plan_id: string
+          provider: string
+          provider_order_id: string
+          provider_payment_id?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          amount_paise?: number
+          created_at?: string
+          credited_at?: string | null
+          id?: string
+          minutes?: number
+          plan_id?: string
+          provider?: string
+          provider_order_id?: string
+          provider_payment_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       recharge_packages: {
         Row: {
           bonus: number
@@ -1098,6 +1140,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      credit_verified_recharge: {
+        Args: {
+          p_amount_paise: number
+          p_order_id: string
+          p_payment_id: string
+          p_provider: string
+        }
+        Returns: Json
+      }
       deduct_chat_minute: {
         Args: { p_companion_slug: string; p_user_id: string }
         Returns: number
