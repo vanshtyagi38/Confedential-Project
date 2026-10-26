@@ -406,8 +406,9 @@ serve(async (req) => {
       );
     }
 
+    const GEMINI_KEY = Deno.env.get("Gemini_API") || Deno.env.get("GEMINI_API_KEY");
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    if (!LOVABLE_API_KEY) {
+    if (!GEMINI_KEY && !LOVABLE_API_KEY) {
       const elapsed = Date.now() - start;
       await logRequest("companion-chat", req.method, 500, elapsed, apiVersion, "API key not configured", ip || undefined);
       return new Response(
@@ -500,24 +501,52 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
       return msg;
     });
 
-    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${LOVABLE_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "google/gemini-2.5-flash",
-        messages: [
-          { role: "system", content: systemPrompt },
-          ...processedMessages,
-        ],
-        stream: true,
-        temperature: 0.95,
-         max_tokens: 320,
-      }),
-      signal: req.signal,
-    });
+    const callAI = (url: string, key: string, model: string, extra: Record<string, unknown> = {}) =>
+      fetch(url, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model,
+          messages: [{ role: "system", content: systemPrompt }, ...processedMessages],
+          stream: true,
+          temperature: 0.95,
+          max_tokens: 320,
+          ...extra,
+        }),
+        signal: req.signal,
+      });
+
+    let response: Response | null = null;
+    if (GEMINI_KEY) {
+      const geminiModels = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-flash-lite-latest"];
+      for (const model of geminiModels) {
+        for (let attempt = 0; attempt < 2 && !response; attempt++) {
+          try {
+            const r = await callAI(
+              "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+              GEMINI_KEY,
+              model,
+              { reasoning_effort: "none" },
+            );
+            if (r.ok) { response = r; break; }
+            const status = r.status;
+            console.error("Gemini direct error:", model, status, (await r.text()).slice(0, 300));
+            if (status !== 503 && status !== 429) break; // try next model
+            await new Promise((res) => setTimeout(res, 600));
+          } catch (e) {
+            console.error("Gemini direct failed:", model, e);
+            break;
+          }
+        }
+        if (response) break;
+      }
+    }
+    if (!response) {
+      if (!LOVABLE_API_KEY) {
+        return new Response(JSON.stringify({ error: "AI unavailable" }), { status: 503, headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      response = await callAI("https://ai.gateway.lovable.dev/v1/chat/completions", LOVABLE_API_KEY, "google/gemini-2.5-flash");
+    }
 
     if (!response.ok) {
       const elapsed = Date.now() - start;
