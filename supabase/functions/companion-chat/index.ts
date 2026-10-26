@@ -522,7 +522,7 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
 
     let response: Response | null = null;
     if (GEMINI_KEY) {
-      const geminiModels = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-flash-lite-latest"];
+      const geminiModels = ["gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-flash-latest"];
       for (const model of geminiModels) {
         for (let attempt = 0; attempt < 2 && !response; attempt++) {
           try {
@@ -530,7 +530,7 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
               "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
               GEMINI_KEY,
               model,
-              { reasoning_effort: "none" },
+              model.includes("lite") ? {} : { reasoning_effort: "low" },
             );
             if (r.ok) { response = r; break; }
             const status = r.status;
