@@ -518,20 +518,27 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
 
     let response: Response | null = null;
     if (GEMINI_KEY) {
-      try {
-        response = await callAI(
-          "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
-          GEMINI_KEY,
-          "gemini-3.8-flash",
-          { reasoning_effort: "none" },
-        );
-        if (!response.ok) {
-          console.error("Gemini direct error:", response.status, await response.text());
-          response = null;
+      const geminiModels = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-flash-lite-latest"];
+      for (const model of geminiModels) {
+        for (let attempt = 0; attempt < 2 && !response; attempt++) {
+          try {
+            const r = await callAI(
+              "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
+              GEMINI_KEY,
+              model,
+              { reasoning_effort: "none" },
+            );
+            if (r.ok) { response = r; break; }
+            const status = r.status;
+            console.error("Gemini direct error:", model, status, (await r.text()).slice(0, 300));
+            if (status !== 503 && status !== 429) break; // try next model
+            await new Promise((res) => setTimeout(res, 600));
+          } catch (e) {
+            console.error("Gemini direct failed:", model, e);
+            break;
+          }
         }
-      } catch (e) {
-        console.error("Gemini direct failed:", e);
-        response = null;
+        if (response) break;
       }
     }
     if (!response) {
