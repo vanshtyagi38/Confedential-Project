@@ -18,9 +18,11 @@ function isInternalCompanionReply(text: string): boolean {
 
 function sanitizeModelStream(upstream: ReadableStream<Uint8Array>): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
+  let reader: ReadableStreamDefaultReader<Uint8Array> | null = null;
   return new ReadableStream({
     async start(controller) {
-      const reader = upstream.getReader();
+      reader = upstream.getReader();
+      const t0 = Date.now();
       const decoder = new TextDecoder();
       let buffer = "";
       let responseText = "";
@@ -53,24 +55,26 @@ function sanitizeModelStream(upstream: ReadableStream<Uint8Array>): ReadableStre
         if (buffer.trim()) consumeLine(buffer);
 
         const trimmed = responseText.trim();
-        const safeText = trimmed.includes("[BLOCK_USER_30MIN]")
+        console.log("AI stream done", { ms: Date.now() - t0, chars: trimmed.length });
+        const safeText = !trimmed
+          ? "Hmm, ek sec network thoda slow hai—phir se bolo na?"
+          : trimmed.includes("[BLOCK_USER_30MIN]")
           ? "[BLOCK_USER_30MIN]"
           : isInternalCompanionReply(trimmed)
             ? "Ek sec, mera message sahi se nahi gaya—phir se bolo?"
             : responseText;
-        if (safeText) {
-          controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: safeText } }] })}\n\n`));
-        }
+        controller.enqueue(encoder.encode(`data: ${JSON.stringify({ choices: [{ delta: { content: safeText } }] })}\n\n`));
         controller.enqueue(encoder.encode("data: [DONE]\n\n"));
         controller.close();
       } catch (error) {
-        controller.error(error);
+        console.error("AI stream error", error);
+        try { controller.error(error); } catch { /* closed */ }
       } finally {
-        reader.releaseLock();
+        try { reader.releaseLock(); } catch { /* ignore */ }
       }
     },
     cancel(reason) {
-      void upstream.cancel(reason);
+      try { void reader?.cancel(reason).catch(() => {}); } catch { /* ignore */ }
     },
   });
 }
@@ -518,7 +522,7 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
 
     let response: Response | null = null;
     if (GEMINI_KEY) {
-      const geminiModels = ["gemini-3.8-flash", "gemini-flash-latest", "gemini-flash-lite-latest"];
+      const geminiModels = ["gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-flash-latest"];
       for (const model of geminiModels) {
         for (let attempt = 0; attempt < 2 && !response; attempt++) {
           try {
@@ -526,7 +530,7 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
               "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
               GEMINI_KEY,
               model,
-              { reasoning_effort: "none" },
+              model.includes("lite") ? {} : { reasoning_effort: "low" },
             );
             if (r.ok) { response = r; break; }
             const status = r.status;
