@@ -522,7 +522,7 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
         response = await callAI(
           "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
           GEMINI_KEY,
-          "gemini-2.5-flash",
+          "gemini-3.8-flash",
           { reasoning_effort: "none" },
         );
         if (!response.ok) {
