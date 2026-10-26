@@ -505,7 +505,7 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
       return msg;
     });
 
-    const callAI = (url: string, key: string, model: string, extra: Record<string, unknown> = {}) =>
+    const callAI = (url: string, key: string, model: string, extra: Record<string, unknown> = {}, signal: AbortSignal = req.signal) =>
       fetch(url, {
         method: "POST",
         headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
@@ -517,28 +517,41 @@ PRIVATE RESPONSE SAFETY — HIGHEST PRIORITY:
           max_tokens: 320,
           ...extra,
         }),
-        signal: req.signal,
+        signal,
       });
 
     let response: Response | null = null;
     if (GEMINI_KEY) {
+      // Google's streaming can stall; request a full reply and re-emit it as SSE.
       const geminiModels = ["gemini-3.8-flash", "gemini-flash-lite-latest", "gemini-flash-latest"];
       for (const model of geminiModels) {
         for (let attempt = 0; attempt < 2 && !response; attempt++) {
+          const t0 = Date.now();
           try {
             const r = await callAI(
               "https://generativelanguage.googleapis.com/v1beta/openai/chat/completions",
               GEMINI_KEY,
               model,
-              model.includes("lite") ? {} : { reasoning_effort: "low" },
+              { stream: false, max_tokens: 1024 },
+              AbortSignal.timeout(25000),
             );
-            if (r.ok) { response = r; break; }
+            if (r.ok) {
+              const data = await r.json();
+              const content = data?.choices?.[0]?.message?.content;
+              console.log("Gemini ok", model, Date.now() - t0, "ms", typeof content === "string" ? content.length : "no-content", data?.choices?.[0]?.finish_reason);
+              if (typeof content === "string" && content.trim()) {
+                const sse = `data: ${JSON.stringify({ choices: [{ delta: { content } }] })}\n\ndata: [DONE]\n\n`;
+                response = new Response(sse, { status: 200 });
+                break;
+              }
+              break; // empty: try next model
+            }
             const status = r.status;
             console.error("Gemini direct error:", model, status, (await r.text()).slice(0, 300));
-            if (status !== 503 && status !== 429) break; // try next model
+            if (status !== 503 && status !== 429) break;
             await new Promise((res) => setTimeout(res, 600));
           } catch (e) {
-            console.error("Gemini direct failed:", model, e);
+            console.error("Gemini direct failed:", model, Date.now() - t0, "ms", String(e));
             break;
           }
         }
